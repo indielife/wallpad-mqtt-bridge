@@ -584,8 +584,12 @@ class Kocom(rs485):
     def parse_message(self, topic, payload):
         device = topic[1]
         command = topic[3]
+
+        if command == "config":
+            return
+
         if device == HA_LIGHT or device == HA_SWITCH:
-            room_device = topic[2].split("_")
+            room_device = topic[2].rsplit("_", 1)
             room = room_device[0]
             sub_device = room_device[1]
             if sub_device.find(DEVICE_LIGHT) != -1:
@@ -620,8 +624,8 @@ class Kocom(rs485):
                         device, room, sub_device, command, payload
                     )
                 )
-            except:
-                logger.info("[From HA]Error {} = {}".format(topic, payload))
+            except Exception as e:
+                logger.error("[From HA] %s = %s, %r", topic, payload, e)
         elif device == HA_CLIMATE:
             device = DEVICE_THERMOSTAT
             room = topic[2]
@@ -650,8 +654,8 @@ class Kocom(rs485):
                     )
                 )
                 self.send_to_homeassistant(device, room, ha_payload)
-            except:
-                logger.info("[From HA]Error {} = {}".format(topic, payload))
+            except Exception as e:
+                logger.error("[From HA] %s = %s, %r", topic, payload, e)
         elif device == HA_FAN:
             device = DEVICE_FAN
             room = topic[2]
@@ -679,8 +683,8 @@ class Kocom(rs485):
                     )
                 )
                 self.send_to_homeassistant(device, room, ha_payload)
-            except:
-                logger.info("[From HA]Error {} = {}".format(topic, payload))
+            except Exception as e:
+                logger.error("[From HA] %s = %s, %r", topic, payload, e)
 
     def on_publish(self, client, obj, mid):
         logger.info("Publish: {}".format(str(mid)))
