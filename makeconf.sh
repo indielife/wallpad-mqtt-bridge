@@ -9,7 +9,7 @@ CONFIG=`cat $CONFIG_FILE`
 
 for i in $(echo $CONFIG | jq -r 'keys_unsorted | .[]')
 do
-  if [ $i == "Advanced" ]
+  if [ "$i" = "Advanced" ]
   then 
     break
   fi 
