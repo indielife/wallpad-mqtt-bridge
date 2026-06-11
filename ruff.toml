@@ -1,0 +1,43 @@
+line-length = 100
+indent-width = 4
+target-version = "py312"
+
+[lint]
+select = [
+    "E",    # pycodestyle - error
+    "W",    # pycodestyle - warning
+    "F",    # pyflakes
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "I",    # isort
+    "N",    # pep8-naming
+    "RUF",  # ruff-specific rules
+    "C90",  # mccabe (cyclomatic complexity)
+]
+ignore = [
+    "F401", # unused-import
+]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = [
+    "E501", # line-too-long
+]
+
+[lint.per-file-ignores]
+"test_*.py" = [
+    "E501", # line-too-long
+    "E712", # true-false-comparison
+]
+
+[lint.pydocstyle]
+convention = "google"
+
+[lint.mccabe]
+max-complexity = 10
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
