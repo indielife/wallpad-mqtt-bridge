@@ -4,4 +4,9 @@ if [ -f .env ]; then
     export $(cat .env | grep -v '#' | xargs)
 fi
 
-rsync -avz --exclude '/.*' ./ "$HA_USER"@"$HA_IP":"$HA_PATH"
+rsync -avz \
+  --exclude '/.*' \
+  --exclude '/docs/' \
+  --exclude '/scripts/' \
+  --exclude '/tests/' \
+  ./ "$HA_USER"@"$HA_IP":"$HA_PATH"
