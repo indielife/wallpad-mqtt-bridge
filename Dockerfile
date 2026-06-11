@@ -1,21 +1,20 @@
 #ARG BUILD_FROM="alpine:latest"
 FROM python:3.12-slim
 
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
 # Install requirements for add-on
 RUN apt-get update && apt-get -y install jq
 RUN python3 -m pip install pyserial && \
         python3 -m pip install paho-mqtt
 
-# Copy data for add-on
-COPY *.py /
-COPY run.sh makeconf.sh /
+# Set work directory
+WORKDIR /app
 
-WORKDIR /share
+# Copy files
+COPY *.py ./
+COPY run.sh makeconf.sh ./
 
-RUN chmod a+x /makeconf.sh
-RUN chmod a+x /run.sh
+RUN chmod +x run.sh makeconf.sh
 
-CMD [ "/run.sh" ]
-
+CMD [ "./run.sh" ]

@@ -1,0 +1,26 @@
+# --- Git & GitHub & Docs ---
+.git
+.github
+.gitignore
+
+# --- Development & Local Tools ---
+.config/
+.vscode/
+docs/
+scripts/
+tests/
+
+# --- Python Environment & Caches ---
+.venv
+poetry.lock
+uv.lock
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+
+# --- Environment Variables & Secrets ---
+.env
+.env.*
