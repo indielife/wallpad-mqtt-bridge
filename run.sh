@@ -1,6 +1,5 @@
 #!/bin/sh
 
-./makeconf.sh
-
 echo "[Info] Run Wallpad Controller"
-exec python3 main.py
+./makeconf.sh
+exec python3 -m kocom.main
