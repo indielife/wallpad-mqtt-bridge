@@ -12,6 +12,10 @@ import time
 
 import paho.mqtt.client as mqtt
 import serial
+import importlib.metadata
+
+from kocom.constants import SW_VERSION
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,8 +26,6 @@ logging.basicConfig(
 
 print(f"[CHECK] 코콤 애드온 파이썬 버전: {sys.version}", flush=True)
 
-# Version
-SW_VERSION = "RS485 Compilation 1.0.3b"
 # Log Level
 CONF_LOGLEVEL = "info"  # debug, info, warn
 
