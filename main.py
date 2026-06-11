@@ -213,9 +213,7 @@ class rs485:
             for item in get_conf_serial:
                 if item[1] != "":
                     self._port_url.setdefault(port_i, item[1])
-                    logger.info(
-                        "[CONFIG] {} {} : {}".format(CONF_SERIAL, item[0], item[1])
-                    )
+                    logger.info("[CONFIG] {} {} : {}".format(CONF_SERIAL, item[0], item[1]))
                 port_i += 1
 
             get_conf_serial_device = config.items(CONF_SERIAL_DEVICE)
@@ -223,11 +221,7 @@ class rs485:
             for item in get_conf_serial_device:
                 if item[1] != "":
                     self._device_list.setdefault(port_i, item[1])
-                    logger.info(
-                        "[CONFIG] {} {} : {}".format(
-                            CONF_SERIAL_DEVICE, item[0], item[1]
-                        )
-                    )
+                    logger.info("[CONFIG] {} {} : {}".format(CONF_SERIAL_DEVICE, item[0], item[1]))
                 port_i += 1
             self._con = self.connect_serial(self._port_url)
         elif d_type == "socket":
@@ -337,9 +331,7 @@ class Kocom(rs485):
         for d_name in KOCOM_DEVICE.values():
             if d_name == DEVICE_ELEVATOR or d_name == DEVICE_GAS:
                 self.wp_list[d_name] = {}
-                self.wp_list[d_name][DEVICE_WALLPAD] = {
-                    "scan": {"tick": 0, "count": 0, "last": 0}
-                }
+                self.wp_list[d_name][DEVICE_WALLPAD] = {"scan": {"tick": 0, "count": 0, "last": 0}}
                 self.wp_list[d_name][DEVICE_WALLPAD][d_name] = {
                     "state": "off",
                     "set": "off",
@@ -348,9 +340,7 @@ class Kocom(rs485):
                 }
             elif d_name == DEVICE_FAN:
                 self.wp_list[d_name] = {}
-                self.wp_list[d_name][DEVICE_WALLPAD] = {
-                    "scan": {"tick": 0, "count": 0, "last": 0}
-                }
+                self.wp_list[d_name][DEVICE_WALLPAD] = {"scan": {"tick": 0, "count": 0, "last": 0}}
                 self.wp_list[d_name][DEVICE_WALLPAD]["mode"] = {
                     "state": "off",
                     "set": "off",
@@ -366,9 +356,7 @@ class Kocom(rs485):
             elif d_name == DEVICE_THERMOSTAT:
                 self.wp_list[d_name] = {}
                 for r_name in KOCOM_ROOM_THERMOSTAT.values():
-                    self.wp_list[d_name][r_name] = {
-                        "scan": {"tick": 0, "count": 0, "last": 0}
-                    }
+                    self.wp_list[d_name][r_name] = {"scan": {"tick": 0, "count": 0, "last": 0}}
                     self.wp_list[d_name][r_name]["mode"] = {
                         "state": "off",
                         "set": "off",
@@ -390,9 +378,7 @@ class Kocom(rs485):
             elif d_name == DEVICE_LIGHT or d_name == DEVICE_PLUG:
                 self.wp_list[d_name] = {}
                 for r_name in KOCOM_ROOM.values():
-                    self.wp_list[d_name][r_name] = {
-                        "scan": {"tick": 0, "count": 0, "last": 0}
-                    }
+                    self.wp_list[d_name][r_name] = {"scan": {"tick": 0, "count": 0, "last": 0}}
                     if d_name == DEVICE_LIGHT:
                         for i in range(0, KOCOM_LIGHT_SIZE[r_name] + 1):
                             self.wp_list[d_name][r_name][d_name + str(i)] = {
@@ -465,11 +451,7 @@ class Kocom(rs485):
         mqtt_client.on_connect = self.on_connect
 
         if server["anonymous"] != "True":
-            if (
-                server["server"] == ""
-                or server["username"] == ""
-                or server["password"] == ""
-            ):
+            if server["server"] == "" or server["username"] == "" or server["password"] == "":
                 logger.info(
                     "{} 설정을 확인하세요. Server[{}] ID[{}] PW[{}] Device[{}]".format(
                         CONF_MQTT,
@@ -480,9 +462,7 @@ class Kocom(rs485):
                     )
                 )
                 return False
-            mqtt_client.username_pw_set(
-                username=server["username"], password=server["password"]
-            )
+            mqtt_client.username_pw_set(username=server["username"], password=server["password"])
             logger.debug(
                 "{} STATUS. Server[{}] ID[{}] PW[{}] Device[{}]".format(
                     CONF_MQTT,
@@ -494,9 +474,7 @@ class Kocom(rs485):
             )
         else:
             logger.debug(
-                "{} STATUS. Server[{}] Device[{}]".format(
-                    CONF_MQTT, server["server"], name
-                )
+                "{} STATUS. Server[{}] Device[{}]".format(CONF_MQTT, server["server"], name)
             )
 
         mqtt_client.connect(server["server"], 1883, 60)
@@ -557,16 +535,12 @@ class Kocom(rs485):
                 return
             elif _topic[3] == "check_sum":
                 chksum = self.check_sum(_payload.lower())
-                logger.info(
-                    "[From HA]{} = {}({})".format(_payload, chksum[0], chksum[1])
-                )
+                logger.info("[From HA]{} = {}({})".format(_payload, chksum[0], chksum[1]))
                 return
         elif not self.kocom_scan:
             if len(_topic) < 4:
                 logger.warning(
-                    "[MQTT] 길이가 짧은 예외 토픽 진입 차단: {} = {}".format(
-                        msg.topic, _payload
-                    )
+                    "[MQTT] 길이가 짧은 예외 토픽 진입 차단: {} = {}".format(msg.topic, _payload)
                 )
                 return
 
@@ -574,11 +548,7 @@ class Kocom(rs485):
             return
         logger.info("Message: {} = {}".format(msg.topic, _payload))
 
-        if (
-            self.ha_registry != False
-            and self.ha_registry == msg.topic
-            and self.kocom_scan
-        ):
+        if self.ha_registry != False and self.ha_registry == msg.topic and self.kocom_scan:
             self.kocom_scan = False
 
     def parse_message(self, topic, payload):
@@ -620,9 +590,7 @@ class Kocom(rs485):
                     self.wp_list[device][room][sub_device][command] = payload
                     self.wp_list[device][room][sub_device]["last"] = command
                 logger.info(
-                    "[From HA]{}/{}/{}/{} = {}".format(
-                        device, room, sub_device, command, payload
-                    )
+                    "[From HA]{}/{}/{}/{} = {}".format(device, room, sub_device, command, payload)
                 )
             except Exception as e:
                 logger.error("[From HA] %s = %s, %r", topic, payload, e)
@@ -631,9 +599,7 @@ class Kocom(rs485):
             room = topic[2]
             try:
                 if command != "mode":
-                    self.wp_list[device][room]["target_temp"]["set"] = int(
-                        float(payload)
-                    )
+                    self.wp_list[device][room]["target_temp"]["set"] = int(float(payload))
                     self.wp_list[device][room]["mode"]["set"] = "heat"
                     self.wp_list[device][room]["target_temp"]["last"] = "set"
                     self.wp_list[device][room]["mode"]["last"] = "set"
@@ -719,14 +685,10 @@ class Kocom(rs485):
         self.kocom_scan = True
 
         if self.wp_elevator:
-            ha_topic = "{}/{}/{}_{}/config".format(
-                HA_PREFIX, HA_SWITCH, "wallpad", DEVICE_ELEVATOR
-            )
+            ha_topic = "{}/{}/{}_{}/config".format(HA_PREFIX, HA_SWITCH, "wallpad", DEVICE_ELEVATOR)
             ha_payload = {
                 "name": "{}_{}_{}".format(self._name, "wallpad", DEVICE_ELEVATOR),
-                "cmd_t": "{}/{}/{}_{}/set".format(
-                    HA_PREFIX, HA_SWITCH, "wallpad", DEVICE_ELEVATOR
-                ),
+                "cmd_t": "{}/{}/{}_{}/set".format(HA_PREFIX, HA_SWITCH, "wallpad", DEVICE_ELEVATOR),
                 "stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_SWITCH, "wallpad"),
                 "val_tpl": "{{ value_json." + DEVICE_ELEVATOR + " }}",
                 "ic": "mdi:elevator",
@@ -749,17 +711,11 @@ class Kocom(rs485):
             else:
                 publish_list.append({ha_topic: json.dumps(ha_payload)})
         if self.wp_gas:
-            ha_topic = "{}/{}/{}_{}/config".format(
-                HA_PREFIX, HA_SWITCH, "wallpad", DEVICE_GAS
-            )
+            ha_topic = "{}/{}/{}_{}/config".format(HA_PREFIX, HA_SWITCH, "wallpad", DEVICE_GAS)
             ha_payload = {
                 "name": "{}_{}_{}".format(self._name, "wallpad", DEVICE_GAS),
-                "cmd_t": "{}/{}/{}_{}/set".format(
-                    HA_PREFIX, HA_SWITCH, "wallpad", DEVICE_GAS
-                ),
-                "stat_t": "{}/{}/{}_{}/state".format(
-                    HA_PREFIX, HA_SWITCH, "wallpad", DEVICE_GAS
-                ),
+                "cmd_t": "{}/{}/{}_{}/set".format(HA_PREFIX, HA_SWITCH, "wallpad", DEVICE_GAS),
+                "stat_t": "{}/{}/{}_{}/state".format(HA_PREFIX, HA_SWITCH, "wallpad", DEVICE_GAS),
                 "val_tpl": "{{ value_json." + DEVICE_GAS + " }}",
                 "ic": "mdi:gas-cylinder",
                 "pl_on": "on",
@@ -781,14 +737,10 @@ class Kocom(rs485):
             else:
                 publish_list.append({ha_topic: json.dumps(ha_payload)})
 
-            ha_topic = "{}/{}/{}_{}/config".format(
-                HA_PREFIX, HA_SENSOR, "wallpad", DEVICE_GAS
-            )
+            ha_topic = "{}/{}/{}_{}/config".format(HA_PREFIX, HA_SENSOR, "wallpad", DEVICE_GAS)
             ha_payload = {
                 "name": "{}_{}_{}".format(self._name, "wallpad", DEVICE_GAS),
-                "stat_t": "{}/{}/{}_{}/state".format(
-                    HA_PREFIX, HA_SENSOR, "wallpad", DEVICE_GAS
-                ),
+                "stat_t": "{}/{}/{}_{}/state".format(HA_PREFIX, HA_SENSOR, "wallpad", DEVICE_GAS),
                 "val_tpl": "{{ value_json." + DEVICE_GAS + " }}",
                 "ic": "mdi:gas-cylinder",
                 "uniq_id": "{}_{}_{}".format(self._name, "wallpad", DEVICE_GAS),
@@ -804,9 +756,7 @@ class Kocom(rs485):
             # subscribe_list.append((ha_payload['stat_t'], 0))
             publish_list.append({ha_topic: json.dumps(ha_payload)})
         if self.wp_fan:
-            ha_topic = "{}/{}/{}_{}/config".format(
-                HA_PREFIX, HA_FAN, "wallpad", DEVICE_FAN
-            )
+            ha_topic = "{}/{}/{}_{}/config".format(HA_PREFIX, HA_FAN, "wallpad", DEVICE_FAN)
             ha_payload = {
                 "name": "{}_{}_{}".format(self._name, "wallpad", DEVICE_FAN),
                 "cmd_t": "{}/{}/{}/mode".format(HA_PREFIX, HA_FAN, "wallpad"),
@@ -848,15 +798,11 @@ class Kocom(rs485):
                                 "cmd_t": "{}/{}/{}_{}/set".format(
                                     HA_PREFIX, HA_LIGHT, room, sub_device
                                 ),
-                                "stat_t": "{}/{}/{}/state".format(
-                                    HA_PREFIX, HA_LIGHT, room
-                                ),
+                                "stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_LIGHT, room),
                                 "val_tpl": "{{ value_json." + str(sub_device) + " }}",
                                 "pl_on": "on",
                                 "pl_off": "off",
-                                "uniq_id": "{}_{}_{}".format(
-                                    self._name, room, sub_device
-                                ),
+                                "uniq_id": "{}_{}_{}".format(self._name, room, sub_device),
                                 "device": {
                                     "name": "Kocom {}".format(room),
                                     "ids": "kocom_{}".format(room),
@@ -885,16 +831,12 @@ class Kocom(rs485):
                                 "cmd_t": "{}/{}/{}_{}/set".format(
                                     HA_PREFIX, HA_SWITCH, room, sub_device
                                 ),
-                                "stat_t": "{}/{}/{}/state".format(
-                                    HA_PREFIX, HA_SWITCH, room
-                                ),
+                                "stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_SWITCH, room),
                                 "val_tpl": "{{ value_json." + str(sub_device) + " }}",
                                 "ic": "mdi:power-socket-eu",
                                 "pl_on": "on",
                                 "pl_off": "off",
-                                "uniq_id": "{}_{}_{}".format(
-                                    self._name, room, sub_device
-                                ),
+                                "uniq_id": "{}_{}_{}".format(self._name, room, sub_device),
                                 "device": {
                                     "name": "Kocom {}".format(room),
                                     "ids": "kocom_{}".format(room),
@@ -916,31 +858,19 @@ class Kocom(rs485):
                     ha_topic = "{}/{}/{}/config".format(HA_PREFIX, HA_CLIMATE, room)
                     ha_payload = {
                         "name": "{}_{}_{}".format(self._name, room, DEVICE_THERMOSTAT),
-                        "mode_cmd_t": "{}/{}/{}/mode".format(
-                            HA_PREFIX, HA_CLIMATE, room
-                        ),
-                        "mode_stat_t": "{}/{}/{}/state".format(
-                            HA_PREFIX, HA_CLIMATE, room
-                        ),
+                        "mode_cmd_t": "{}/{}/{}/mode".format(HA_PREFIX, HA_CLIMATE, room),
+                        "mode_stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_CLIMATE, room),
                         "mode_stat_tpl": "{{ value_json.mode }}",
-                        "temp_cmd_t": "{}/{}/{}/target_temp".format(
-                            HA_PREFIX, HA_CLIMATE, room
-                        ),
-                        "temp_stat_t": "{}/{}/{}/state".format(
-                            HA_PREFIX, HA_CLIMATE, room
-                        ),
+                        "temp_cmd_t": "{}/{}/{}/target_temp".format(HA_PREFIX, HA_CLIMATE, room),
+                        "temp_stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_CLIMATE, room),
                         "temp_stat_tpl": "{{ value_json.target_temp }}",
-                        "curr_temp_t": "{}/{}/{}/state".format(
-                            HA_PREFIX, HA_CLIMATE, room
-                        ),
+                        "curr_temp_t": "{}/{}/{}/state".format(HA_PREFIX, HA_CLIMATE, room),
                         "curr_temp_tpl": "{{ value_json.current_temp }}",
                         "min_temp": 5,
                         "max_temp": 40,
                         "temp_step": 1,
                         "modes": ["off", "heat", "fan_only"],
-                        "uniq_id": "{}_{}_{}".format(
-                            self._name, room, DEVICE_THERMOSTAT
-                        ),
+                        "uniq_id": "{}_{}_{}".format(self._name, room, DEVICE_THERMOSTAT),
                         "device": {
                             "name": "Kocom {}".format(room),
                             "ids": "kocom_{}".format(room),
@@ -972,29 +902,21 @@ class Kocom(rs485):
             self.d_mqtt.publish(
                 "{}/{}/{}/state".format(HA_PREFIX, HA_LIGHT, room), v_value, retain=True
             )
-            logger.info(
-                "[To HA]{}/{}/{}/state = {}".format(HA_PREFIX, HA_LIGHT, room, v_value)
-            )
+            logger.info("[To HA]{}/{}/{}/state = {}".format(HA_PREFIX, HA_LIGHT, room, v_value))
         elif device == DEVICE_PLUG:
             self.d_mqtt.publish(
                 "{}/{}/{}/state".format(HA_PREFIX, HA_SWITCH, room),
                 v_value,
                 retain=True,
             )
-            logger.info(
-                "[To HA]{}/{}/{}/state = {}".format(HA_PREFIX, HA_SWITCH, room, v_value)
-            )
+            logger.info("[To HA]{}/{}/{}/state = {}".format(HA_PREFIX, HA_SWITCH, room, v_value))
         elif device == DEVICE_THERMOSTAT:
             self.d_mqtt.publish(
                 "{}/{}/{}/state".format(HA_PREFIX, HA_CLIMATE, room),
                 v_value,
                 retain=True,
             )
-            logger.info(
-                "[To HA]{}/{}/{}/state = {}".format(
-                    HA_PREFIX, HA_CLIMATE, room, v_value
-                )
-            )
+            logger.info("[To HA]{}/{}/{}/state = {}".format(HA_PREFIX, HA_CLIMATE, room, v_value))
         elif device == DEVICE_ELEVATOR:
             v_value = json.dumps({device: value})
             self.d_mqtt.publish(
@@ -1002,9 +924,7 @@ class Kocom(rs485):
                 v_value,
                 retain=True,
             )
-            logger.info(
-                "[To HA]{}/{}/{}/state = {}".format(HA_PREFIX, HA_SWITCH, room, v_value)
-            )
+            logger.info("[To HA]{}/{}/{}/state = {}".format(HA_PREFIX, HA_SWITCH, room, v_value))
         elif device == DEVICE_GAS:
             v_value = json.dumps({device: value})
             self.d_mqtt.publish(
@@ -1031,9 +951,7 @@ class Kocom(rs485):
             self.d_mqtt.publish(
                 "{}/{}/{}/state".format(HA_PREFIX, HA_FAN, room), v_value, retain=True
             )
-            logger.info(
-                "[To HA]{}/{}/{}/state = {}".format(HA_PREFIX, HA_FAN, room, v_value)
-            )
+            logger.info("[To HA]{}/{}/{}/state = {}".format(HA_PREFIX, HA_FAN, room, v_value))
 
     def get_serial(self, packet_name, packet_len):
         packet = ""
@@ -1062,9 +980,7 @@ class Kocom(rs485):
                 packet = ""
                 start_flag = False
             if not self.connected:
-                logger.debug(
-                    "[ERROR] 서버 연결이 끊어져 get_serial Thread를 종료합니다."
-                )
+                logger.debug("[ERROR] 서버 연결이 끊어져 get_serial Thread를 종료합니다.")
                 break
 
     def check_sum(self, packet):
@@ -1121,19 +1037,13 @@ class Kocom(rs485):
             if v["src_device"] == DEVICE_FAN:
                 v["value"] = self.parse_fan(p["value"])
             elif v["src_device"] == DEVICE_LIGHT or v["src_device"] == DEVICE_PLUG:
-                v["value"] = self.parse_switch(
-                    v["src_device"], v["src_room"], p["value"]
-                )
+                v["value"] = self.parse_switch(v["src_device"], v["src_room"], p["value"])
             elif v["src_device"] == DEVICE_THERMOSTAT:
                 v["value"] = self.parse_thermostat(
                     p["value"],
-                    self.wp_list[v["src_device"]][v["src_room"]]["target_temp"][
-                        "state"
-                    ],
+                    self.wp_list[v["src_device"]][v["src_room"]]["target_temp"]["state"],
                 )
-            elif (
-                v["src_device"] == DEVICE_WALLPAD and v["dst_device"] == DEVICE_ELEVATOR
-            ):
+            elif v["src_device"] == DEVICE_WALLPAD and v["dst_device"] == DEVICE_ELEVATOR:
                 v["value"] = "off"
             elif v["src_device"] == DEVICE_GAS:
                 v["value"] = v["command"]
@@ -1148,9 +1058,7 @@ class Kocom(rs485):
         try:
             if v["command"] == "조회" and v["src_device"] == DEVICE_WALLPAD:
                 if name == "HA":
-                    self.write(
-                        self.make_packet(v["dst_device"], v["dst_room"], "조회", "", "")
-                    )
+                    self.write(self.make_packet(v["dst_device"], v["dst_room"], "조회", "", ""))
                 logger.debug(
                     "[{} {}]{}({}) {}({}) -> {}({})".format(
                         from_to,
@@ -1183,23 +1091,17 @@ class Kocom(rs485):
             ):
                 if v["type"] == "send" and v["dst_device"] == DEVICE_ELEVATOR:
                     self.set_list(v["dst_device"], DEVICE_WALLPAD, v["value"])
-                    self.send_to_homeassistant(
-                        v["dst_device"], DEVICE_WALLPAD, v["value"]
-                    )
+                    self.send_to_homeassistant(v["dst_device"], DEVICE_WALLPAD, v["value"])
                 elif v["src_device"] == DEVICE_FAN or v["src_device"] == DEVICE_GAS:
                     self.set_list(v["src_device"], DEVICE_WALLPAD, v["value"])
-                    self.send_to_homeassistant(
-                        v["src_device"], DEVICE_WALLPAD, v["value"]
-                    )
+                    self.send_to_homeassistant(v["src_device"], DEVICE_WALLPAD, v["value"])
                 elif (
                     v["src_device"] == DEVICE_THERMOSTAT
                     or v["src_device"] == DEVICE_LIGHT
                     or v["src_device"] == DEVICE_PLUG
                 ):
                     self.set_list(v["src_device"], v["src_room"], v["value"])
-                    self.send_to_homeassistant(
-                        v["src_device"], v["src_room"], v["value"]
-                    )
+                    self.send_to_homeassistant(v["src_device"], v["src_room"], v["value"])
         except:
             logger.info("[{} {}]Error {}".format(from_to, name, packet))
 
@@ -1233,9 +1135,9 @@ class Kocom(rs485):
                         if (
                             self.wp_list[device][room][sub]["last"] == "set"
                             or type(self.wp_list[device][room][sub]["last"]) == float
-                        ) and self.wp_list[device][room][sub]["set"] == self.wp_list[
-                            device
-                        ][room][sub]["state"]:
+                        ) and self.wp_list[device][room][sub]["set"] == self.wp_list[device][room][
+                            sub
+                        ]["state"]:
                             self.wp_list[device][room][sub]["last"] = "state"
                             self.wp_list[device][room][sub]["count"] = 0
                     except:
@@ -1251,9 +1153,9 @@ class Kocom(rs485):
                         if (
                             self.wp_list[device][room][sub]["last"] == "set"
                             or type(self.wp_list[device][room][sub]["last"]) == float
-                        ) and self.wp_list[device][room][sub]["set"] == self.wp_list[
-                            device
-                        ][room][sub]["state"]:
+                        ) and self.wp_list[device][room][sub]["set"] == self.wp_list[device][room][
+                            sub
+                        ]["state"]:
                             self.wp_list[device][room][sub]["last"] = "state"
                             self.wp_list[device][room][sub]["count"] = 0
                     except:
@@ -1273,9 +1175,9 @@ class Kocom(rs485):
                         if (
                             self.wp_list[device][room][sub]["last"] == "set"
                             or type(self.wp_list[device][room][sub]["last"]) == float
-                        ) and self.wp_list[device][room][sub]["set"] == self.wp_list[
-                            device
-                        ][room][sub]["state"]:
+                        ) and self.wp_list[device][room][sub]["set"] == self.wp_list[device][room][
+                            sub
+                        ]["state"]:
                             self.wp_list[device][room][sub]["last"] = "state"
                             self.wp_list[device][room][sub]["count"] = 0
                     except:
@@ -1285,9 +1187,7 @@ class Kocom(rs485):
                             )
                         )
         except:
-            logger.info(
-                "[From {}]Error SetList {}/{} = {}".format(name, device, room, value)
-            )
+            logger.info("[From {}]Error SetList {}/{} = {}".format(name, device, room, value))
 
     def scan_list(self):
         while True:
@@ -1309,21 +1209,12 @@ class Kocom(rs485):
                                         if (
                                             "scan" in r_list
                                             and type(r_list["scan"]) == dict
-                                            and now - r_list["scan"]["tick"]
-                                            > SCAN_INTERVAL
+                                            and now - r_list["scan"]["tick"] > SCAN_INTERVAL
                                             and (
                                                 (device == DEVICE_FAN and self.wp_fan)
-                                                or (
-                                                    device == DEVICE_GAS and self.wp_gas
-                                                )
-                                                or (
-                                                    device == DEVICE_LIGHT
-                                                    and self.wp_light
-                                                )
-                                                or (
-                                                    device == DEVICE_PLUG
-                                                    and self.wp_plug
-                                                )
+                                                or (device == DEVICE_GAS and self.wp_gas)
+                                                or (device == DEVICE_LIGHT and self.wp_light)
+                                                or (device == DEVICE_PLUG and self.wp_plug)
                                                 or (
                                                     device == DEVICE_THERMOSTAT
                                                     and self.wp_thermostat
@@ -1333,9 +1224,7 @@ class Kocom(rs485):
                                             if now - r_list["scan"]["last"] > 2:
                                                 r_list["scan"]["count"] += 1
                                                 r_list["scan"]["last"] = now
-                                                self.set_serial(
-                                                    device, room, "", "", cmd="조회"
-                                                )
+                                                self.set_serial(device, room, "", "", cmd="조회")
                                                 time.sleep(SCANNING_INTERVAL)
                                             if r_list["scan"]["count"] > 4:
                                                 r_list["scan"]["tick"] = now
@@ -1368,9 +1257,7 @@ class Kocom(rs485):
                     except:
                         logger.debug("[Scan]Error")
             if not self.connected:
-                logger.debug(
-                    "[ERROR] 서버 연결이 끊어져 scan_list Thread를 종료합니다."
-                )
+                logger.debug("[ERROR] 서버 연결이 끊어져 scan_list Thread를 종료합니다.")
                 break
             time.sleep(0.2)
 
@@ -1378,9 +1265,7 @@ class Kocom(rs485):
         if (time.time() - self.tick) < KOCOM_INTERVAL / 1000:
             return
         if cmd == "상태":
-            logger.info(
-                "[To {}]{}/{}/{} -> {}".format(self._name, device, room, target, value)
-            )
+            logger.info("[To {}]{}/{}/{} -> {}".format(self._name, device, room, target, value))
         elif cmd == "조회":
             logger.info("[To {}]{}/{} -> 조회".format(self._name, device, room))
         packet = (
@@ -1428,9 +1313,7 @@ class Kocom(rs485):
             if device != DEVICE_THERMOSTAT
             else KOCOM_ROOM_THERMOSTAT_REV.get(room)
         )
-        p_dst = KOCOM_DEVICE_REV.get(DEVICE_WALLPAD) + KOCOM_ROOM_REV.get(
-            DEVICE_WALLPAD
-        )
+        p_dst = KOCOM_DEVICE_REV.get(DEVICE_WALLPAD) + KOCOM_ROOM_REV.get(DEVICE_WALLPAD)
         p_cmd = KOCOM_COMMAND_REV.get(cmd)
         p_value = ""
         if cmd == "조회":
@@ -1439,9 +1322,7 @@ class Kocom(rs485):
             if device == DEVICE_ELEVATOR:
                 p_device = KOCOM_DEVICE_REV.get(DEVICE_WALLPAD)
                 p_room = KOCOM_ROOM_REV.get(DEVICE_WALLPAD)
-                p_dst = KOCOM_DEVICE_REV.get(device) + KOCOM_ROOM_REV.get(
-                    DEVICE_WALLPAD
-                )
+                p_dst = KOCOM_DEVICE_REV.get(device) + KOCOM_ROOM_REV.get(DEVICE_WALLPAD)
                 p_cmd = KOCOM_COMMAND_REV.get("on")
                 p_value = "0000000000000000"
             elif device == DEVICE_GAS:
@@ -1461,8 +1342,7 @@ class Kocom(rs485):
                             else:
                                 if (
                                     sub_device in self.wp_list[device][room]
-                                    and self.wp_list[device][room][sub_device]["state"]
-                                    == "on"
+                                    and self.wp_list[device][room][sub_device]["state"] == "on"
                                 ):
                                     p_value += "ff"
                                 else:
@@ -1520,9 +1400,7 @@ class Kocom(rs485):
             else KOCOM_PLUG_SIZE.get(room) + 1
         )
         for i in range(1, to_i):
-            switch[device + str(i)] = (
-                "off" if value[i * 2 - 2 : i * 2] == "00" else "on"
-            )
+            switch[device + str(i)] = "off" if value[i * 2 - 2 : i * 2] == "00" else "on"
             if value[i * 2 - 2 : i * 2] != "00":
                 on_count += 1
         switch[device + str("0")] = "on" if on_count > 0 else "off"
@@ -1585,11 +1463,7 @@ class Grex:
         mqtt_client.on_connect = self.on_connect
 
         if server["anonymous"] != "True":
-            if (
-                server["server"] == ""
-                or server["username"] == ""
-                or server["password"] == ""
-            ):
+            if server["server"] == "" or server["username"] == "" or server["password"] == "":
                 logger.info(
                     "{} 설정을 확인하세요. Server[{}] ID[{}] PW[{}] Device[{}]".format(
                         CONF_MQTT,
@@ -1600,9 +1474,7 @@ class Grex:
                     )
                 )
                 return False
-            mqtt_client.username_pw_set(
-                username=server["username"], password=server["password"]
-            )
+            mqtt_client.username_pw_set(username=server["username"], password=server["password"])
             logger.debug(
                 "{} STATUS. Server[{}] ID[{}] PW[{}] Device[{}]".format(
                     CONF_MQTT,
@@ -1614,9 +1486,7 @@ class Grex:
             )
         else:
             logger.debug(
-                "{} STATUS. Server[{}] Device[{}]".format(
-                    CONF_MQTT, server["server"], name
-                )
+                "{} STATUS. Server[{}] Device[{}]".format(CONF_MQTT, server["server"], name)
             )
 
         mqtt_client.connect(server["server"], 1883, 60)
@@ -1700,14 +1570,10 @@ class Grex:
         # subscribe_list.append((ha_payload['stat_t'], 0))
         publish_list.append({ha_topic: json.dumps(ha_payload)})
 
-        ha_topic = "{}/{}/{}_{}_mode/config".format(
-            HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN
-        )
+        ha_topic = "{}/{}/{}_{}_mode/config".format(HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN)
         ha_payload = {
             "name": "{}_{}_mode".format(self._name, DEVICE_FAN),
-            "stat_t": "{}/{}/{}_{}/state".format(
-                HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN
-            ),
+            "stat_t": "{}/{}/{}_{}/state".format(HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN),
             "val_tpl": "{{ value_json." + DEVICE_FAN + "_mode }}",
             "ic": "mdi:play-circle-outline",
             "uniq_id": "{}_{}_{}_mode".format(self._name, "grex", DEVICE_FAN),
@@ -1722,14 +1588,10 @@ class Grex:
         subscribe_list.append((ha_topic, 0))
         # subscribe_list.append((ha_payload['stat_t'], 0))
         publish_list.append({ha_topic: json.dumps(ha_payload)})
-        ha_topic = "{}/{}/{}_{}_speed/config".format(
-            HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN
-        )
+        ha_topic = "{}/{}/{}_{}_speed/config".format(HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN)
         ha_payload = {
             "name": "{}_{}_speed".format(self._name, DEVICE_FAN),
-            "stat_t": "{}/{}/{}_{}/state".format(
-                HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN
-            ),
+            "stat_t": "{}/{}/{}_{}/state".format(HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN),
             "val_tpl": "{{ value_json." + DEVICE_FAN + "_speed }}",
             "ic": "mdi:speedometer",
             "uniq_id": "{}_{}_{}_speed".format(self._name, "grex", DEVICE_FAN),
@@ -1759,9 +1621,7 @@ class Grex:
                 retain=True,
             )
             logger.info(
-                "[To HA]{}/{}/{}/state = {}".format(
-                    HA_PREFIX, HA_FAN, "grex", json.dumps(value)
-                )
+                "[To HA]{}/{}/{}/state = {}".format(HA_PREFIX, HA_FAN, "grex", json.dumps(value))
             )
         elif target == HA_SENSOR:
             self.d_mqtt.publish(
@@ -1851,10 +1711,7 @@ class Grex:
                         send_to_ha_sensor["fan_mode"] = "수동"
                     elif self.grex_cont["mode"] == "sleep":
                         send_to_ha_sensor["fan_mode"] = "취침"
-                    elif (
-                        self.grex_cont["mode"] == "off"
-                        and self.mqtt_cont["mode"] == "on"
-                    ):
+                    elif self.grex_cont["mode"] == "off" and self.mqtt_cont["mode"] == "on":
                         send_to_ha_sensor["fan_mode"] = "HA"
                     if self.grex_cont["speed"] == "low":
                         send_to_ha_sensor["fan_speed"] = "1단"
@@ -1872,12 +1729,8 @@ class Grex:
                     self.mqtt_cont["mode"] == "on" and self.mqtt_cont["speed"] == "off"
                 ):
                     control_packet = self.make_control_packet("off", "off")
-                elif (
-                    self.mqtt_cont["mode"] == "on" and self.mqtt_cont["speed"] != "off"
-                ):
-                    control_packet = self.make_control_packet(
-                        "manual", self.mqtt_cont["speed"]
-                    )
+                elif self.mqtt_cont["mode"] == "on" and self.mqtt_cont["speed"] != "off":
+                    control_packet = self.make_control_packet("manual", self.mqtt_cont["speed"])
             else:
                 control_packet = self.make_control_packet(
                     self.grex_cont["mode"], self.grex_cont["speed"]
@@ -1902,9 +1755,7 @@ class Grex:
             p_speed = packet[8:12]
             if self.vent_cont["speed"] != GREX_SPEED[p_speed]:
                 self.vent_cont["speed"] = GREX_SPEED[p_speed]
-                logger.info(
-                    "[From {}]speed:{}".format(packet_name, self.vent_cont["speed"])
-                )
+                logger.info("[From {}]speed:{}".format(packet_name, self.vent_cont["speed"]))
 
                 send_to_ha_fan = {"mode": "off", "speed": "off"}
                 if self.grex_cont["mode"] != "off" or (
@@ -1924,10 +1775,7 @@ class Grex:
                         send_to_ha_sensor["fan_mode"] = "수동"
                     elif self.grex_cont["mode"] == "sleep":
                         send_to_ha_sensor["fan_mode"] = "취침"
-                    elif (
-                        self.grex_cont["mode"] == "off"
-                        and self.mqtt_cont["mode"] == "on"
-                    ):
+                    elif self.grex_cont["mode"] == "off" and self.mqtt_cont["mode"] == "on":
                         send_to_ha_sensor["fan_mode"] = "HA"
                     if self.vent_cont["speed"] == "low":
                         send_to_ha_sensor["fan_speed"] = "1단"
@@ -2066,9 +1914,7 @@ if __name__ == "__main__":
 
     if DEFAULT_SPEED not in ["low", "medium", "high"]:
         logger.info(
-            "[Error] DEFAULT_SPEED 설정오류로 medium 으로 설정. {} -> medium".format(
-                DEFAULT_SPEED
-            )
+            "[Error] DEFAULT_SPEED 설정오류로 medium 으로 설정. {} -> medium".format(DEFAULT_SPEED)
         )
         DEFAULT_SPEED = "medium"
 
@@ -2105,9 +1951,7 @@ if __name__ == "__main__":
             if _name == "kocom":
                 kocom = Kocom(r, _name, _name, 42)
                 if not kocom.connection_lost():
-                    logger.info(
-                        "[ERROR] 서버 연결이 끊어져 1분 후 재접속을 시도합니다."
-                    )
+                    logger.info("[ERROR] 서버 연결이 끊어져 1분 후 재접속을 시도합니다.")
                     time.sleep(60)
                     connection_flag = False
         if _grex_ventilator is not False and _grex_controller is not False:
