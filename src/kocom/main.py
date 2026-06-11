@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-python -m pip install pyserial
-python -m pip install paho-mqtt
-"""
-
 import configparser
 import json
 import logging
@@ -177,7 +171,7 @@ def make_folder(folder_name):
         os.mkdir(folder_name)
 
 
-root_dir = str(os.path.dirname(os.path.realpath(__file__)))
+root_dir = os.path.abspath(os.getcwd())
 log_dir = root_dir + "/log/"
 make_folder(log_dir)
 conf_path = str(root_dir + "/" + CONF_FILE)
