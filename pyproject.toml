@@ -1,0 +1,18 @@
+[project]
+name = "kocom-wallpad"
+version = "0.1.0"
+description = "Kocom Wallpad Add-on for Home Assistant"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "paho-mqtt>=2.1.0",
+    "pyserial>=3.5",
+]
+
+[dependency-groups]
+dev = [
+    "commitizen>=4.16.3",
+    "pre-commit>=4.6.0",
+    "pytest>=9.0.3",
+    "ruff>=0.15.16",
+]
