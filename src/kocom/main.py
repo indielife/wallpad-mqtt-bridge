@@ -17,14 +17,8 @@ import importlib.metadata
 from kocom.constants import SW_VERSION
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(asctime)s] [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    handlers=[logging.StreamHandler()],  # 표준 출력(stdout)으로 전달
-)
+logger = logging.getLogger(__name__)
 
-print(f"[CHECK] 코콤 애드온 파이썬 버전: {sys.version}", flush=True)
 
 # Log Level
 CONF_LOGLEVEL = "info"  # debug, info, warn
@@ -156,7 +150,6 @@ GREX_SPEED = {"0101": "low", "0202": "medium", "0303": "high", "0000": "off"}
 
 # CONFIG 파일 변수값
 CONF_FILE = "rs485.conf"
-CONF_LOGFILE = "rs485.log"
 CONF_LOGNAME = "RS485"
 CONF_WALLPAD = "Wallpad"
 CONF_MQTT = "MQTT"
@@ -167,19 +160,6 @@ CONF_SOCKET = "Socket"
 CONF_SOCKET_DEVICE = "SocketDevice"
 
 
-# Log 폴더 생성 (도커 실행 시 로그폴더 매핑)
-def make_folder(folder_name):
-    if not os.path.isdir(folder_name):
-        os.mkdir(folder_name)
-
-
-root_dir = os.path.abspath(os.getcwd())
-log_dir = root_dir + "/log/"
-make_folder(log_dir)
-conf_path = str(root_dir + "/" + CONF_FILE)
-log_path = str(log_dir + "/" + CONF_LOGFILE)
-
-
 class rs485:
     def __init__(self):
         self._mqtt_config = {}
@@ -187,6 +167,9 @@ class rs485:
         self._device_list = {}
         self._wp_list = {}
         self.type = None
+
+        root_dir = os.path.abspath(os.getcwd())
+        conf_path = str(root_dir + "/" + CONF_FILE)
 
         config = configparser.ConfigParser()
         config.read(conf_path)
@@ -1874,9 +1857,43 @@ class Grex:
         return str(chksum_hex)
 
 
+def setup_logging(log_path):
+    # 1. 폴더 자동 생성
+    log_dir = os.path.dirname(log_path)
+    if log_dir and not os.path.isdir(log_dir):
+        os.makedirs(log_dir)
+
+    # 2. 파일 핸들러 설정 (기존 1MB 제한 및 10개 백업 유지)
+    file_max_bytes = 100 * 1024 * 10  # 1,024,000 바이트 (약 1MB)
+    log_file_handler = logging.handlers.RotatingFileHandler(
+        filename=log_path, maxBytes=file_max_bytes, backupCount=10, encoding="utf-8"
+    )
+
+    # 3. 콘솔 출력 핸들러 설정
+    log_stream_handler = logging.StreamHandler()
+
+    # 4. 루트 로거 설정을 통해 모든 하위 모듈(grex, rs485 등)에 일괄 적용
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s.%(msecs)03d [%(levelname)s] %(name)s:%(lineno)d %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        handlers=[
+            log_file_handler,
+            log_stream_handler,
+        ],
+    )
+
+
 if __name__ == "__main__":
-    # logger 인스턴스 생성 및 로그레벨 설정
-    logger = logging.getLogger(CONF_LOGNAME)
+    # 로그 설정
+    root_dir = os.path.abspath(os.getcwd())
+    log_path = os.path.join(root_dir, "log", "kocom.log")
+
+    setup_logging(log_path)
+
+    logger.info(f"{SW_VERSION} 시작")
+    logger.info(f"python version: {sys.version}")
+
     logger.setLevel(logging.INFO)
     if CONF_LOGLEVEL == "info":
         logger.setLevel(logging.INFO)
@@ -1884,29 +1901,6 @@ if __name__ == "__main__":
         logger.setLevel(logging.DEBUG)
     if CONF_LOGLEVEL == "warn":
         logger.setLevel(logging.WARN)
-
-    # formatter 생성
-    logFormatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s : Line %(lineno)s - %(message)s"
-    )
-
-    # fileHandler, StreamHandler 생성
-    file_max_bytes = 100 * 1024 * 10  # 1 MB 사이즈
-    logFileHandler = logging.handlers.RotatingFileHandler(
-        filename=log_path, maxBytes=file_max_bytes, backupCount=10, encoding="utf-8"
-    )
-    logStreamHandler = logging.StreamHandler()
-
-    # handler 에 formatter 설정
-    logFileHandler.setFormatter(logFormatter)
-    logStreamHandler.setFormatter(logFormatter)
-    logFileHandler.suffix = "%Y%m%d"
-
-    logger.addHandler(logFileHandler)
-    # logger.addHandler(logStreamHandler)
-
-    logging.info("{} 시작".format(SW_VERSION))
-    logger.info("{} 시작".format(SW_VERSION))
 
     if DEFAULT_SPEED not in ["low", "medium", "high"]:
         logger.info(
