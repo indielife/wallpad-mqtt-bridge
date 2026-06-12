@@ -9,4 +9,5 @@ rsync -avz \
   --exclude '/docs/' \
   --exclude '/scripts/' \
   --exclude '/tests/' \
+  --exclude '__pycache__' \
   ./ "$HA_USER"@"$HA_IP":"$HA_PATH"
