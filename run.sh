@@ -1,5 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 
-echo "[Info] Run Wallpad Controller"
+export ADDON_VERSION=$(jq -r '.version' config.json)
+
+echo "========================================================"
+echo "    KOCOM Wallpad RS485 Controller Add-on"
+echo "    Version: ${ADDON_VERSION}"
+echo "========================================================"
+
 ./makeconf.sh
 exec python3 -m kocom.main

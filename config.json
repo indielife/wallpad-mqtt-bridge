@@ -1,6 +1,6 @@
 {
   "name": "Kocom Wallpad (Local Custom)",
-  "version": "1.1.1",
+  "version": "0.1.0",
   "slug": "kocom_wallpad",
   "description": "Kocom Wallpad Controller for Homeassistant",
   "arch": [
