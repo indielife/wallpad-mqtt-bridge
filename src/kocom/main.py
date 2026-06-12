@@ -867,57 +867,37 @@ class Kocom(rs485):
         self.ha_registry = ha_topic
 
     def send_to_homeassistant(self, device, room, value):
-        v_value = json.dumps(value)
+        payload = json.dumps(value)
         if device == DEVICE_LIGHT:
-            self.d_mqtt.publish(
-                "{}/{}/{}/state".format(HA_PREFIX, HA_LIGHT, room), v_value, retain=True
-            )
-            logger.info("[To HA]%s/%s/%s/state = {}", HA_PREFIX, HA_LIGHT, room, v_value)
+            topic = f"{HA_PREFIX}/{HA_LIGHT}/{room}/state"
+            self.d_mqtt.publish(topic, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic, payload)
         elif device == DEVICE_PLUG:
-            self.d_mqtt.publish(
-                "{}/{}/{}/state".format(HA_PREFIX, HA_SWITCH, room),
-                v_value,
-                retain=True,
-            )
-            logger.info("[To HA]%s/%s/%s/state = {}", HA_PREFIX, HA_SWITCH, room, v_value)
+            topic = f"{HA_PREFIX}/{HA_SWITCH}/{room}/state"
+            self.d_mqtt.publish(topic, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic, payload)
         elif device == DEVICE_THERMOSTAT:
-            self.d_mqtt.publish(
-                "{}/{}/{}/state".format(HA_PREFIX, HA_CLIMATE, room),
-                v_value,
-                retain=True,
-            )
-            logger.info("[To HA]%s/%s/%s/state = {}", HA_PREFIX, HA_CLIMATE, room, v_value)
+            topic = f"{HA_PREFIX}/{HA_CLIMATE}/{room}/state"
+            self.d_mqtt.publish(topic, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic, payload)
         elif device == DEVICE_ELEVATOR:
-            v_value = json.dumps({device: value})
-            self.d_mqtt.publish(
-                "{}/{}/{}/state".format(HA_PREFIX, HA_SWITCH, room),
-                v_value,
-                retain=True,
-            )
-            logger.info("[To HA]%s/%s/%s/state = {}", HA_PREFIX, HA_SWITCH, room, v_value)
+            payload = json.dumps({device: value})
+            topic = f"{HA_PREFIX}/{HA_SWITCH}/{room}/state"
+            self.d_mqtt.publish(topic, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic, payload)
         elif device == DEVICE_GAS:
-            v_value = json.dumps({device: value})
-            self.d_mqtt.publish(
-                "{}/{}/{}_{}/state".format(HA_PREFIX, HA_SENSOR, room, DEVICE_GAS),
-                v_value,
-                retain=True,
-            )
-            logger.info(
-                "[To HA]%s/%s/%s_%s/state = %s", HA_PREFIX, HA_SENSOR, room, DEVICE_GAS, v_value
-            )
-            self.d_mqtt.publish(
-                "{}/{}/{}_{}/state".format(HA_PREFIX, HA_SWITCH, room, DEVICE_GAS),
-                v_value,
-                retain=True,
-            )
-            logger.info(
-                "[To HA]%s/%s/%s_%s/state = %s", HA_PREFIX, HA_SWITCH, room, DEVICE_GAS, v_value
-            )
+            payload = json.dumps({device: value})
+            topic_sensor = f"{HA_PREFIX}/{HA_SENSOR}/{room}_{DEVICE_GAS}/state"
+            self.d_mqtt.publish(topic_sensor, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic_sensor, payload)
+
+            topic_switch = f"{HA_PREFIX}/{HA_SWITCH}/{room}_{DEVICE_GAS}/state"
+            self.d_mqtt.publish(topic_switch, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic_switch, payload)
         elif device == DEVICE_FAN:
-            self.d_mqtt.publish(
-                "{}/{}/{}/state".format(HA_PREFIX, HA_FAN, room), v_value, retain=True
-            )
-            logger.info("[To HA]%s/%s/%s/state = %s", HA_PREFIX, HA_FAN, room, v_value)
+            topic = f"{HA_PREFIX}/{HA_FAN}/{room}/state"
+            self.d_mqtt.publish(topic, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic, payload)
 
     def get_serial(self, packet_name, packet_len):
         packet = ""
@@ -1582,26 +1562,15 @@ class Grex:
 
     def send_to_homeassistant(self, target, value):
         if target == HA_FAN:
-            self.d_mqtt.publish(
-                "{}/{}/{}/state".format(HA_PREFIX, HA_FAN, "grex"),
-                json.dumps(value),
-                retain=True,
-            )
-            logger.info("[To HA]%s/%s/%s/state = %s", HA_PREFIX, HA_FAN, "grex", json.dumps(value))
+            payload = json.dumps(value)
+            topic = f"{HA_PREFIX}/{HA_FAN}/grex/state"
+            self.d_mqtt.publish(topic, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic, payload)
         elif target == HA_SENSOR:
-            self.d_mqtt.publish(
-                "{}/{}/{}_{}/state".format(HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN),
-                json.dumps(value, ensure_ascii=False),
-                retain=True,
-            )
-            logger.info(
-                "[To HA]%s/%s/%s_%s/state = %s",
-                HA_PREFIX,
-                HA_SENSOR,
-                "grex",
-                DEVICE_FAN,
-                json.dumps(value, ensure_ascii=False),
-            )
+            payload = json.dumps(value, ensure_ascii=False)
+            topic = f"{HA_PREFIX}/{HA_SENSOR}/grex_{DEVICE_FAN}/state"
+            self.d_mqtt.publish(topic, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic, payload)
 
     def get_serial(self, ser, packet_name, packet_len):
         buf = []
