@@ -1,0 +1,145 @@
+# serializer version: 1
+# name: test_homeassistant_device_discovery[False-False-elevator-expected_topics0][elevator_publish_payload_switch]
+  dict({
+    'cmd_t': 'homeassistant/switch/wallpad_elevator/set',
+    'device': dict({
+      'ids': 'kocom_wallpad',
+      'mdl': 'Wallpad',
+      'mf': 'KOCOM',
+      'name': 'Kocom wallpad',
+      'sw': 'RS485 Compilation 0.1.0',
+    }),
+    'ic': 'mdi:elevator',
+    'name': 'test_name_wallpad_elevator',
+    'pl_off': 'off',
+    'pl_on': 'on',
+    'stat_t': 'homeassistant/switch/wallpad/state',
+    'uniq_id': 'test_name_wallpad_elevator',
+    'val_tpl': '{{ value_json.elevator }}',
+  })
+# ---
+# name: test_homeassistant_device_discovery[False-False-gas-expected_topics1][gas_publish_payload_sensor]
+  dict({
+    'device': dict({
+      'ids': 'kocom_wallpad',
+      'mdl': 'Wallpad',
+      'mf': 'KOCOM',
+      'name': 'Kocom wallpad',
+      'sw': 'RS485 Compilation 0.1.0',
+    }),
+    'ic': 'mdi:gas-cylinder',
+    'name': 'test_name_wallpad_gas',
+    'stat_t': 'homeassistant/sensor/wallpad_gas/state',
+    'uniq_id': 'test_name_wallpad_gas',
+    'val_tpl': '{{ value_json.gas }}',
+  })
+# ---
+# name: test_homeassistant_device_discovery[False-False-gas-expected_topics1][gas_publish_payload_switch]
+  dict({
+    'cmd_t': 'homeassistant/switch/wallpad_gas/set',
+    'device': dict({
+      'ids': 'kocom_wallpad',
+      'mdl': 'Wallpad',
+      'mf': 'KOCOM',
+      'name': 'Kocom wallpad',
+      'sw': 'RS485 Compilation 0.1.0',
+    }),
+    'ic': 'mdi:gas-cylinder',
+    'name': 'test_name_wallpad_gas',
+    'pl_off': 'off',
+    'pl_on': 'on',
+    'stat_t': 'homeassistant/switch/wallpad_gas/state',
+    'uniq_id': 'test_name_wallpad_gas',
+    'val_tpl': '{{ value_json.gas }}',
+  })
+# ---
+# name: test_homeassistant_device_discovery[True-False-elevator-expected_topics0][elevator_publish_payload_switch]
+  dict({
+    'cmd_t': 'homeassistant/switch/wallpad_elevator/set',
+    'device': dict({
+      'ids': 'kocom_wallpad',
+      'mdl': 'Wallpad',
+      'mf': 'KOCOM',
+      'name': 'Kocom wallpad',
+      'sw': 'RS485 Compilation 0.1.0',
+    }),
+    'ic': 'mdi:elevator',
+    'name': 'test_name_wallpad_elevator',
+    'pl_off': 'off',
+    'pl_on': 'on',
+    'stat_t': 'homeassistant/switch/wallpad/state',
+    'uniq_id': 'test_name_wallpad_elevator',
+    'val_tpl': '{{ value_json.elevator }}',
+  })
+# ---
+# name: test_homeassistant_device_discovery[True-False-elevator-expected_topics0][elevator_subscribe_topics]
+  list([
+    tuple(
+      'rs485/bridge/#',
+      0,
+    ),
+    tuple(
+      'homeassistant/switch/wallpad_elevator/config',
+      0,
+    ),
+    tuple(
+      'homeassistant/switch/wallpad_elevator/set',
+      0,
+    ),
+  ])
+# ---
+# name: test_homeassistant_device_discovery[True-False-gas-expected_topics1][gas_publish_payload_sensor]
+  dict({
+    'device': dict({
+      'ids': 'kocom_wallpad',
+      'mdl': 'Wallpad',
+      'mf': 'KOCOM',
+      'name': 'Kocom wallpad',
+      'sw': 'RS485 Compilation 0.1.0',
+    }),
+    'ic': 'mdi:gas-cylinder',
+    'name': 'test_name_wallpad_gas',
+    'stat_t': 'homeassistant/sensor/wallpad_gas/state',
+    'uniq_id': 'test_name_wallpad_gas',
+    'val_tpl': '{{ value_json.gas }}',
+  })
+# ---
+# name: test_homeassistant_device_discovery[True-False-gas-expected_topics1][gas_publish_payload_switch]
+  dict({
+    'cmd_t': 'homeassistant/switch/wallpad_gas/set',
+    'device': dict({
+      'ids': 'kocom_wallpad',
+      'mdl': 'Wallpad',
+      'mf': 'KOCOM',
+      'name': 'Kocom wallpad',
+      'sw': 'RS485 Compilation 0.1.0',
+    }),
+    'ic': 'mdi:gas-cylinder',
+    'name': 'test_name_wallpad_gas',
+    'pl_off': 'off',
+    'pl_on': 'on',
+    'stat_t': 'homeassistant/switch/wallpad_gas/state',
+    'uniq_id': 'test_name_wallpad_gas',
+    'val_tpl': '{{ value_json.gas }}',
+  })
+# ---
+# name: test_homeassistant_device_discovery[True-False-gas-expected_topics1][gas_subscribe_topics]
+  list([
+    tuple(
+      'rs485/bridge/#',
+      0,
+    ),
+    tuple(
+      'homeassistant/switch/wallpad_gas/config',
+      0,
+    ),
+    tuple(
+      'homeassistant/switch/wallpad_gas/set',
+      0,
+    ),
+    tuple(
+      'homeassistant/sensor/wallpad_gas/config',
+      0,
+    ),
+  ])
+# ---
