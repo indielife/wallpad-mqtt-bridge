@@ -10,6 +10,7 @@ select = [
     "UP",   # pyupgrade
     "B",    # flake8-bugbear
     "SIM",  # flake8-simplify
+    "G",    # flake8-logging-format
     "I",    # isort
     "N",    # pep8-naming
     "RUF",  # ruff-specific rules
