@@ -15,7 +15,7 @@ COPY src/ ./src/
 RUN pip install --no-cache-dir .
 
 # Runtime scripts
-COPY run.sh makeconf.sh ./
+COPY config.json run.sh makeconf.sh ./
 RUN chmod +x run.sh makeconf.sh
 
 CMD [ "./run.sh" ]

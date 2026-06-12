@@ -1,4 +1,5 @@
 import configparser
+import importlib.metadata
 import json
 import logging
 import logging.config
@@ -13,17 +14,11 @@ import time
 import paho.mqtt.client as mqtt
 import serial
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(asctime)s] [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    handlers=[logging.StreamHandler()],  # 표준 출력(stdout)으로 전달
-)
+from kocom.constants import SW_VERSION
 
-print(f"[CHECK] 코콤 애드온 파이썬 버전: {sys.version}", flush=True)
+logger = logging.getLogger(__name__)
 
-# Version
-SW_VERSION = "RS485 Compilation 1.0.3b"
+
 # Log Level
 CONF_LOGLEVEL = "info"  # debug, info, warn
 
@@ -154,7 +149,6 @@ GREX_SPEED = {"0101": "low", "0202": "medium", "0303": "high", "0000": "off"}
 
 # CONFIG 파일 변수값
 CONF_FILE = "rs485.conf"
-CONF_LOGFILE = "rs485.log"
 CONF_LOGNAME = "RS485"
 CONF_WALLPAD = "Wallpad"
 CONF_MQTT = "MQTT"
@@ -165,19 +159,6 @@ CONF_SOCKET = "Socket"
 CONF_SOCKET_DEVICE = "SocketDevice"
 
 
-# Log 폴더 생성 (도커 실행 시 로그폴더 매핑)
-def make_folder(folder_name):
-    if not os.path.isdir(folder_name):
-        os.mkdir(folder_name)
-
-
-root_dir = os.path.abspath(os.getcwd())
-log_dir = root_dir + "/log/"
-make_folder(log_dir)
-conf_path = str(root_dir + "/" + CONF_FILE)
-log_path = str(log_dir + "/" + CONF_LOGFILE)
-
-
 class rs485:
     def __init__(self):
         self._mqtt_config = {}
@@ -186,18 +167,21 @@ class rs485:
         self._wp_list = {}
         self.type = None
 
+        root_dir = os.path.abspath(os.getcwd())
+        conf_path = str(root_dir + "/" + CONF_FILE)
+
         config = configparser.ConfigParser()
         config.read(conf_path)
 
         get_conf_wallpad = config.items(CONF_WALLPAD)
         for item in get_conf_wallpad:
             self._wp_list.setdefault(item[0], item[1])
-            logger.info("[CONFIG] {} {} : {}".format(CONF_WALLPAD, item[0], item[1]))
+            logger.info("[CONFIG] %s %s : %s", CONF_WALLPAD, item[0], item[1])
 
         get_conf_mqtt = config.items(CONF_MQTT)
         for item in get_conf_mqtt:
             self._mqtt_config.setdefault(item[0], item[1])
-            logger.info("[CONFIG] {} {} : {}".format(CONF_MQTT, item[0], item[1]))
+            logger.info("[CONFIG] %s %s : %s", CONF_MQTT, item[0], item[1])
 
         d_type = config.get(CONF_LOGNAME, "type").lower()
         if d_type == "serial":
@@ -207,7 +191,7 @@ class rs485:
             for item in get_conf_serial:
                 if item[1] != "":
                     self._port_url.setdefault(port_i, item[1])
-                    logger.info("[CONFIG] {} {} : {}".format(CONF_SERIAL, item[0], item[1]))
+                    logger.info("[CONFIG] %s %s : %s", CONF_SERIAL, item[0], item[1])
                 port_i += 1
 
             get_conf_serial_device = config.items(CONF_SERIAL_DEVICE)
@@ -215,7 +199,7 @@ class rs485:
             for item in get_conf_serial_device:
                 if item[1] != "":
                     self._device_list.setdefault(port_i, item[1])
-                    logger.info("[CONFIG] {} {} : {}".format(CONF_SERIAL_DEVICE, item[0], item[1]))
+                    logger.info("[CONFIG] %s %s : %s", CONF_SERIAL_DEVICE, item[0], item[1])
                 port_i += 1
             self._con = self.connect_serial(self._port_url)
         elif d_type == "socket":
@@ -282,12 +266,12 @@ class rs485:
                     ser[p].bytesize = 8
                     ser[p].stopbits = 1
                     ser[p].autoOpen = False
-                    logger.info("Port {} : {}".format(p, port[p]))
+                    logger.info("Port %s : %s", p, port[p])
                     opened += 1
                 else:
-                    logger.info("시리얼포트가 열려있지 않습니다.[{}]".format(port[p]))
+                    logger.info("시리얼포트가 열려있지 않습니다.[%s]", port[p])
             except serial.serialutil.SerialException:
-                logger.info("시리얼포트에 연결할 수 없습니다.[{}]".format(port[p]))
+                logger.info("시리얼포트에 연결할 수 없습니다.[%s]", port[p])
         if opened == 0:
             return False
         return ser
@@ -298,7 +282,7 @@ class rs485:
         try:
             soc.connect((server, int(port)))
         except Exception as e:
-            logger.info("소켓에 연결할 수 없습니다.[{}][{}:{}]".format(e, server, port))
+            logger.info("소켓에 연결할 수 없습니다.[%s][%s:%s]", e, server, port)
             return False
         soc.settimeout(None)
         return soc
@@ -447,29 +431,25 @@ class Kocom(rs485):
         if server["anonymous"] != "True":
             if server["server"] == "" or server["username"] == "" or server["password"] == "":
                 logger.info(
-                    "{} 설정을 확인하세요. Server[{}] ID[{}] PW[{}] Device[{}]".format(
-                        CONF_MQTT,
-                        server["server"],
-                        server["username"],
-                        server["password"],
-                        name,
-                    )
-                )
-                return False
-            mqtt_client.username_pw_set(username=server["username"], password=server["password"])
-            logger.debug(
-                "{} STATUS. Server[{}] ID[{}] PW[{}] Device[{}]".format(
+                    "%s 설정을 확인하세요. Server[%s] ID[%s] PW[%s] Device[%s]",
                     CONF_MQTT,
                     server["server"],
                     server["username"],
                     server["password"],
                     name,
                 )
+                return False
+            mqtt_client.username_pw_set(username=server["username"], password=server["password"])
+            logger.debug(
+                "%s STATUS. Server[%s] ID[%s] PW[%s] Device[%s]",
+                CONF_MQTT,
+                server["server"],
+                server["username"],
+                server["password"],
+                name,
             )
         else:
-            logger.debug(
-                "{} STATUS. Server[{}] Device[{}]".format(CONF_MQTT, server["server"], name)
-            )
+            logger.debug("%s STATUS. Server[%s] Device[%s]", CONF_MQTT, server["server"], name)
 
         mqtt_client.connect(server["server"], 1883, 60)
         mqtt_client.loop_start()
@@ -492,7 +472,7 @@ class Kocom(rs485):
                     logger.setLevel(logging.DEBUG)
                 if _payload == "warn":
                     logger.setLevel(logging.WARN)
-                logger.info("[From HA]Set Loglevel to {}".format(_payload))
+                logger.info("[From HA]Set Loglevel to %s", _payload)
                 return
             elif _topic[3] == "restart":
                 self.homeassistant_device_discovery()
@@ -529,18 +509,18 @@ class Kocom(rs485):
                 return
             elif _topic[3] == "check_sum":
                 chksum = self.check_sum(_payload.lower())
-                logger.info("[From HA]{} = {}({})".format(_payload, chksum[0], chksum[1]))
+                logger.info("[From HA]%s = %s(%s)", _payload, chksum[0], chksum[1])
                 return
         elif not self.kocom_scan:
             if len(_topic) < 4:
                 logger.warning(
-                    "[MQTT] 길이가 짧은 예외 토픽 진입 차단: {} = {}".format(msg.topic, _payload)
+                    "[MQTT] 길이가 짧은 예외 토픽 진입 차단: %s = %s", msg.topic, _payload
                 )
                 return
 
             self.parse_message(_topic, _payload)
             return
-        logger.info("Message: {} = {}".format(msg.topic, _payload))
+        logger.info("Message: %s = %s", msg.topic, _payload)
 
         if self.ha_registry != False and self.ha_registry == msg.topic and self.kocom_scan:
             self.kocom_scan = False
@@ -583,9 +563,7 @@ class Kocom(rs485):
                 else:
                     self.wp_list[device][room][sub_device][command] = payload
                     self.wp_list[device][room][sub_device]["last"] = command
-                logger.info(
-                    "[From HA]{}/{}/{}/{} = {}".format(device, room, sub_device, command, payload)
-                )
+                logger.info("[From HA]%s/%s/%s/%s = %s", device, room, sub_device, command, payload)
             except Exception as e:
                 logger.error("[From HA] %s = %s, %r", topic, payload, e)
         elif device == HA_CLIMATE:
@@ -606,12 +584,11 @@ class Kocom(rs485):
                     "current_temp": self.wp_list[device][room]["current_temp"]["state"],
                 }
                 logger.info(
-                    "[From HA]{}/{}/set = [mode={}, target_temp={}]".format(
-                        device,
-                        room,
-                        self.wp_list[device][room]["mode"]["set"],
-                        self.wp_list[device][room]["target_temp"]["set"],
-                    )
+                    "[From HA]%s/%s/set = [mode=%s, target_temp=%s]",
+                    device,
+                    room,
+                    self.wp_list[device][room]["mode"]["set"],
+                    self.wp_list[device][room]["target_temp"]["set"],
                 )
                 self.send_to_homeassistant(device, room, ha_payload)
             except Exception as e:
@@ -635,22 +612,21 @@ class Kocom(rs485):
                     "speed": self.wp_list[device][room]["speed"]["set"],
                 }
                 logger.info(
-                    "[From HA]{}/{}/set = [mode={}, speed={}]".format(
-                        device,
-                        room,
-                        self.wp_list[device][room]["mode"]["set"],
-                        self.wp_list[device][room]["speed"]["set"],
-                    )
+                    "[From HA]%s/%s/set = [mode=%s, speed=%s]",
+                    device,
+                    room,
+                    self.wp_list[device][room]["mode"]["set"],
+                    self.wp_list[device][room]["speed"]["set"],
                 )
                 self.send_to_homeassistant(device, room, ha_payload)
             except Exception as e:
                 logger.error("[From HA] %s = %s, %r", topic, payload, e)
 
     def on_publish(self, client, obj, mid):
-        logger.info("Publish: {}".format(str(mid)))
+        logger.info("Publish: %s", str(mid))
 
     def on_subscribe(self, client, obj, mid, granted_qos):
-        logger.info("Subscribed: {} {}".format(str(mid), str(granted_qos)))
+        logger.info("Subscribed: %s %s", str(mid), str(granted_qos))
 
     def on_connect(self, client, userdata, flags, rc):
         if int(rc) == 0:
@@ -668,7 +644,7 @@ class Kocom(rs485):
         elif int(rc) == 5:
             logger.info("[MQTT] 5: Connection refused – not authorised")
         else:
-            logger.info("[MQTT] {} : Connection refused".format(rc))
+            logger.info("[MQTT] %s : Connection refused", rc)
 
     def homeassistant_device_discovery(self, initial=False, remove=False):
         subscribe_list = []
@@ -891,61 +867,37 @@ class Kocom(rs485):
         self.ha_registry = ha_topic
 
     def send_to_homeassistant(self, device, room, value):
-        v_value = json.dumps(value)
+        payload = json.dumps(value)
         if device == DEVICE_LIGHT:
-            self.d_mqtt.publish(
-                "{}/{}/{}/state".format(HA_PREFIX, HA_LIGHT, room), v_value, retain=True
-            )
-            logger.info("[To HA]{}/{}/{}/state = {}".format(HA_PREFIX, HA_LIGHT, room, v_value))
+            topic = f"{HA_PREFIX}/{HA_LIGHT}/{room}/state"
+            self.d_mqtt.publish(topic, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic, payload)
         elif device == DEVICE_PLUG:
-            self.d_mqtt.publish(
-                "{}/{}/{}/state".format(HA_PREFIX, HA_SWITCH, room),
-                v_value,
-                retain=True,
-            )
-            logger.info("[To HA]{}/{}/{}/state = {}".format(HA_PREFIX, HA_SWITCH, room, v_value))
+            topic = f"{HA_PREFIX}/{HA_SWITCH}/{room}/state"
+            self.d_mqtt.publish(topic, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic, payload)
         elif device == DEVICE_THERMOSTAT:
-            self.d_mqtt.publish(
-                "{}/{}/{}/state".format(HA_PREFIX, HA_CLIMATE, room),
-                v_value,
-                retain=True,
-            )
-            logger.info("[To HA]{}/{}/{}/state = {}".format(HA_PREFIX, HA_CLIMATE, room, v_value))
+            topic = f"{HA_PREFIX}/{HA_CLIMATE}/{room}/state"
+            self.d_mqtt.publish(topic, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic, payload)
         elif device == DEVICE_ELEVATOR:
-            v_value = json.dumps({device: value})
-            self.d_mqtt.publish(
-                "{}/{}/{}/state".format(HA_PREFIX, HA_SWITCH, room),
-                v_value,
-                retain=True,
-            )
-            logger.info("[To HA]{}/{}/{}/state = {}".format(HA_PREFIX, HA_SWITCH, room, v_value))
+            payload = json.dumps({device: value})
+            topic = f"{HA_PREFIX}/{HA_SWITCH}/{room}/state"
+            self.d_mqtt.publish(topic, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic, payload)
         elif device == DEVICE_GAS:
-            v_value = json.dumps({device: value})
-            self.d_mqtt.publish(
-                "{}/{}/{}_{}/state".format(HA_PREFIX, HA_SENSOR, room, DEVICE_GAS),
-                v_value,
-                retain=True,
-            )
-            logger.info(
-                "[To HA]{}/{}/{}_{}/state = {}".format(
-                    HA_PREFIX, HA_SENSOR, room, DEVICE_GAS, v_value
-                )
-            )
-            self.d_mqtt.publish(
-                "{}/{}/{}_{}/state".format(HA_PREFIX, HA_SWITCH, room, DEVICE_GAS),
-                v_value,
-                retain=True,
-            )
-            logger.info(
-                "[To HA]{}/{}/{}_{}/state = {}".format(
-                    HA_PREFIX, HA_SWITCH, room, DEVICE_GAS, v_value
-                )
-            )
+            payload = json.dumps({device: value})
+            topic_sensor = f"{HA_PREFIX}/{HA_SENSOR}/{room}_{DEVICE_GAS}/state"
+            self.d_mqtt.publish(topic_sensor, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic_sensor, payload)
+
+            topic_switch = f"{HA_PREFIX}/{HA_SWITCH}/{room}_{DEVICE_GAS}/state"
+            self.d_mqtt.publish(topic_switch, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic_switch, payload)
         elif device == DEVICE_FAN:
-            self.d_mqtt.publish(
-                "{}/{}/{}/state".format(HA_PREFIX, HA_FAN, room), v_value, retain=True
-            )
-            logger.info("[To HA]{}/{}/{}/state = {}".format(HA_PREFIX, HA_FAN, room, v_value))
+            topic = f"{HA_PREFIX}/{HA_FAN}/{room}/state"
+            self.d_mqtt.publish(topic, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic, payload)
 
     def get_serial(self, packet_name, packet_len):
         packet = ""
@@ -969,7 +921,7 @@ class Kocom(rs485):
                 chksum = self.check_sum(packet)
                 if chksum[0]:
                     self.tick = time.time()
-                    logger.debug("[From {}]{}".format(packet_name, packet))
+                    logger.debug("[From %s]%s", packet_name, packet)
                     self.packet_parsing(packet)
                 packet = ""
                 start_flag = False
@@ -1054,30 +1006,28 @@ class Kocom(rs485):
                 if name == "HA":
                     self.write(self.make_packet(v["dst_device"], v["dst_room"], "조회", "", ""))
                 logger.debug(
-                    "[{} {}]{}({}) {}({}) -> {}({})".format(
-                        from_to,
-                        name,
-                        v["type"],
-                        v["command"],
-                        v["src_device"],
-                        v["src_room"],
-                        v["dst_device"],
-                        v["dst_room"],
-                    )
+                    "[%s %s]%s(%s) %s(%s) -> %s(%s)",
+                    from_to,
+                    name,
+                    v["type"],
+                    v["command"],
+                    v["src_device"],
+                    v["src_room"],
+                    v["dst_device"],
+                    v["dst_room"],
                 )
             else:
                 logger.debug(
-                    "[{} {}]{}({}) {}({}) -> {}({}) = {}".format(
-                        from_to,
-                        name,
-                        v["type"],
-                        v["command"],
-                        v["src_device"],
-                        v["src_room"],
-                        v["dst_device"],
-                        v["dst_room"],
-                        v["value"],
-                    )
+                    "[%s %s]%s(%s) %s(%s) -> %s(%s) = %s",
+                    from_to,
+                    name,
+                    v["type"],
+                    v["command"],
+                    v["src_device"],
+                    v["src_room"],
+                    v["dst_device"],
+                    v["dst_room"],
+                    v["value"],
                 )
 
             if (v["type"] == "ack" and v["dst_device"] == DEVICE_WALLPAD) or (
@@ -1097,11 +1047,11 @@ class Kocom(rs485):
                     self.set_list(v["src_device"], v["src_room"], v["value"])
                     self.send_to_homeassistant(v["src_device"], v["src_room"], v["value"])
         except:
-            logger.info("[{} {}]Error {}".format(from_to, name, packet))
+            logger.info("[%s %s]Error %s", from_to, name, packet)
 
     def set_list(self, device, room, value, name="kocom"):
         try:
-            logger.info("[From {}]{}/{}/state = {}".format(name, device, room, value))
+            logger.info("[From %s]%s/%s/state = %s", name, device, room, value)
             if (
                 "scan" in self.wp_list[device][room]
                 and type(self.wp_list[device][room]["scan"]) == dict
@@ -1136,9 +1086,12 @@ class Kocom(rs485):
                             self.wp_list[device][room][sub]["count"] = 0
                     except:
                         logger.info(
-                            "[From {}]Error SetListDevice {}/{}/{}/state = {}".format(
-                                name, device, room, sub, v
-                            )
+                            "[From %s]Error SetListDevice %s/%s/%s/state = %s",
+                            name,
+                            device,
+                            room,
+                            sub,
+                            v,
                         )
             elif device == DEVICE_LIGHT or device == DEVICE_PLUG:
                 for sub, v in value.items():
@@ -1154,9 +1107,12 @@ class Kocom(rs485):
                             self.wp_list[device][room][sub]["count"] = 0
                     except:
                         logger.info(
-                            "[From {}]Error SetListDevice {}/{}/{}/state = {}".format(
-                                name, device, room, sub, v
-                            )
+                            "[From %s]Error SetListDevice %s/%s/%s/state = %s",
+                            name,
+                            device,
+                            room,
+                            sub,
+                            v,
                         )
             elif device == DEVICE_THERMOSTAT:
                 for sub, v in value.items():
@@ -1176,12 +1132,15 @@ class Kocom(rs485):
                             self.wp_list[device][room][sub]["count"] = 0
                     except:
                         logger.info(
-                            "[From {}]Error SetListDevice {}/{}/{}/state = {}".format(
-                                name, device, room, sub, v
-                            )
+                            "[From %s]Error SetListDevice %s/%s/%s/state = %s",
+                            name,
+                            device,
+                            room,
+                            sub,
+                            v,
                         )
         except:
-            logger.info("[From {}]Error SetList {}/{} = {}".format(name, device, room, value))
+            logger.info("[From %s]Error SetList %s/%s = %s", name, device, room, value)
 
     def scan_list(self):
         while True:
@@ -1259,9 +1218,9 @@ class Kocom(rs485):
         if (time.time() - self.tick) < KOCOM_INTERVAL / 1000:
             return
         if cmd == "상태":
-            logger.info("[To {}]{}/{}/{} -> {}".format(self._name, device, room, target, value))
+            logger.info("[To %s]%s/%s/%s -> %s", self._name, device, room, target, value)
         elif cmd == "조회":
-            logger.info("[To {}]{}/{} -> 조회".format(self._name, device, room))
+            logger.info("[To %s]%s/%s -> 조회", self._name, device, room)
         packet = (
             self.make_packet(device, room, "상태", target, value)
             if cmd == "상태"
@@ -1269,31 +1228,29 @@ class Kocom(rs485):
         )
         v = self.value_packet(self.parse_packet(packet))
 
-        logger.debug("[To {}]{}".format(self._name, packet))
+        logger.debug("[To %s]%s", self._name, packet)
         if v["command"] == "조회" and v["src_device"] == DEVICE_WALLPAD:
             logger.debug(
-                "[To {}]{}({}) {}({}) -> {}({})".format(
-                    self._name,
-                    v["type"],
-                    v["command"],
-                    v["src_device"],
-                    v["src_room"],
-                    v["dst_device"],
-                    v["dst_room"],
-                )
+                "[To %s]%s(%s) %s(%s) -> %s(%s)",
+                self._name,
+                v["type"],
+                v["command"],
+                v["src_device"],
+                v["src_room"],
+                v["dst_device"],
+                v["dst_room"],
             )
         else:
             logger.debug(
-                "[To {}]{}({}) {}({}) -> {}({}) = {}".format(
-                    self._name,
-                    v["type"],
-                    v["command"],
-                    v["src_device"],
-                    v["src_room"],
-                    v["dst_device"],
-                    v["dst_room"],
-                    v["value"],
-                )
+                "[To %s]%s(%s) %s(%s) -> %s(%s) = %s",
+                self._name,
+                v["type"],
+                v["command"],
+                v["src_device"],
+                v["src_room"],
+                v["dst_device"],
+                v["dst_room"],
+                v["value"],
             )
         if device == DEVICE_ELEVATOR:
             self.send_to_homeassistant(DEVICE_ELEVATOR, DEVICE_WALLPAD, "on")
@@ -1459,29 +1416,25 @@ class Grex:
         if server["anonymous"] != "True":
             if server["server"] == "" or server["username"] == "" or server["password"] == "":
                 logger.info(
-                    "{} 설정을 확인하세요. Server[{}] ID[{}] PW[{}] Device[{}]".format(
-                        CONF_MQTT,
-                        server["server"],
-                        server["username"],
-                        server["password"],
-                        name,
-                    )
-                )
-                return False
-            mqtt_client.username_pw_set(username=server["username"], password=server["password"])
-            logger.debug(
-                "{} STATUS. Server[{}] ID[{}] PW[{}] Device[{}]".format(
+                    "%s 설정을 확인하세요. Server[%s] ID[%s] PW[%s] Device[%s]",
                     CONF_MQTT,
                     server["server"],
                     server["username"],
                     server["password"],
                     name,
                 )
+                return False
+            mqtt_client.username_pw_set(username=server["username"], password=server["password"])
+            logger.debug(
+                "%s STATUS. Server[%s] ID[%s] PW[%s] Device[%s]",
+                CONF_MQTT,
+                server["server"],
+                server["username"],
+                server["password"],
+                name,
             )
         else:
-            logger.debug(
-                "{} STATUS. Server[{}] Device[{}]".format(CONF_MQTT, server["server"], name)
-            )
+            logger.debug("%s STATUS. Server[%s] Device[%s]", CONF_MQTT, server["server"], name)
 
         mqtt_client.connect(server["server"], 1883, 60)
         mqtt_client.loop_start()
@@ -1496,7 +1449,7 @@ class Grex:
                 self.homeassistant_device_discovery()
                 return
         elif _topic[0] == HA_PREFIX and _topic[1] == HA_FAN and _topic[2] == "grex":
-            logger.info("Message Fan: {} = {}".format(msg.topic, _payload))
+            logger.info("Message Fan: %s = %s", msg.topic, _payload)
             if _topic[3] == "speed" or _topic[3] == "mode":
                 if (
                     _topic[3] == "mode"
@@ -1511,10 +1464,10 @@ class Grex:
                     self.send_to_homeassistant(HA_FAN, self.mqtt_cont)
 
     def on_publish(self, client, obj, mid):
-        logger.info("Publish: {}".format(str(mid)))
+        logger.info("Publish: %s", str(mid))
 
     def on_subscribe(self, client, obj, mid, granted_qos):
-        logger.info("Subscribed: {} {}".format(str(mid), str(granted_qos)))
+        logger.info("Subscribed: %s %s", str(mid), str(granted_qos))
 
     def on_connect(self, client, userdata, flags, rc):
         if int(rc) == 0:
@@ -1609,29 +1562,15 @@ class Grex:
 
     def send_to_homeassistant(self, target, value):
         if target == HA_FAN:
-            self.d_mqtt.publish(
-                "{}/{}/{}/state".format(HA_PREFIX, HA_FAN, "grex"),
-                json.dumps(value),
-                retain=True,
-            )
-            logger.info(
-                "[To HA]{}/{}/{}/state = {}".format(HA_PREFIX, HA_FAN, "grex", json.dumps(value))
-            )
+            payload = json.dumps(value)
+            topic = f"{HA_PREFIX}/{HA_FAN}/grex/state"
+            self.d_mqtt.publish(topic, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic, payload)
         elif target == HA_SENSOR:
-            self.d_mqtt.publish(
-                "{}/{}/{}_{}/state".format(HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN),
-                json.dumps(value, ensure_ascii=False),
-                retain=True,
-            )
-            logger.info(
-                "[To HA]{}/{}/{}_{}/state = {}".format(
-                    HA_PREFIX,
-                    HA_SENSOR,
-                    "grex",
-                    DEVICE_FAN,
-                    json.dumps(value, ensure_ascii=False),
-                )
-            )
+            payload = json.dumps(value, ensure_ascii=False)
+            topic = f"{HA_PREFIX}/{HA_SENSOR}/grex_{DEVICE_FAN}/state"
+            self.d_mqtt.publish(topic, payload, retain=True)
+            logger.info("[To HA] %s = %s", topic, payload)
 
     def get_serial(self, ser, packet_name, packet_len):
         buf = []
@@ -1655,7 +1594,7 @@ class Grex:
                 if len(buf) >= packet_len:
                     joindata = "".join(buf)
                     chksum = self.validate_checksum(joindata, packet_len - 1)
-                    # logger.debug("[From {}]{} {} {}".format(packet_name, joindata, str(chksum[0]), str(chksum[1])))
+                    # logger.debug("[From %s]%s %s %s", packet_name, joindata, str(chksum[0]), str(chksum[1]))
                     if chksum[0]:
                         self.packet_parsing(joindata, packet_name)
                     buf = []
@@ -1683,9 +1622,10 @@ class Grex:
                 self.grex_cont["mode"] = GREX_MODE[p_mode]
                 self.grex_cont["speed"] = GREX_SPEED[p_speed]
                 logger.info(
-                    "[From {}]mode:{} / speed:{}".format(
-                        packet_name, self.grex_cont["mode"], self.grex_cont["speed"]
-                    )
+                    "[From %s]mode:%s / speed:%s",
+                    packet_name,
+                    self.grex_cont["mode"],
+                    self.grex_cont["speed"],
                 )
                 send_to_ha_fan = {"mode": "off", "speed": "off"}
                 if self.grex_cont["mode"] != "off" or (
@@ -1740,16 +1680,16 @@ class Grex:
 
             if response_packet != "":
                 self.contoller["serial"].write(bytearray.fromhex(response_packet))
-                # logger.debug("[Tooo grex_controller]{}".format(response_packet))
+                # logger.debug("[Tooo grex_controller]%s", response_packet)
             if control_packet != "":
                 self.ventilator["serial"].write(bytearray.fromhex(control_packet))
-                # logger.debug("[Tooo grex_ventilator]{}".format(control_packet))
+                # logger.debug("[Tooo grex_ventilator]%s", control_packet)
 
         elif p_prefix == "d18b":
             p_speed = packet[8:12]
             if self.vent_cont["speed"] != GREX_SPEED[p_speed]:
                 self.vent_cont["speed"] = GREX_SPEED[p_speed]
-                logger.info("[From {}]speed:{}".format(packet_name, self.vent_cont["speed"]))
+                logger.info("[From %s]speed:%s", packet_name, self.vent_cont["speed"])
 
                 send_to_ha_fan = {"mode": "off", "speed": "off"}
                 if self.grex_cont["mode"] != "off" or (
@@ -1872,9 +1812,43 @@ class Grex:
         return str(chksum_hex)
 
 
+def setup_logging(log_path):
+    # 1. 폴더 자동 생성
+    log_dir = os.path.dirname(log_path)
+    if log_dir and not os.path.isdir(log_dir):
+        os.makedirs(log_dir)
+
+    # 2. 파일 핸들러 설정 (기존 1MB 제한 및 10개 백업 유지)
+    file_max_bytes = 100 * 1024 * 10  # 1,024,000 바이트 (약 1MB)
+    log_file_handler = logging.handlers.RotatingFileHandler(
+        filename=log_path, maxBytes=file_max_bytes, backupCount=10, encoding="utf-8"
+    )
+
+    # 3. 콘솔 출력 핸들러 설정
+    log_stream_handler = logging.StreamHandler()
+
+    # 4. 루트 로거 설정을 통해 모든 하위 모듈(grex, rs485 등)에 일괄 적용
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s.%(msecs)03d [%(levelname)s] %(name)s:%(lineno)d %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        handlers=[
+            log_file_handler,
+            log_stream_handler,
+        ],
+    )
+
+
 if __name__ == "__main__":
-    # logger 인스턴스 생성 및 로그레벨 설정
-    logger = logging.getLogger(CONF_LOGNAME)
+    # 로그 설정
+    root_dir = os.path.abspath(os.getcwd())
+    log_path = os.path.join(root_dir, "log", "kocom.log")
+
+    setup_logging(log_path)
+
+    logger.info("%s 시작", SW_VERSION)
+    logger.info("python version: %s", sys.version)
+
     logger.setLevel(logging.INFO)
     if CONF_LOGLEVEL == "info":
         logger.setLevel(logging.INFO)
@@ -1883,32 +1857,9 @@ if __name__ == "__main__":
     if CONF_LOGLEVEL == "warn":
         logger.setLevel(logging.WARN)
 
-    # formatter 생성
-    logFormatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s : Line %(lineno)s - %(message)s"
-    )
-
-    # fileHandler, StreamHandler 생성
-    file_max_bytes = 100 * 1024 * 10  # 1 MB 사이즈
-    logFileHandler = logging.handlers.RotatingFileHandler(
-        filename=log_path, maxBytes=file_max_bytes, backupCount=10, encoding="utf-8"
-    )
-    logStreamHandler = logging.StreamHandler()
-
-    # handler 에 formatter 설정
-    logFileHandler.setFormatter(logFormatter)
-    logStreamHandler.setFormatter(logFormatter)
-    logFileHandler.suffix = "%Y%m%d"
-
-    logger.addHandler(logFileHandler)
-    # logger.addHandler(logStreamHandler)
-
-    logging.info("{} 시작".format(SW_VERSION))
-    logger.info("{} 시작".format(SW_VERSION))
-
     if DEFAULT_SPEED not in ["low", "medium", "high"]:
         logger.info(
-            "[Error] DEFAULT_SPEED 설정오류로 medium 으로 설정. {} -> medium".format(DEFAULT_SPEED)
+            "[Error] DEFAULT_SPEED 설정오류로 medium 으로 설정. %s -> medium", DEFAULT_SPEED
         )
         DEFAULT_SPEED = "medium"
 
@@ -1923,7 +1874,7 @@ if __name__ == "__main__":
                 if r._connect[device].isOpen():
                     _name = r._device[device]
                     try:
-                        logger.info("[CONFIG] {} 초기화".format(_name))
+                        logger.info("[CONFIG] %s 초기화", _name)
                         if _name == "kocom":
                             kocom = Kocom(r, _name, device, 42)
                         elif _name == "grex_ventilator":
