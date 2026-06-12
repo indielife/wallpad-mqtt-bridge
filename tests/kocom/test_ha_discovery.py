@@ -46,6 +46,13 @@ def kocom_factory():
             mock_client._connect = {"test_device": MagicMock()}
 
             wallpad = Kocom(mock_client, name="test_name", device="test_device", packet_len=10)
+
+            # 테스트를 위해 wp_list에 가상의 방과 디바이스 구조 추가
+            wallpad.wp_list = {
+                "light": {"room1": {"light1": {}}},
+                "plug": {"room1": {"plug1": {}}},
+                "thermostat": {"room1": {"thermostat1": {}}},
+            }
             return wallpad, mock_mqtt_instance
 
         yield _create
@@ -65,6 +72,30 @@ def kocom_factory():
             [
                 f"{HA_PREFIX}/{HA_SWITCH}/wallpad_{DEVICE_GAS}/config",
                 f"{HA_PREFIX}/{HA_SENSOR}/wallpad_{DEVICE_GAS}/config",
+            ],
+        ),
+        (
+            "fan",
+            [
+                "homeassistant/fan/wallpad_fan/config",
+            ],
+        ),
+        (
+            "light",
+            [
+                "homeassistant/light/room1_light1/config",
+            ],
+        ),
+        (
+            "plug",
+            [
+                "homeassistant/switch/room1_plug1/config",
+            ],
+        ),
+        (
+            "thermostat",
+            [
+                "homeassistant/climate/room1/config",
             ],
         ),
     ],
