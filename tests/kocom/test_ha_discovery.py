@@ -24,6 +24,10 @@ def kocom_factory():
         patch("kocom.main.threading.Thread"),
         patch("kocom.main.Kocom.get_serial"),
         patch("kocom.main.Kocom.scan_list"),
+        patch("kocom.main.KOCOM_ROOM", {"00": "room1"}),
+        patch("kocom.main.KOCOM_ROOM_THERMOSTAT", {"00": "room1"}),
+        patch("kocom.main.KOCOM_LIGHT_SIZE", {"room1": 1}),
+        patch("kocom.main.KOCOM_PLUG_SIZE", {"room1": 1}),
     ):
         mock_mqtt_instance = MagicMock()
         mock_connect_mqtt.return_value = mock_mqtt_instance
@@ -47,12 +51,6 @@ def kocom_factory():
 
             wallpad = Kocom(mock_client, name="test_name", device="test_device", packet_len=10)
 
-            # 테스트를 위해 wp_list에 가상의 방과 디바이스 구조 추가
-            wallpad.wp_list = {
-                "light": {"room1": {"light1": {}}},
-                "plug": {"room1": {"plug1": {}}},
-                "thermostat": {"room1": {"thermostat1": {}}},
-            }
             return wallpad, mock_mqtt_instance
 
         yield _create
@@ -83,12 +81,14 @@ def kocom_factory():
         (
             "light",
             [
+                "homeassistant/light/room1_light0/config",
                 "homeassistant/light/room1_light1/config",
             ],
         ),
         (
             "plug",
             [
+                "homeassistant/switch/room1_plug0/config",
                 "homeassistant/switch/room1_plug1/config",
             ],
         ),
@@ -134,8 +134,9 @@ def test_homeassistant_device_discovery(
         assert topic in published_data, f"{topic} 토픽으로 발행되지 않았습니다."
 
         payload = published_data[topic]
-        topic_suffix = topic.split("/")[1]
-        snapshot_name = f"{active_device}_publish_payload_{topic_suffix}"
+        domain = topic.split("/")[1]
+        entity_id = topic.split("/")[2]
+        snapshot_name = f"{active_device}_publish_payload_{domain}_{entity_id}"
 
         if remove:
             assert payload == ""

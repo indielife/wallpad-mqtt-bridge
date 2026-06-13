@@ -15,6 +15,7 @@ import paho.mqtt.client as mqtt
 import serial
 
 from kocom.constants import SW_VERSION
+from kocom.devices import Elevator, Fan, Gas, GrexVentilator, Light, Plug, Thermostat
 
 logger = logging.getLogger(__name__)
 
@@ -306,6 +307,14 @@ class Kocom(rs485):
         self.wp_gas = self.client._wp_gas
         self.wp_elevator = self.client._wp_elevator
         self.wp_thermostat = self.client._wp_thermostat
+
+        self.devices = []
+        if self.wp_elevator:
+            self.devices.append(Elevator(name_prefix=self._name, sw_version=SW_VERSION))
+        if self.wp_gas:
+            self.devices.append(Gas(name_prefix=self._name, sw_version=SW_VERSION))
+        if self.wp_fan:
+            self.devices.append(Fan(name_prefix=self._name, sw_version=SW_VERSION))
         for d_name in KOCOM_DEVICE.values():
             if d_name == DEVICE_ELEVATOR or d_name == DEVICE_GAS:
                 self.wp_list[d_name] = {}
@@ -373,6 +382,40 @@ class Kocom(rs485):
                                 "last": "state",
                                 "count": 0,
                             }
+
+        if self.wp_light:
+            for room, r_value in self.wp_list.get(DEVICE_LIGHT, {}).items():
+                if isinstance(r_value, dict):
+                    for sub_device in r_value.keys():
+                        if sub_device != "scan":
+                            self.devices.append(
+                                Light(
+                                    name_prefix=self._name,
+                                    room=room,
+                                    sub_device=sub_device,
+                                    sw_version=SW_VERSION,
+                                )
+                            )
+
+        if self.wp_plug:
+            for room, r_value in self.wp_list.get(DEVICE_PLUG, {}).items():
+                if isinstance(r_value, dict):
+                    for sub_device in r_value.keys():
+                        if sub_device != "scan":
+                            self.devices.append(
+                                Plug(
+                                    name_prefix=self._name,
+                                    room=room,
+                                    sub_device=sub_device,
+                                    sw_version=SW_VERSION,
+                                )
+                            )
+
+        if self.wp_thermostat:
+            for room in self.wp_list.get(DEVICE_THERMOSTAT, {}).keys():
+                self.devices.append(
+                    Thermostat(name_prefix=self._name, room=room, sw_version=SW_VERSION)
+                )
 
         self.d_type = client._type
         if self.d_type == "serial":
@@ -653,214 +696,15 @@ class Kocom(rs485):
 
         self.ha_registry = False
         self.kocom_scan = True
+        ha_topic = False  # 초기화 보장
 
-        if self.wp_elevator:
-            ha_topic = "{}/{}/{}_{}/config".format(HA_PREFIX, HA_SWITCH, "wallpad", DEVICE_ELEVATOR)
-            ha_payload = {
-                "name": "{}_{}_{}".format(self._name, "wallpad", DEVICE_ELEVATOR),
-                "cmd_t": "{}/{}/{}_{}/set".format(HA_PREFIX, HA_SWITCH, "wallpad", DEVICE_ELEVATOR),
-                "stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_SWITCH, "wallpad"),
-                "val_tpl": "{{ value_json." + DEVICE_ELEVATOR + " }}",
-                "ic": "mdi:elevator",
-                "pl_on": "on",
-                "pl_off": "off",
-                "uniq_id": "{}_{}_{}".format(self._name, "wallpad", DEVICE_ELEVATOR),
-                "device": {
-                    "name": "Kocom {}".format("wallpad"),
-                    "ids": "kocom_{}".format("wallpad"),
-                    "mf": "KOCOM",
-                    "mdl": "Wallpad",
-                    "sw": SW_VERSION,
-                },
-            }
-            subscribe_list.append((ha_topic, 0))
-            subscribe_list.append((ha_payload["cmd_t"], 0))
-            # subscribe_list.append((ha_payload['stat_t'], 0))
-            if remove:
-                publish_list.append({ha_topic: ""})
-            else:
-                publish_list.append({ha_topic: json.dumps(ha_payload)})
-        if self.wp_gas:
-            ha_topic = "{}/{}/{}_{}/config".format(HA_PREFIX, HA_SWITCH, "wallpad", DEVICE_GAS)
-            ha_payload = {
-                "name": "{}_{}_{}".format(self._name, "wallpad", DEVICE_GAS),
-                "cmd_t": "{}/{}/{}_{}/set".format(HA_PREFIX, HA_SWITCH, "wallpad", DEVICE_GAS),
-                "stat_t": "{}/{}/{}_{}/state".format(HA_PREFIX, HA_SWITCH, "wallpad", DEVICE_GAS),
-                "val_tpl": "{{ value_json." + DEVICE_GAS + " }}",
-                "ic": "mdi:gas-cylinder",
-                "pl_on": "on",
-                "pl_off": "off",
-                "uniq_id": "{}_{}_{}".format(self._name, "wallpad", DEVICE_GAS),
-                "device": {
-                    "name": "Kocom {}".format("wallpad"),
-                    "ids": "kocom_{}".format("wallpad"),
-                    "mf": "KOCOM",
-                    "mdl": "Wallpad",
-                    "sw": SW_VERSION,
-                },
-            }
-            subscribe_list.append((ha_topic, 0))
-            subscribe_list.append((ha_payload["cmd_t"], 0))
-            # subscribe_list.append((ha_payload['stat_t'], 0))
-            if remove:
-                publish_list.append({ha_topic: ""})
-            else:
-                publish_list.append({ha_topic: json.dumps(ha_payload)})
-
-            ha_topic = "{}/{}/{}_{}/config".format(HA_PREFIX, HA_SENSOR, "wallpad", DEVICE_GAS)
-            ha_payload = {
-                "name": "{}_{}_{}".format(self._name, "wallpad", DEVICE_GAS),
-                "stat_t": "{}/{}/{}_{}/state".format(HA_PREFIX, HA_SENSOR, "wallpad", DEVICE_GAS),
-                "val_tpl": "{{ value_json." + DEVICE_GAS + " }}",
-                "ic": "mdi:gas-cylinder",
-                "uniq_id": "{}_{}_{}".format(self._name, "wallpad", DEVICE_GAS),
-                "device": {
-                    "name": "Kocom {}".format("wallpad"),
-                    "ids": "kocom_{}".format("wallpad"),
-                    "mf": "KOCOM",
-                    "mdl": "Wallpad",
-                    "sw": SW_VERSION,
-                },
-            }
-            subscribe_list.append((ha_topic, 0))
-            # subscribe_list.append((ha_payload['stat_t'], 0))
-            if remove:
-                publish_list.append({ha_topic: ""})
-            else:
-                publish_list.append({ha_topic: json.dumps(ha_payload)})
-        if self.wp_fan:
-            ha_topic = "{}/{}/{}_{}/config".format(HA_PREFIX, HA_FAN, "wallpad", DEVICE_FAN)
-            ha_payload = {
-                "name": "{}_{}_{}".format(self._name, "wallpad", DEVICE_FAN),
-                "cmd_t": "{}/{}/{}/mode".format(HA_PREFIX, HA_FAN, "wallpad"),
-                "stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_FAN, "wallpad"),
-                "spd_cmd_t": "{}/{}/{}/speed".format(HA_PREFIX, HA_FAN, "wallpad"),
-                "spd_stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_FAN, "wallpad"),
-                "stat_val_tpl": "{{ value_json.mode }}",
-                "spd_val_tpl": "{{ value_json.speed }}",
-                "pl_on": "on",
-                "pl_off": "off",
-                "spds": ["low", "medium", "high", "off"],
-                "uniq_id": "{}_{}_{}".format(self._name, "wallpad", DEVICE_FAN),
-                "device": {
-                    "name": "Kocom {}".format("wallpad"),
-                    "ids": "kocom_{}".format("wallpad"),
-                    "mf": "KOCOM",
-                    "mdl": "Wallpad",
-                    "sw": SW_VERSION,
-                },
-            }
-            subscribe_list.append((ha_topic, 0))
-            subscribe_list.append((ha_payload["cmd_t"], 0))
-            # subscribe_list.append((ha_payload['stat_t'], 0))
-            subscribe_list.append((ha_payload["spd_cmd_t"], 0))
-            if remove:
-                publish_list.append({ha_topic: ""})
-            else:
-                publish_list.append({ha_topic: json.dumps(ha_payload)})
-        if self.wp_light:
-            for room, r_value in self.wp_list[DEVICE_LIGHT].items():
-                if type(r_value) == dict:
-                    for sub_device, d_value in r_value.items():
-                        if type(d_value) == dict:
-                            ha_topic = "{}/{}/{}_{}/config".format(
-                                HA_PREFIX, HA_LIGHT, room, sub_device
-                            )
-                            ha_payload = {
-                                "name": "{}_{}_{}".format(self._name, room, sub_device),
-                                "cmd_t": "{}/{}/{}_{}/set".format(
-                                    HA_PREFIX, HA_LIGHT, room, sub_device
-                                ),
-                                "stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_LIGHT, room),
-                                "val_tpl": "{{ value_json." + str(sub_device) + " }}",
-                                "pl_on": "on",
-                                "pl_off": "off",
-                                "uniq_id": "{}_{}_{}".format(self._name, room, sub_device),
-                                "device": {
-                                    "name": "Kocom {}".format(room),
-                                    "ids": "kocom_{}".format(room),
-                                    "mf": "KOCOM",
-                                    "mdl": "Wallpad",
-                                    "sw": SW_VERSION,
-                                },
-                            }
-                            subscribe_list.append((ha_topic, 0))
-                            subscribe_list.append((ha_payload["cmd_t"], 0))
-                            # subscribe_list.append((ha_payload['stat_t'], 0))
-                            if remove:
-                                publish_list.append({ha_topic: ""})
-                            else:
-                                publish_list.append({ha_topic: json.dumps(ha_payload)})
-        if self.wp_plug:
-            for room, r_value in self.wp_list[DEVICE_PLUG].items():
-                if type(r_value) == dict:
-                    for sub_device, d_value in r_value.items():
-                        if type(d_value) == dict:
-                            ha_topic = "{}/{}/{}_{}/config".format(
-                                HA_PREFIX, HA_SWITCH, room, sub_device
-                            )
-                            ha_payload = {
-                                "name": "{}_{}_{}".format(self._name, room, sub_device),
-                                "cmd_t": "{}/{}/{}_{}/set".format(
-                                    HA_PREFIX, HA_SWITCH, room, sub_device
-                                ),
-                                "stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_SWITCH, room),
-                                "val_tpl": "{{ value_json." + str(sub_device) + " }}",
-                                "ic": "mdi:power-socket-eu",
-                                "pl_on": "on",
-                                "pl_off": "off",
-                                "uniq_id": "{}_{}_{}".format(self._name, room, sub_device),
-                                "device": {
-                                    "name": "Kocom {}".format(room),
-                                    "ids": "kocom_{}".format(room),
-                                    "mf": "KOCOM",
-                                    "mdl": "Wallpad",
-                                    "sw": SW_VERSION,
-                                },
-                            }
-                            subscribe_list.append((ha_topic, 0))
-                            subscribe_list.append((ha_payload["cmd_t"], 0))
-                            # subscribe_list.append((ha_payload['stat_t'], 0))
-                            if remove:
-                                publish_list.append({ha_topic: ""})
-                            else:
-                                publish_list.append({ha_topic: json.dumps(ha_payload)})
-        if self.wp_thermostat:
-            for room, r_list in self.wp_list[DEVICE_THERMOSTAT].items():
-                if type(r_list) == dict:
-                    ha_topic = "{}/{}/{}/config".format(HA_PREFIX, HA_CLIMATE, room)
-                    ha_payload = {
-                        "name": "{}_{}_{}".format(self._name, room, DEVICE_THERMOSTAT),
-                        "mode_cmd_t": "{}/{}/{}/mode".format(HA_PREFIX, HA_CLIMATE, room),
-                        "mode_stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_CLIMATE, room),
-                        "mode_stat_tpl": "{{ value_json.mode }}",
-                        "temp_cmd_t": "{}/{}/{}/target_temp".format(HA_PREFIX, HA_CLIMATE, room),
-                        "temp_stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_CLIMATE, room),
-                        "temp_stat_tpl": "{{ value_json.target_temp }}",
-                        "curr_temp_t": "{}/{}/{}/state".format(HA_PREFIX, HA_CLIMATE, room),
-                        "curr_temp_tpl": "{{ value_json.current_temp }}",
-                        "min_temp": 5,
-                        "max_temp": 40,
-                        "temp_step": 1,
-                        "modes": ["off", "heat", "fan_only"],
-                        "uniq_id": "{}_{}_{}".format(self._name, room, DEVICE_THERMOSTAT),
-                        "device": {
-                            "name": "Kocom {}".format(room),
-                            "ids": "kocom_{}".format(room),
-                            "mf": "KOCOM",
-                            "mdl": "Wallpad",
-                            "sw": SW_VERSION,
-                        },
-                    }
-                    subscribe_list.append((ha_topic, 0))
-                    subscribe_list.append((ha_payload["mode_cmd_t"], 0))
-                    # subscribe_list.append((ha_payload['mode_stat_t'], 0))
-                    subscribe_list.append((ha_payload["temp_cmd_t"], 0))
-                    # subscribe_list.append((ha_payload['temp_stat_t'], 0))
-                    if remove:
-                        publish_list.append({ha_topic: ""})
-                    else:
-                        publish_list.append({ha_topic: json.dumps(ha_payload)})
+        # 분리된 기기(Elevator, Gas, Fan) 객체들의 디스커버리 페이로드 생성
+        for device in self.devices:
+            for topic, payload in device.get_discovery_payloads(remove=remove):
+                publish_list.append({topic: payload})
+                ha_topic = topic
+            for topic in device.get_subscribe_topics():
+                subscribe_list.append((topic, 0))
 
         if initial:
             self.d_mqtt.subscribe(subscribe_list)
@@ -1387,6 +1231,7 @@ class Grex:
         self.mqtt_cont = {"mode": "off", "speed": "off"}
 
         self.d_mqtt = self.connect_mqtt(client._mqtt, "GREX")
+        self.device = GrexVentilator(name_prefix=self._name, sw_version=SW_VERSION)
 
         _t4 = threading.Thread(
             target=self.get_serial,
@@ -1489,73 +1334,15 @@ class Grex:
         else:
             logger.info(rc, ": Connection refused")
 
-    def homeassistant_device_discovery(self, initial=False):
+    def homeassistant_device_discovery(self, initial=False, remove=False):
         subscribe_list = []
         publish_list = []
         subscribe_list.append(("rs485/bridge/#", 0))
-        ha_topic = "{}/{}/{}_{}/config".format(HA_PREFIX, HA_FAN, "grex", DEVICE_FAN)
-        ha_payload = {
-            "name": "{}_{}".format(self._name, DEVICE_FAN),
-            "cmd_t": "{}/{}/{}/mode".format(HA_PREFIX, HA_FAN, "grex"),
-            "stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_FAN, "grex"),
-            "spd_cmd_t": "{}/{}/{}/speed".format(HA_PREFIX, HA_FAN, "grex"),
-            "spd_stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_FAN, "grex"),
-            "stat_val_tpl": "{{ value_json.mode }}",
-            "spd_val_tpl": "{{ value_json.speed }}",
-            "pl_on": "on",
-            "pl_off": "off",
-            "spds": ["low", "medium", "high", "off"],
-            "uniq_id": "{}_{}_{}".format(self._name, "grex", DEVICE_FAN),
-            "device": {
-                "name": "Grex Ventilator",
-                "ids": "grex_ventilator",
-                "mf": "Grex",
-                "mdl": "Ventilator",
-                "sw": SW_VERSION,
-            },
-        }
-        subscribe_list.append((ha_topic, 0))
-        subscribe_list.append((ha_payload["cmd_t"], 0))
-        subscribe_list.append((ha_payload["spd_cmd_t"], 0))
-        # subscribe_list.append((ha_payload['stat_t'], 0))
-        publish_list.append({ha_topic: json.dumps(ha_payload)})
 
-        ha_topic = "{}/{}/{}_{}_mode/config".format(HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN)
-        ha_payload = {
-            "name": "{}_{}_mode".format(self._name, DEVICE_FAN),
-            "stat_t": "{}/{}/{}_{}/state".format(HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN),
-            "val_tpl": "{{ value_json." + DEVICE_FAN + "_mode }}",
-            "ic": "mdi:play-circle-outline",
-            "uniq_id": "{}_{}_{}_mode".format(self._name, "grex", DEVICE_FAN),
-            "device": {
-                "name": "Grex Ventilator",
-                "ids": "grex_ventilator",
-                "mf": "Grex",
-                "mdl": "Ventilator",
-                "sw": SW_VERSION,
-            },
-        }
-        subscribe_list.append((ha_topic, 0))
-        # subscribe_list.append((ha_payload['stat_t'], 0))
-        publish_list.append({ha_topic: json.dumps(ha_payload)})
-        ha_topic = "{}/{}/{}_{}_speed/config".format(HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN)
-        ha_payload = {
-            "name": "{}_{}_speed".format(self._name, DEVICE_FAN),
-            "stat_t": "{}/{}/{}_{}/state".format(HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN),
-            "val_tpl": "{{ value_json." + DEVICE_FAN + "_speed }}",
-            "ic": "mdi:speedometer",
-            "uniq_id": "{}_{}_{}_speed".format(self._name, "grex", DEVICE_FAN),
-            "device": {
-                "name": "Grex Ventilator",
-                "ids": "grex_ventilator",
-                "mf": "Grex",
-                "mdl": "Ventilator",
-                "sw": SW_VERSION,
-            },
-        }
-        subscribe_list.append((ha_topic, 0))
-        # subscribe_list.append((ha_payload['stat_t'], 0))
-        publish_list.append({ha_topic: json.dumps(ha_payload)})
+        for topic, payload in self.device.get_discovery_payloads(remove=remove):
+            publish_list.append({topic: payload})
+        for topic in self.device.get_subscribe_topics():
+            subscribe_list.append((topic, 0))
 
         if initial:
             self.d_mqtt.subscribe(subscribe_list)
