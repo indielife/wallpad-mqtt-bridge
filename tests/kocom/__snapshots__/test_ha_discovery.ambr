@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: test_homeassistant_device_discovery[False-False-elevator-expected_topics0][elevator_publish_payload_switch]
+# name: test_homeassistant_device_discovery[False-False-elevator-expected_topics0][elevator_publish_payload_switch_wallpad_elevator]
   dict({
     'cmd_t': 'homeassistant/switch/wallpad_elevator/set',
     'device': dict({
@@ -18,7 +18,7 @@
     'val_tpl': '{{ value_json.elevator }}',
   })
 # ---
-# name: test_homeassistant_device_discovery[False-False-fan-expected_topics2][fan_publish_payload_fan]
+# name: test_homeassistant_device_discovery[False-False-fan-expected_topics2][fan_publish_payload_fan_wallpad_fan]
   dict({
     'cmd_t': 'homeassistant/fan/wallpad/mode',
     'device': dict({
@@ -45,7 +45,7 @@
     'uniq_id': 'test_name_wallpad_fan',
   })
 # ---
-# name: test_homeassistant_device_discovery[False-False-gas-expected_topics1][gas_publish_payload_sensor]
+# name: test_homeassistant_device_discovery[False-False-gas-expected_topics1][gas_publish_payload_sensor_wallpad_gas]
   dict({
     'device': dict({
       'ids': 'kocom_wallpad',
@@ -61,7 +61,7 @@
     'val_tpl': '{{ value_json.gas }}',
   })
 # ---
-# name: test_homeassistant_device_discovery[False-False-gas-expected_topics1][gas_publish_payload_switch]
+# name: test_homeassistant_device_discovery[False-False-gas-expected_topics1][gas_publish_payload_switch_wallpad_gas]
   dict({
     'cmd_t': 'homeassistant/switch/wallpad_gas/set',
     'device': dict({
@@ -80,7 +80,7 @@
     'val_tpl': '{{ value_json.gas }}',
   })
 # ---
-# name: test_homeassistant_device_discovery[False-False-light-expected_topics3][light_publish_payload_light]
+# name: test_homeassistant_device_discovery[False-False-light-expected_topics3][light_publish_payload_light_room1_light1]
   dict({
     'cmd_t': 'homeassistant/light/room1_light1/set',
     'device': dict({
@@ -98,7 +98,7 @@
     'val_tpl': '{{ value_json.light1 }}',
   })
 # ---
-# name: test_homeassistant_device_discovery[False-False-plug-expected_topics4][plug_publish_payload_switch]
+# name: test_homeassistant_device_discovery[False-False-plug-expected_topics4][plug_publish_payload_switch_room1_plug1]
   dict({
     'cmd_t': 'homeassistant/switch/room1_plug1/set',
     'device': dict({
@@ -117,7 +117,7 @@
     'val_tpl': '{{ value_json.plug1 }}',
   })
 # ---
-# name: test_homeassistant_device_discovery[False-False-thermostat-expected_topics5][thermostat_publish_payload_climate]
+# name: test_homeassistant_device_discovery[False-False-thermostat-expected_topics5][thermostat_publish_payload_climate_room1]
   dict({
     'curr_temp_t': 'homeassistant/climate/room1/state',
     'curr_temp_tpl': '{{ value_json.current_temp }}',
@@ -146,7 +146,7 @@
     'uniq_id': 'test_name_room1_thermostat',
   })
 # ---
-# name: test_homeassistant_device_discovery[True-False-elevator-expected_topics0][elevator_publish_payload_switch]
+# name: test_homeassistant_device_discovery[True-False-elevator-expected_topics0][elevator_publish_payload_switch_wallpad_elevator]
   dict({
     'cmd_t': 'homeassistant/switch/wallpad_elevator/set',
     'device': dict({
@@ -181,7 +181,7 @@
     ),
   ])
 # ---
-# name: test_homeassistant_device_discovery[True-False-fan-expected_topics2][fan_publish_payload_fan]
+# name: test_homeassistant_device_discovery[True-False-fan-expected_topics2][fan_publish_payload_fan_wallpad_fan]
   dict({
     'cmd_t': 'homeassistant/fan/wallpad/mode',
     'device': dict({
@@ -228,7 +228,7 @@
     ),
   ])
 # ---
-# name: test_homeassistant_device_discovery[True-False-gas-expected_topics1][gas_publish_payload_sensor]
+# name: test_homeassistant_device_discovery[True-False-gas-expected_topics1][gas_publish_payload_sensor_wallpad_gas]
   dict({
     'device': dict({
       'ids': 'kocom_wallpad',
@@ -244,7 +244,7 @@
     'val_tpl': '{{ value_json.gas }}',
   })
 # ---
-# name: test_homeassistant_device_discovery[True-False-gas-expected_topics1][gas_publish_payload_switch]
+# name: test_homeassistant_device_discovery[True-False-gas-expected_topics1][gas_publish_payload_switch_wallpad_gas]
   dict({
     'cmd_t': 'homeassistant/switch/wallpad_gas/set',
     'device': dict({
@@ -283,7 +283,7 @@
     ),
   ])
 # ---
-# name: test_homeassistant_device_discovery[True-False-light-expected_topics3][light_publish_payload_light]
+# name: test_homeassistant_device_discovery[True-False-light-expected_topics3][light_publish_payload_light_room1_light1]
   dict({
     'cmd_t': 'homeassistant/light/room1_light1/set',
     'device': dict({
@@ -317,7 +317,7 @@
     ),
   ])
 # ---
-# name: test_homeassistant_device_discovery[True-False-plug-expected_topics4][plug_publish_payload_switch]
+# name: test_homeassistant_device_discovery[True-False-plug-expected_topics4][plug_publish_payload_switch_room1_plug1]
   dict({
     'cmd_t': 'homeassistant/switch/room1_plug1/set',
     'device': dict({
@@ -352,7 +352,7 @@
     ),
   ])
 # ---
-# name: test_homeassistant_device_discovery[True-False-thermostat-expected_topics5][thermostat_publish_payload_climate]
+# name: test_homeassistant_device_discovery[True-False-thermostat-expected_topics5][thermostat_publish_payload_climate_room1]
   dict({
     'curr_temp_t': 'homeassistant/climate/room1/state',
     'curr_temp_tpl': '{{ value_json.current_temp }}',

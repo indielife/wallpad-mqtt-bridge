@@ -134,8 +134,9 @@ def test_homeassistant_device_discovery(
         assert topic in published_data, f"{topic} 토픽으로 발행되지 않았습니다."
 
         payload = published_data[topic]
-        topic_suffix = topic.split("/")[1]
-        snapshot_name = f"{active_device}_publish_payload_{topic_suffix}"
+        domain = topic.split("/")[1]
+        entity_id = topic.split("/")[2]
+        snapshot_name = f"{active_device}_publish_payload_{domain}_{entity_id}"
 
         if remove:
             assert payload == ""
