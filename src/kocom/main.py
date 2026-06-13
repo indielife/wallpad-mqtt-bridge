@@ -724,7 +724,10 @@ class Kocom(rs485):
             }
             subscribe_list.append((ha_topic, 0))
             # subscribe_list.append((ha_payload['stat_t'], 0))
-            publish_list.append({ha_topic: json.dumps(ha_payload)})
+            if remove:
+                publish_list.append({ha_topic: ""})
+            else:
+                publish_list.append({ha_topic: json.dumps(ha_payload)})
         if self.wp_fan:
             ha_topic = "{}/{}/{}_{}/config".format(HA_PREFIX, HA_FAN, "wallpad", DEVICE_FAN)
             ha_payload = {
