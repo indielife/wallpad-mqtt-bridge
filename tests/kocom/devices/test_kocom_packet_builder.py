@@ -1,4 +1,4 @@
-from kocom.devices.packet_builder import KocomPacketBuilder
+from kocom.devices.kocom_packet_builder import KocomPacketBuilder
 
 
 def test_kocom_packet_builder_build():
