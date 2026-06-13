@@ -779,7 +779,7 @@ class Kocom(rs485):
     def check_sum(self, packet):
         sum_packet = sum(bytearray.fromhex(packet)[:17])
         v_sum = int(packet[34:36], 16) if len(packet) >= 36 else 0
-        chk_sum = "{0:02x}".format((sum_packet + 1 + v_sum) % 256)
+        chk_sum = f"{(sum_packet + 1 + v_sum) % 256:02x}"
         orgin_sum = packet[36:38] if len(packet) >= 38 else ""
         return (True, chk_sum) if chk_sum == orgin_sum else (False, chk_sum)
 
@@ -1160,7 +1160,7 @@ class Kocom(rs485):
                         p_value += "0100"
                     else:
                         p_value += "1101"
-                    p_value += "{0:02x}".format(int(float(target_temp)))
+                    p_value += f"{int(float(target_temp)):02x}"
                     p_value += "0000000000"
                 except:
                     logger.debug("[Make Packet] Error on DEVICE_THERMOSTAT")
@@ -1570,7 +1570,7 @@ class Grex:
         start = 0
         buf = []
         for x in range(int(len(hex_string) / 2)):
-            buf.append("0x{}".format(hex_string[start:slide_windows].lower()))
+            buf.append(f"0x{hex_string[start:slide_windows].lower()}")
             slide_windows += 2
             start += 2
         return buf
@@ -1582,7 +1582,7 @@ class Grex:
             if ix > 0:
                 hex_int = int(x, 16)
                 if ix == length:
-                    chksum_hex = "0x{0:02x}".format((sum_buf % 256))
+                    chksum_hex = f"0x{(sum_buf % 256):02x}"
                     if hex_list[ix] == chksum_hex:
                         return (True, hex_list[ix])
                     else:
@@ -1598,7 +1598,7 @@ class Grex:
                 hex_int = int(x, 16)
                 sum_buf += hex_int
                 if ix == length - 1:
-                    chksum_hex = "{0:02x}".format((sum_buf % 256))
+                    chksum_hex = f"{(sum_buf % 256):02x}"
         return str(chksum_hex)
 
 
