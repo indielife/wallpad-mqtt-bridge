@@ -15,7 +15,7 @@ import paho.mqtt.client as mqtt
 import serial
 
 from kocom.constants import SW_VERSION
-from kocom.devices import Elevator, Fan, Gas
+from kocom.devices import Elevator, Fan, Gas, Light, Plug
 
 logger = logging.getLogger(__name__)
 
@@ -383,6 +383,34 @@ class Kocom(rs485):
                                 "count": 0,
                             }
 
+        if self.wp_light:
+            for room, r_value in self.wp_list.get(DEVICE_LIGHT, {}).items():
+                if isinstance(r_value, dict):
+                    for sub_device in r_value.keys():
+                        if sub_device != "scan":
+                            self.devices.append(
+                                Light(
+                                    name_prefix=self._name,
+                                    room=room,
+                                    sub_device=sub_device,
+                                    sw_version=SW_VERSION,
+                                )
+                            )
+
+        if self.wp_plug:
+            for room, r_value in self.wp_list.get(DEVICE_PLUG, {}).items():
+                if isinstance(r_value, dict):
+                    for sub_device in r_value.keys():
+                        if sub_device != "scan":
+                            self.devices.append(
+                                Plug(
+                                    name_prefix=self._name,
+                                    room=room,
+                                    sub_device=sub_device,
+                                    sw_version=SW_VERSION,
+                                )
+                            )
+
         self.d_type = client._type
         if self.d_type == "serial":
             self.d_serial = client._connect[device]
@@ -672,73 +700,6 @@ class Kocom(rs485):
             for topic in device.get_subscribe_topics():
                 subscribe_list.append((topic, 0))
 
-        if self.wp_light:
-            for room, r_value in self.wp_list[DEVICE_LIGHT].items():
-                if type(r_value) == dict:
-                    for sub_device, d_value in r_value.items():
-                        if type(d_value) == dict:
-                            ha_topic = "{}/{}/{}_{}/config".format(
-                                HA_PREFIX, HA_LIGHT, room, sub_device
-                            )
-                            ha_payload = {
-                                "name": "{}_{}_{}".format(self._name, room, sub_device),
-                                "cmd_t": "{}/{}/{}_{}/set".format(
-                                    HA_PREFIX, HA_LIGHT, room, sub_device
-                                ),
-                                "stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_LIGHT, room),
-                                "val_tpl": "{{ value_json." + str(sub_device) + " }}",
-                                "pl_on": "on",
-                                "pl_off": "off",
-                                "uniq_id": "{}_{}_{}".format(self._name, room, sub_device),
-                                "device": {
-                                    "name": "Kocom {}".format(room),
-                                    "ids": "kocom_{}".format(room),
-                                    "mf": "KOCOM",
-                                    "mdl": "Wallpad",
-                                    "sw": SW_VERSION,
-                                },
-                            }
-                            subscribe_list.append((ha_topic, 0))
-                            subscribe_list.append((ha_payload["cmd_t"], 0))
-                            # subscribe_list.append((ha_payload['stat_t'], 0))
-                            if remove:
-                                publish_list.append({ha_topic: ""})
-                            else:
-                                publish_list.append({ha_topic: json.dumps(ha_payload)})
-        if self.wp_plug:
-            for room, r_value in self.wp_list[DEVICE_PLUG].items():
-                if type(r_value) == dict:
-                    for sub_device, d_value in r_value.items():
-                        if type(d_value) == dict:
-                            ha_topic = "{}/{}/{}_{}/config".format(
-                                HA_PREFIX, HA_SWITCH, room, sub_device
-                            )
-                            ha_payload = {
-                                "name": "{}_{}_{}".format(self._name, room, sub_device),
-                                "cmd_t": "{}/{}/{}_{}/set".format(
-                                    HA_PREFIX, HA_SWITCH, room, sub_device
-                                ),
-                                "stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_SWITCH, room),
-                                "val_tpl": "{{ value_json." + str(sub_device) + " }}",
-                                "ic": "mdi:power-socket-eu",
-                                "pl_on": "on",
-                                "pl_off": "off",
-                                "uniq_id": "{}_{}_{}".format(self._name, room, sub_device),
-                                "device": {
-                                    "name": "Kocom {}".format(room),
-                                    "ids": "kocom_{}".format(room),
-                                    "mf": "KOCOM",
-                                    "mdl": "Wallpad",
-                                    "sw": SW_VERSION,
-                                },
-                            }
-                            subscribe_list.append((ha_topic, 0))
-                            subscribe_list.append((ha_payload["cmd_t"], 0))
-                            # subscribe_list.append((ha_payload['stat_t'], 0))
-                            if remove:
-                                publish_list.append({ha_topic: ""})
-                            else:
-                                publish_list.append({ha_topic: json.dumps(ha_payload)})
         if self.wp_thermostat:
             for room, r_list in self.wp_list[DEVICE_THERMOSTAT].items():
                 if type(r_list) == dict:

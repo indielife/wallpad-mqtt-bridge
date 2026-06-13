@@ -80,6 +80,24 @@
     'val_tpl': '{{ value_json.gas }}',
   })
 # ---
+# name: test_homeassistant_device_discovery[False-False-light-expected_topics3][light_publish_payload_light_room1_light0]
+  dict({
+    'cmd_t': 'homeassistant/light/room1_light0/set',
+    'device': dict({
+      'ids': 'kocom_room1',
+      'mdl': 'Wallpad',
+      'mf': 'KOCOM',
+      'name': 'Kocom room1',
+      'sw': 'RS485 Compilation 0.1.0',
+    }),
+    'name': 'test_name_room1_light0',
+    'pl_off': 'off',
+    'pl_on': 'on',
+    'stat_t': 'homeassistant/light/room1/state',
+    'uniq_id': 'test_name_room1_light0',
+    'val_tpl': '{{ value_json.light0 }}',
+  })
+# ---
 # name: test_homeassistant_device_discovery[False-False-light-expected_topics3][light_publish_payload_light_room1_light1]
   dict({
     'cmd_t': 'homeassistant/light/room1_light1/set',
@@ -96,6 +114,25 @@
     'stat_t': 'homeassistant/light/room1/state',
     'uniq_id': 'test_name_room1_light1',
     'val_tpl': '{{ value_json.light1 }}',
+  })
+# ---
+# name: test_homeassistant_device_discovery[False-False-plug-expected_topics4][plug_publish_payload_switch_room1_plug0]
+  dict({
+    'cmd_t': 'homeassistant/switch/room1_plug0/set',
+    'device': dict({
+      'ids': 'kocom_room1',
+      'mdl': 'Wallpad',
+      'mf': 'KOCOM',
+      'name': 'Kocom room1',
+      'sw': 'RS485 Compilation 0.1.0',
+    }),
+    'ic': 'mdi:power-socket-eu',
+    'name': 'test_name_room1_plug0',
+    'pl_off': 'off',
+    'pl_on': 'on',
+    'stat_t': 'homeassistant/switch/room1/state',
+    'uniq_id': 'test_name_room1_plug0',
+    'val_tpl': '{{ value_json.plug0 }}',
   })
 # ---
 # name: test_homeassistant_device_discovery[False-False-plug-expected_topics4][plug_publish_payload_switch_room1_plug1]
@@ -283,6 +320,24 @@
     ),
   ])
 # ---
+# name: test_homeassistant_device_discovery[True-False-light-expected_topics3][light_publish_payload_light_room1_light0]
+  dict({
+    'cmd_t': 'homeassistant/light/room1_light0/set',
+    'device': dict({
+      'ids': 'kocom_room1',
+      'mdl': 'Wallpad',
+      'mf': 'KOCOM',
+      'name': 'Kocom room1',
+      'sw': 'RS485 Compilation 0.1.0',
+    }),
+    'name': 'test_name_room1_light0',
+    'pl_off': 'off',
+    'pl_on': 'on',
+    'stat_t': 'homeassistant/light/room1/state',
+    'uniq_id': 'test_name_room1_light0',
+    'val_tpl': '{{ value_json.light0 }}',
+  })
+# ---
 # name: test_homeassistant_device_discovery[True-False-light-expected_topics3][light_publish_payload_light_room1_light1]
   dict({
     'cmd_t': 'homeassistant/light/room1_light1/set',
@@ -308,14 +363,6 @@
       0,
     ),
     tuple(
-      'homeassistant/light/room1_scan/config',
-      0,
-    ),
-    tuple(
-      'homeassistant/light/room1_scan/set',
-      0,
-    ),
-    tuple(
       'homeassistant/light/room1_light0/config',
       0,
     ),
@@ -332,6 +379,25 @@
       0,
     ),
   ])
+# ---
+# name: test_homeassistant_device_discovery[True-False-plug-expected_topics4][plug_publish_payload_switch_room1_plug0]
+  dict({
+    'cmd_t': 'homeassistant/switch/room1_plug0/set',
+    'device': dict({
+      'ids': 'kocom_room1',
+      'mdl': 'Wallpad',
+      'mf': 'KOCOM',
+      'name': 'Kocom room1',
+      'sw': 'RS485 Compilation 0.1.0',
+    }),
+    'ic': 'mdi:power-socket-eu',
+    'name': 'test_name_room1_plug0',
+    'pl_off': 'off',
+    'pl_on': 'on',
+    'stat_t': 'homeassistant/switch/room1/state',
+    'uniq_id': 'test_name_room1_plug0',
+    'val_tpl': '{{ value_json.plug0 }}',
+  })
 # ---
 # name: test_homeassistant_device_discovery[True-False-plug-expected_topics4][plug_publish_payload_switch_room1_plug1]
   dict({
@@ -356,14 +422,6 @@
   list([
     tuple(
       'rs485/bridge/#',
-      0,
-    ),
-    tuple(
-      'homeassistant/switch/room1_scan/config',
-      0,
-    ),
-    tuple(
-      'homeassistant/switch/room1_scan/set',
       0,
     ),
     tuple(

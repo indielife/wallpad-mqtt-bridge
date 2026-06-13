@@ -81,12 +81,14 @@ def kocom_factory():
         (
             "light",
             [
+                "homeassistant/light/room1_light0/config",
                 "homeassistant/light/room1_light1/config",
             ],
         ),
         (
             "plug",
             [
+                "homeassistant/switch/room1_plug0/config",
                 "homeassistant/switch/room1_plug1/config",
             ],
         ),
