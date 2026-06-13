@@ -1,6 +1,6 @@
 import pytest
 
-from kocom.devices import Elevator, KocomPacketBuilder, Light, Thermostat
+from kocom.devices import Elevator, Gas, KocomPacketBuilder, Light, Thermostat
 from kocom.main import (
     DEVICE_ELEVATOR,
     DEVICE_GAS,
@@ -36,6 +36,7 @@ def kocom_instance():
         Light(name_prefix="test", room="livingroom", sub_device="light3", sw_version="1.0"),
         Thermostat(name_prefix="test", room="room1", sw_version="1.0"),
         Elevator(name_prefix="test", sw_version="1.0", packet_builder=kocom.packet_builder),
+        Gas(name_prefix="test", sw_version="1.0", packet_builder=kocom.packet_builder),
     ]
     return kocom
 
@@ -82,5 +83,20 @@ def test_make_packet_elevator(kocom_instance):
         "aa5530bc00"  # Header
         "0100"  # p_device & p_room 강제 덮어쓰기 (Wallpad, livingroom)
         "4400"  # p_dst 강제 덮어쓰기 (Elevator, livingroom)
+    )
+    assert packet.startswith(expected_body)
+
+
+def test_make_packet_gas(kocom_instance):
+    """가스 밸브 제어 시 p_cmd가 'off'로 강제되는지 검증합니다."""
+    packet = kocom_instance.make_packet(DEVICE_GAS, "wallpad", "상태", "gas", "off")
+
+    expected_body = (
+        "aa5530bc00"  # Header
+        "2c"  # p_device: 2c (Gas)
+        "00"  # p_room: 00 (wallpad)
+        "0100"  # p_dst: 0100 (Wallpad wallpad)
+        "02"  # p_cmd: 02 (off)
+        "0000000000000000"  # p_value
     )
     assert packet.startswith(expected_body)

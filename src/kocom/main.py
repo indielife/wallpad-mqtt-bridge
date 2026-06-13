@@ -329,7 +329,13 @@ class Kocom(rs485):
                 )
             )
         if self.wp_gas:
-            self.devices.append(Gas(name_prefix=self._name, sw_version=SW_VERSION))
+            self.devices.append(
+                Gas(
+                    name_prefix=self._name,
+                    sw_version=SW_VERSION,
+                    packet_builder=self.packet_builder,
+                )
+            )
         if self.wp_fan:
             self.devices.append(Fan(name_prefix=self._name, sw_version=SW_VERSION))
         for d_name in KOCOM_DEVICE.values():
@@ -1170,10 +1176,7 @@ class Kocom(rs485):
         if cmd == "조회":
             p_value = "0000000000000000"
         else:
-            if device == DEVICE_GAS:
-                p_cmd = KOCOM_COMMAND_REV.get("off")
-                p_value = "0000000000000000"
-            elif device == DEVICE_LIGHT or device == DEVICE_PLUG:
+            if device == DEVICE_LIGHT or device == DEVICE_PLUG:
                 try:
                     all_device = device + "0"
                     for i in range(1, 9):
