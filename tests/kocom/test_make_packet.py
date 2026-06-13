@@ -1,6 +1,6 @@
 import pytest
 
-from kocom.devices import Elevator, Light, Thermostat
+from kocom.devices import Elevator, KocomPacketBuilder, Light, Thermostat
 from kocom.main import (
     DEVICE_ELEVATOR,
     DEVICE_GAS,
@@ -29,12 +29,13 @@ def kocom_instance():
             }
         },
     }
+    kocom.packet_builder = KocomPacketBuilder()
     kocom.devices = [
         Light(name_prefix="test", room="livingroom", sub_device="light1", sw_version="1.0"),
         Light(name_prefix="test", room="livingroom", sub_device="light2", sw_version="1.0"),
         Light(name_prefix="test", room="livingroom", sub_device="light3", sw_version="1.0"),
         Thermostat(name_prefix="test", room="room1", sw_version="1.0"),
-        Elevator(name_prefix="test", sw_version="1.0"),
+        Elevator(name_prefix="test", sw_version="1.0", packet_builder=kocom.packet_builder),
     ]
     return kocom
 

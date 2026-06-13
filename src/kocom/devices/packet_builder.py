@@ -4,7 +4,9 @@ class PacketBuilder:
     각 프로토콜(Kocom, Grex 등)에 맞는 빌더가 이를 상속받아 구현합니다.
     """
 
-    def build(self, **kwargs) -> str:
+    def build(
+        self, device_hex: str, room_hex: str, dst_hex: str, cmd_hex: str, value_hex: str
+    ) -> str:
         raise NotImplementedError
 
 
@@ -14,16 +16,18 @@ class KocomPacketBuilder(PacketBuilder):
     HEADER = "aa5530bc00"
     TAIL = "0d0d"
 
-    def build(self, device: str, room: str, dst: str, cmd: str, value: str) -> str:
+    def build(
+        self, device_hex: str, room_hex: str, dst_hex: str, cmd_hex: str, value_hex: str
+    ) -> str:
         """주어진 부품들을 Kocom 프레임(헤더, 페이로드, 체크섬, 테일)으로 조립합니다."""
-        if not (device and room and dst and cmd and value):
+        if not (device_hex and room_hex and dst_hex and cmd_hex and value_hex):
             return ""
 
-        payload = device + room + dst + cmd + value
+        payload = device_hex + room_hex + dst_hex + cmd_hex + value_hex
         packet_without_checksum = self.HEADER + payload
-        chk_sum = self._calculate_checksum(packet_without_checksum)
+        checksum = self._calculate_checksum(packet_without_checksum)
 
-        return packet_without_checksum + chk_sum + self.TAIL
+        return packet_without_checksum + checksum + self.TAIL
 
     def _calculate_checksum(self, packet: str) -> str:
         sum_packet = sum(bytearray.fromhex(packet)[:17])

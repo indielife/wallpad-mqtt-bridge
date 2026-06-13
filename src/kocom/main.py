@@ -15,7 +15,16 @@ import paho.mqtt.client as mqtt
 import serial
 
 from kocom.constants import SW_VERSION
-from kocom.devices import Elevator, Fan, Gas, GrexVentilator, Light, Plug, Thermostat
+from kocom.devices import (
+    Elevator,
+    Fan,
+    Gas,
+    GrexVentilator,
+    KocomPacketBuilder,
+    Light,
+    Plug,
+    Thermostat,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -308,9 +317,17 @@ class Kocom(rs485):
         self.wp_elevator = self.client._wp_elevator
         self.wp_thermostat = self.client._wp_thermostat
 
+        self.packet_builder = KocomPacketBuilder()
+
         self.devices = []
         if self.wp_elevator:
-            self.devices.append(Elevator(name_prefix=self._name, sw_version=SW_VERSION))
+            self.devices.append(
+                Elevator(
+                    name_prefix=self._name,
+                    sw_version=SW_VERSION,
+                    packet_builder=self.packet_builder,
+                )
+            )
         if self.wp_gas:
             self.devices.append(Gas(name_prefix=self._name, sw_version=SW_VERSION))
         if self.wp_fan:
@@ -451,7 +468,7 @@ class Kocom(rs485):
             logging.info("[Serial Read] Connection Error")
 
     def write(self, data):
-        if data == False:
+        if not data:
             return
         self.tick = time.time()
         if self.client._connect == False:
@@ -1062,15 +1079,21 @@ class Kocom(rs485):
     def set_serial(self, device, room, target, value, cmd="상태"):
         if (time.time() - self.tick) < KOCOM_INTERVAL / 1000:
             return
+
         if cmd == "상태":
             logger.info("[To %s]%s/%s/%s -> %s", self._name, device, room, target, value)
         elif cmd == "조회":
             logger.info("[To %s]%s/%s -> 조회", self._name, device, room)
+
         packet = (
             self.make_packet(device, room, "상태", target, value)
             if cmd == "상태"
             else self.make_packet(device, room, "조회", "", "")
         )
+
+        if not packet:
+            return
+
         v = self.value_packet(self.parse_packet(packet))
 
         logger.debug("[To %s]%s", self._name, packet)
@@ -1102,6 +1125,38 @@ class Kocom(rs485):
         self.write(packet)
 
     def make_packet(self, device, room, cmd, target, value):
+        # 1. 타겟 기기 객체 찾기
+        target_obj = None
+        for d in self.devices:
+            if device in [DEVICE_LIGHT, DEVICE_PLUG]:
+                if d.room == room and d.sub_device == target:
+                    target_obj = d
+                    break
+            elif device == DEVICE_THERMOSTAT:
+                if d.room == room and d.sub_device == "thermostat":
+                    target_obj = d
+                    break
+            else:
+                if d.room == room and d.sub_device == device:
+                    target_obj = d
+                    break
+
+        # 2. 객체에게 패킷 생성 위임 (전략 패턴 + 빌더)
+        if target_obj and cmd != "조회":
+            room_state = self.wp_list.get(device, {}).get(room, {})
+            built_packet = target_obj.build_packet(
+                cmd=cmd,
+                target=target,
+                value=value,
+                room_state=room_state,
+                device_rev=KOCOM_DEVICE_REV,
+                room_rev=KOCOM_ROOM_REV,
+                cmd_rev=KOCOM_COMMAND_REV,
+            )
+            if built_packet:
+                return built_packet
+
+        # 3. 객체에서 반환된 패킷이 없다면 기존 레거시 로직으로 폴백
         p_header = "aa5530bc00"
         p_device = KOCOM_DEVICE_REV.get(device)
         p_room = (
@@ -1115,13 +1170,7 @@ class Kocom(rs485):
         if cmd == "조회":
             p_value = "0000000000000000"
         else:
-            if device == DEVICE_ELEVATOR:
-                p_device = KOCOM_DEVICE_REV.get(DEVICE_WALLPAD)
-                p_room = KOCOM_ROOM_REV.get(DEVICE_WALLPAD)
-                p_dst = KOCOM_DEVICE_REV.get(device) + KOCOM_ROOM_REV.get(DEVICE_WALLPAD)
-                p_cmd = KOCOM_COMMAND_REV.get("on")
-                p_value = "0000000000000000"
-            elif device == DEVICE_GAS:
+            if device == DEVICE_GAS:
                 p_cmd = KOCOM_COMMAND_REV.get("off")
                 p_value = "0000000000000000"
             elif device == DEVICE_LIGHT or device == DEVICE_PLUG:
@@ -1179,7 +1228,7 @@ class Kocom(rs485):
             chk_sum = self.check_sum(packet)[1]
             packet += chk_sum + "0d0d"
             return packet
-        return False
+        return None
 
     def parse_fan(self, value="0000000000000000"):
         fan = {}

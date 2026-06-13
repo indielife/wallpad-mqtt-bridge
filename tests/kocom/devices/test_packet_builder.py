@@ -6,11 +6,11 @@ def test_kocom_packet_builder_build():
     builder = KocomPacketBuilder()
 
     packet = builder.build(
-        device="0e",
-        room="00",
-        dst="0100",
-        cmd="00",
-        value="ffff000000000000",
+        device_hex="0e",
+        room_hex="00",
+        dst_hex="0100",
+        cmd_hex="00",
+        value_hex="ffff000000000000",
     )
 
     # 결과물: 헤더(10) + 기기(2) + 방(2) + 목적지(4) + 명령(2) + 데이터(16) + 체크섬(2) + 테일(4) = 42글자

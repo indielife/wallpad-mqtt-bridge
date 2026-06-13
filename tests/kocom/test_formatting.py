@@ -22,6 +22,7 @@ def test_kocom_make_packet_thermostat_temp_format():
     kocom.wp_list = {
         DEVICE_THERMOSTAT: {"room1": {"mode": {"set": "heat"}, "target_temp": {"set": 25.0}}}
     }
+    kocom.devices = []
     kocom.check_sum = MagicMock(return_value=(True, "00"))
 
     packet = kocom.make_packet(DEVICE_THERMOSTAT, "room1", "상태", "", "")
