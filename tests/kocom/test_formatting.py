@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock
 
+from kocom.devices import KocomPacketBuilder, Thermostat
 from kocom.main import DEVICE_THERMOSTAT, Grex, Kocom
 
 
@@ -22,8 +23,12 @@ def test_kocom_make_packet_thermostat_temp_format():
     kocom.wp_list = {
         DEVICE_THERMOSTAT: {"room1": {"mode": {"set": "heat"}, "target_temp": {"set": 25.0}}}
     }
-    kocom.devices = []
-    kocom.check_sum = MagicMock(return_value=(True, "00"))
+    kocom.packet_builder = KocomPacketBuilder()
+    kocom.devices = [
+        Thermostat(
+            name_prefix="test", room="room1", sw_version="1.0", packet_builder=kocom.packet_builder
+        )
+    ]
 
     packet = kocom.make_packet(DEVICE_THERMOSTAT, "room1", "상태", "", "")
     # 25도 -> 16진수 "19". 패킷의 value(20번째 인덱스) 앞 6글자가 "110019"여야 함

@@ -337,7 +337,13 @@ class Kocom(rs485):
                 )
             )
         if self.wp_fan:
-            self.devices.append(Fan(name_prefix=self._name, sw_version=SW_VERSION))
+            self.devices.append(
+                Fan(
+                    name_prefix=self._name,
+                    sw_version=SW_VERSION,
+                    packet_builder=self.packet_builder,
+                )
+            )
         for d_name in KOCOM_DEVICE.values():
             if d_name == DEVICE_ELEVATOR or d_name == DEVICE_GAS:
                 self.wp_list[d_name] = {}
@@ -439,7 +445,12 @@ class Kocom(rs485):
         if self.wp_thermostat:
             for room in self.wp_list.get(DEVICE_THERMOSTAT, {}).keys():
                 self.devices.append(
-                    Thermostat(name_prefix=self._name, room=room, sw_version=SW_VERSION)
+                    Thermostat(
+                        name_prefix=self._name,
+                        room=room,
+                        sw_version=SW_VERSION,
+                        packet_builder=self.packet_builder,
+                    )
                 )
 
         self.d_type = client._type
@@ -1160,6 +1171,8 @@ class Kocom(rs485):
                 device_rev=KOCOM_DEVICE_REV,
                 room_rev=KOCOM_ROOM_REV,
                 cmd_rev=KOCOM_COMMAND_REV,
+                room_thermostat_rev=KOCOM_ROOM_THERMOSTAT_REV,
+                fan_speed_rev=KOCOM_FAN_SPEED_REV,
             )
             if built_packet:
                 return built_packet
@@ -1177,34 +1190,7 @@ class Kocom(rs485):
         p_value = ""
         if cmd == "조회":
             p_value = "0000000000000000"
-        else:
-            if device == DEVICE_THERMOSTAT:
-                try:
-                    mode = self.wp_list[device][room]["mode"]["set"]
-                    target_temp = self.wp_list[device][room]["target_temp"]["set"]
-                    if mode == "heat":
-                        p_value += "1100"
-                    elif mode == "off":
-                        # p_value += '0001'
-                        p_value += "0100"
-                    else:
-                        p_value += "1101"
-                    p_value += f"{int(float(target_temp)):02x}"
-                    p_value += "0000000000"
-                except:
-                    logger.debug("[Make Packet] Error on DEVICE_THERMOSTAT")
-            elif device == DEVICE_FAN:
-                try:
-                    mode = self.wp_list[device][room]["mode"]["set"]
-                    speed = self.wp_list[device][room]["speed"]["set"]
-                    if mode == "on":
-                        p_value += "1100"
-                    elif mode == "off":
-                        p_value += "0001"
-                    p_value += KOCOM_FAN_SPEED_REV.get(speed)
-                    p_value += "00000000000"
-                except:
-                    logger.debug("[Make Packet] Error on DEVICE_THERMOSTAT")
+
         if p_value != "":
             packet = p_header + p_device + p_room + p_dst + p_cmd + p_value
             chk_sum = self.check_sum(packet)[1]

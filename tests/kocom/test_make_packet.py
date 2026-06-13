@@ -1,8 +1,9 @@
 import pytest
 
-from kocom.devices import Elevator, Gas, KocomPacketBuilder, Light, Thermostat
+from kocom.devices import Elevator, Fan, Gas, KocomPacketBuilder, Light, Thermostat
 from kocom.main import (
     DEVICE_ELEVATOR,
+    DEVICE_FAN,
     DEVICE_GAS,
     DEVICE_LIGHT,
     DEVICE_THERMOSTAT,
@@ -26,6 +27,12 @@ def kocom_instance():
             "room1": {
                 "mode": {"set": "heat"},
                 "target_temp": {"set": 25.0},
+            }
+        },
+        DEVICE_FAN: {
+            "wallpad": {
+                "mode": {"set": "on"},
+                "speed": {"set": "medium"},
             }
         },
     }
@@ -52,7 +59,10 @@ def kocom_instance():
             sw_version="1.0",
             packet_builder=kocom.packet_builder,
         ),
-        Thermostat(name_prefix="test", room="room1", sw_version="1.0"),
+        Thermostat(
+            name_prefix="test", room="room1", sw_version="1.0", packet_builder=kocom.packet_builder
+        ),
+        Fan(name_prefix="test", sw_version="1.0", packet_builder=kocom.packet_builder),
         Elevator(name_prefix="test", sw_version="1.0", packet_builder=kocom.packet_builder),
         Gas(name_prefix="test", sw_version="1.0", packet_builder=kocom.packet_builder),
     ]
@@ -116,5 +126,20 @@ def test_make_packet_gas(kocom_instance):
         "0100"  # p_dst: 0100 (Wallpad wallpad)
         "02"  # p_cmd: 02 (off)
         "0000000000000000"  # p_value
+    )
+    assert packet.startswith(expected_body)
+
+
+def test_make_packet_fan(kocom_instance):
+    """환기팬(Fan) 제어 시 모드와 풍속을 기반으로 페이로드를 조립하는지 검증합니다."""
+    packet = kocom_instance.make_packet(DEVICE_FAN, "wallpad", "상태", "fan", "on")
+
+    expected_body = (
+        "aa5530bc00"  # Header
+        "48"  # p_device: 48 (Fan)
+        "00"  # p_room: 00 (wallpad)
+        "0100"  # p_dst: 0100 (Wallpad wallpad)
+        "00"  # p_cmd: 00 (상태)
+        "1100800000000000"  # p_value: 1100(on) + 8(medium) + 패딩
     )
     assert packet.startswith(expected_body)
