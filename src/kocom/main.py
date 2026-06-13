@@ -458,9 +458,9 @@ class Kocom(rs485):
             return
         try:
             if self.d_type == "serial":
-                return self.d_serial.write(bytearray.fromhex((data)))
+                return self.d_serial.write(bytearray.fromhex(data))
             elif self.d_type == "socket":
-                return self.d_serial.send(bytearray.fromhex((data)))
+                return self.d_serial.send(bytearray.fromhex(data))
         except:
             logging.info("[Serial Write] Connection Error")
 
@@ -527,11 +527,7 @@ class Kocom(rs485):
                 return
             elif _topic[3] == "scan":
                 for d_name in KOCOM_DEVICE.values():
-                    if d_name == DEVICE_ELEVATOR or d_name == DEVICE_GAS:
-                        self.wp_list[d_name][DEVICE_WALLPAD] = {
-                            "scan": {"tick": 0, "count": 0, "last": 0}
-                        }
-                    elif d_name == DEVICE_FAN:
+                    if d_name == DEVICE_ELEVATOR or d_name == DEVICE_GAS or d_name == DEVICE_FAN:
                         self.wp_list[d_name][DEVICE_WALLPAD] = {
                             "scan": {"tick": 0, "count": 0, "last": 0}
                         }
@@ -708,9 +704,11 @@ class Kocom(rs485):
 
         if initial:
             self.d_mqtt.subscribe(subscribe_list)
+
         for ha in publish_list:
             for topic, payload in ha.items():
                 self.d_mqtt.publish(topic, payload, retain=True)
+
         self.ha_registry = ha_topic
 
     def send_to_homeassistant(self, device, room, value):
@@ -1128,13 +1126,13 @@ class Kocom(rs485):
                 p_value = "0000000000000000"
             elif device == DEVICE_LIGHT or device == DEVICE_PLUG:
                 try:
-                    all_device = device + str("0")
+                    all_device = device + "0"
                     for i in range(1, 9):
                         sub_device = device + str(i)
                         if target != sub_device:
                             if target == all_device:
                                 if sub_device in self.wp_list[device][room]:
-                                    p_value += "ff" if value == "on" else str("00")
+                                    p_value += "ff" if value == "on" else "00"
                                 else:
                                     p_value += "00"
                             else:
@@ -1146,7 +1144,7 @@ class Kocom(rs485):
                                 else:
                                     p_value += "00"
                         else:
-                            p_value += "ff" if value == "on" else str("00")
+                            p_value += "ff" if value == "on" else "00"
                 except:
                     logger.debug("[Make Packet] Error on DEVICE_LIGHT or DEVICE_PLUG")
             elif device == DEVICE_THERMOSTAT:
@@ -1201,7 +1199,7 @@ class Kocom(rs485):
             switch[device + str(i)] = "off" if value[i * 2 - 2 : i * 2] == "00" else "on"
             if value[i * 2 - 2 : i * 2] != "00":
                 on_count += 1
-        switch[device + str("0")] = "on" if on_count > 0 else "off"
+        switch[device + "0"] = "on" if on_count > 0 else "off"
         return switch
 
     def parse_thermostat(self, value="0000000000000000", init_temp=False):
