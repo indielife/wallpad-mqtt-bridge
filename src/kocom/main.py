@@ -15,7 +15,7 @@ import paho.mqtt.client as mqtt
 import serial
 
 from kocom.constants import SW_VERSION
-from kocom.devices import Elevator, Fan, Gas, Light, Plug, Thermostat
+from kocom.devices import Elevator, Fan, Gas, GrexVentilator, Light, Plug, Thermostat
 
 logger = logging.getLogger(__name__)
 
@@ -1231,6 +1231,7 @@ class Grex:
         self.mqtt_cont = {"mode": "off", "speed": "off"}
 
         self.d_mqtt = self.connect_mqtt(client._mqtt, "GREX")
+        self.device = GrexVentilator(name_prefix=self._name, sw_version=SW_VERSION)
 
         _t4 = threading.Thread(
             target=self.get_serial,
@@ -1333,73 +1334,15 @@ class Grex:
         else:
             logger.info(rc, ": Connection refused")
 
-    def homeassistant_device_discovery(self, initial=False):
+    def homeassistant_device_discovery(self, initial=False, remove=False):
         subscribe_list = []
         publish_list = []
         subscribe_list.append(("rs485/bridge/#", 0))
-        ha_topic = "{}/{}/{}_{}/config".format(HA_PREFIX, HA_FAN, "grex", DEVICE_FAN)
-        ha_payload = {
-            "name": "{}_{}".format(self._name, DEVICE_FAN),
-            "cmd_t": "{}/{}/{}/mode".format(HA_PREFIX, HA_FAN, "grex"),
-            "stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_FAN, "grex"),
-            "spd_cmd_t": "{}/{}/{}/speed".format(HA_PREFIX, HA_FAN, "grex"),
-            "spd_stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_FAN, "grex"),
-            "stat_val_tpl": "{{ value_json.mode }}",
-            "spd_val_tpl": "{{ value_json.speed }}",
-            "pl_on": "on",
-            "pl_off": "off",
-            "spds": ["low", "medium", "high", "off"],
-            "uniq_id": "{}_{}_{}".format(self._name, "grex", DEVICE_FAN),
-            "device": {
-                "name": "Grex Ventilator",
-                "ids": "grex_ventilator",
-                "mf": "Grex",
-                "mdl": "Ventilator",
-                "sw": SW_VERSION,
-            },
-        }
-        subscribe_list.append((ha_topic, 0))
-        subscribe_list.append((ha_payload["cmd_t"], 0))
-        subscribe_list.append((ha_payload["spd_cmd_t"], 0))
-        # subscribe_list.append((ha_payload['stat_t'], 0))
-        publish_list.append({ha_topic: json.dumps(ha_payload)})
 
-        ha_topic = "{}/{}/{}_{}_mode/config".format(HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN)
-        ha_payload = {
-            "name": "{}_{}_mode".format(self._name, DEVICE_FAN),
-            "stat_t": "{}/{}/{}_{}/state".format(HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN),
-            "val_tpl": "{{ value_json." + DEVICE_FAN + "_mode }}",
-            "ic": "mdi:play-circle-outline",
-            "uniq_id": "{}_{}_{}_mode".format(self._name, "grex", DEVICE_FAN),
-            "device": {
-                "name": "Grex Ventilator",
-                "ids": "grex_ventilator",
-                "mf": "Grex",
-                "mdl": "Ventilator",
-                "sw": SW_VERSION,
-            },
-        }
-        subscribe_list.append((ha_topic, 0))
-        # subscribe_list.append((ha_payload['stat_t'], 0))
-        publish_list.append({ha_topic: json.dumps(ha_payload)})
-        ha_topic = "{}/{}/{}_{}_speed/config".format(HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN)
-        ha_payload = {
-            "name": "{}_{}_speed".format(self._name, DEVICE_FAN),
-            "stat_t": "{}/{}/{}_{}/state".format(HA_PREFIX, HA_SENSOR, "grex", DEVICE_FAN),
-            "val_tpl": "{{ value_json." + DEVICE_FAN + "_speed }}",
-            "ic": "mdi:speedometer",
-            "uniq_id": "{}_{}_{}_speed".format(self._name, "grex", DEVICE_FAN),
-            "device": {
-                "name": "Grex Ventilator",
-                "ids": "grex_ventilator",
-                "mf": "Grex",
-                "mdl": "Ventilator",
-                "sw": SW_VERSION,
-            },
-        }
-        subscribe_list.append((ha_topic, 0))
-        # subscribe_list.append((ha_payload['stat_t'], 0))
-        publish_list.append({ha_topic: json.dumps(ha_payload)})
+        for topic, payload in self.device.get_discovery_payloads(remove=remove):
+            publish_list.append({topic: payload})
+        for topic in self.device.get_subscribe_topics():
+            subscribe_list.append((topic, 0))
 
         if initial:
             self.d_mqtt.subscribe(subscribe_list)
