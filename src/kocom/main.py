@@ -1177,25 +1177,17 @@ class Kocom(rs485):
             if built_packet:
                 return built_packet
 
-        # 3. 객체에서 반환된 패킷이 없다면 기존 레거시 로직으로 폴백
-        p_header = "aa5530bc00"
-        p_device = KOCOM_DEVICE_REV.get(device)
-        p_room = (
-            KOCOM_ROOM_REV.get(room)
-            if device != DEVICE_THERMOSTAT
-            else KOCOM_ROOM_THERMOSTAT_REV.get(room)
-        )
-        p_dst = KOCOM_DEVICE_REV.get(DEVICE_WALLPAD) + KOCOM_ROOM_REV.get(DEVICE_WALLPAD)
-        p_cmd = KOCOM_COMMAND_REV.get(cmd)
-        p_value = ""
+        # 3. 객체에서 처리되지 않은 공통 명령(예: 방 전체 '조회')은 빌더를 통해 직접 생성
         if cmd == "조회":
-            p_value = "0000000000000000"
+            return self.packet_builder.build_scan_packet(
+                device=device,
+                room=room,
+                device_rev=KOCOM_DEVICE_REV,
+                room_rev=KOCOM_ROOM_REV,
+                room_thermostat_rev=KOCOM_ROOM_THERMOSTAT_REV,
+                cmd_rev=KOCOM_COMMAND_REV,
+            )
 
-        if p_value != "":
-            packet = p_header + p_device + p_room + p_dst + p_cmd + p_value
-            chk_sum = self.check_sum(packet)[1]
-            packet += chk_sum + "0d0d"
-            return packet
         return None
 
     def parse_fan(self, value="0000000000000000"):

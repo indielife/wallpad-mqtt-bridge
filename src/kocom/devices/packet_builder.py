@@ -33,3 +33,28 @@ class KocomPacketBuilder(PacketBuilder):
         sum_packet = sum(bytearray.fromhex(packet)[:17])
         v_sum = int(packet[34:36], 16) if len(packet) >= 36 else 0
         return f"{(sum_packet + 1 + v_sum) % 256:02x}"
+
+    def build_scan_packet(
+        self,
+        device: str,
+        room: str,
+        device_rev: dict,
+        room_rev: dict,
+        room_thermostat_rev: dict,
+        cmd_rev: dict,
+    ) -> str:
+        """기기 상태 조회를 위한 스캔(조회) 패킷을 생성합니다."""
+        device_hex = device_rev.get(device, "")
+        room_hex = (
+            room_rev.get(room, "") if device != "thermostat" else room_thermostat_rev.get(room, "")
+        )
+        dst_hex = device_rev.get("wallpad", "01") + room_rev.get("wallpad", "00")
+        cmd_hex = cmd_rev.get("조회", "3a")
+        value_hex = "0000000000000000"
+        return self.build(
+            device_hex=device_hex,
+            room_hex=room_hex,
+            dst_hex=dst_hex,
+            cmd_hex=cmd_hex,
+            value_hex=value_hex,
+        )
