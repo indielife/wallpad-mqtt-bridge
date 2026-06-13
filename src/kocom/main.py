@@ -15,7 +15,7 @@ import paho.mqtt.client as mqtt
 import serial
 
 from kocom.constants import SW_VERSION
-from kocom.devices import Elevator, Fan, Gas, Light, Plug
+from kocom.devices import Elevator, Fan, Gas, Light, Plug, Thermostat
 
 logger = logging.getLogger(__name__)
 
@@ -411,6 +411,12 @@ class Kocom(rs485):
                                 )
                             )
 
+        if self.wp_thermostat:
+            for room in self.wp_list.get(DEVICE_THERMOSTAT, {}).keys():
+                self.devices.append(
+                    Thermostat(name_prefix=self._name, room=room, sw_version=SW_VERSION)
+                )
+
         self.d_type = client._type
         if self.d_type == "serial":
             self.d_serial = client._connect[device]
@@ -699,43 +705,6 @@ class Kocom(rs485):
                 ha_topic = topic
             for topic in device.get_subscribe_topics():
                 subscribe_list.append((topic, 0))
-
-        if self.wp_thermostat:
-            for room, r_list in self.wp_list[DEVICE_THERMOSTAT].items():
-                if type(r_list) == dict:
-                    ha_topic = "{}/{}/{}/config".format(HA_PREFIX, HA_CLIMATE, room)
-                    ha_payload = {
-                        "name": "{}_{}_{}".format(self._name, room, DEVICE_THERMOSTAT),
-                        "mode_cmd_t": "{}/{}/{}/mode".format(HA_PREFIX, HA_CLIMATE, room),
-                        "mode_stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_CLIMATE, room),
-                        "mode_stat_tpl": "{{ value_json.mode }}",
-                        "temp_cmd_t": "{}/{}/{}/target_temp".format(HA_PREFIX, HA_CLIMATE, room),
-                        "temp_stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_CLIMATE, room),
-                        "temp_stat_tpl": "{{ value_json.target_temp }}",
-                        "curr_temp_t": "{}/{}/{}/state".format(HA_PREFIX, HA_CLIMATE, room),
-                        "curr_temp_tpl": "{{ value_json.current_temp }}",
-                        "min_temp": 5,
-                        "max_temp": 40,
-                        "temp_step": 1,
-                        "modes": ["off", "heat", "fan_only"],
-                        "uniq_id": "{}_{}_{}".format(self._name, room, DEVICE_THERMOSTAT),
-                        "device": {
-                            "name": "Kocom {}".format(room),
-                            "ids": "kocom_{}".format(room),
-                            "mf": "KOCOM",
-                            "mdl": "Wallpad",
-                            "sw": SW_VERSION,
-                        },
-                    }
-                    subscribe_list.append((ha_topic, 0))
-                    subscribe_list.append((ha_payload["mode_cmd_t"], 0))
-                    # subscribe_list.append((ha_payload['mode_stat_t'], 0))
-                    subscribe_list.append((ha_payload["temp_cmd_t"], 0))
-                    # subscribe_list.append((ha_payload['temp_stat_t'], 0))
-                    if remove:
-                        publish_list.append({ha_topic: ""})
-                    else:
-                        publish_list.append({ha_topic: json.dumps(ha_payload)})
 
         if initial:
             self.d_mqtt.subscribe(subscribe_list)

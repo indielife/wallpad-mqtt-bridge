@@ -4,6 +4,7 @@ from .fan import Fan
 from .gas import Gas
 from .light import Light
 from .plug import Plug
+from .thermostat import Thermostat
 
 __all__ = [
     "BaseDevice",
@@ -12,4 +13,5 @@ __all__ = [
     "Gas",
     "Light",
     "Plug",
+    "Thermostat",
 ]
