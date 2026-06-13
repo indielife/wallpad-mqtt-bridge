@@ -15,7 +15,7 @@ import paho.mqtt.client as mqtt
 import serial
 
 from kocom.constants import SW_VERSION
-from kocom.devices import Elevator, Gas
+from kocom.devices import Elevator, Fan, Gas
 
 logger = logging.getLogger(__name__)
 
@@ -313,6 +313,8 @@ class Kocom(rs485):
             self.devices.append(Elevator(name_prefix=self._name, sw_version=SW_VERSION))
         if self.wp_gas:
             self.devices.append(Gas(name_prefix=self._name, sw_version=SW_VERSION))
+        if self.wp_fan:
+            self.devices.append(Fan(name_prefix=self._name, sw_version=SW_VERSION))
         for d_name in KOCOM_DEVICE.values():
             if d_name == DEVICE_ELEVATOR or d_name == DEVICE_GAS:
                 self.wp_list[d_name] = {}
@@ -662,7 +664,7 @@ class Kocom(rs485):
         self.kocom_scan = True
         ha_topic = False  # 초기화 보장
 
-        # 분리된 기기(Elevator, Gas) 객체들의 디스커버리 페이로드 생성
+        # 분리된 기기(Elevator, Gas, Fan) 객체들의 디스커버리 페이로드 생성
         for device in self.devices:
             for topic, payload in device.get_discovery_payloads(remove=remove):
                 publish_list.append({topic: payload})
@@ -670,36 +672,6 @@ class Kocom(rs485):
             for topic in device.get_subscribe_topics():
                 subscribe_list.append((topic, 0))
 
-        if self.wp_fan:
-            ha_topic = "{}/{}/{}_{}/config".format(HA_PREFIX, HA_FAN, "wallpad", DEVICE_FAN)
-            ha_payload = {
-                "name": "{}_{}_{}".format(self._name, "wallpad", DEVICE_FAN),
-                "cmd_t": "{}/{}/{}/mode".format(HA_PREFIX, HA_FAN, "wallpad"),
-                "stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_FAN, "wallpad"),
-                "spd_cmd_t": "{}/{}/{}/speed".format(HA_PREFIX, HA_FAN, "wallpad"),
-                "spd_stat_t": "{}/{}/{}/state".format(HA_PREFIX, HA_FAN, "wallpad"),
-                "stat_val_tpl": "{{ value_json.mode }}",
-                "spd_val_tpl": "{{ value_json.speed }}",
-                "pl_on": "on",
-                "pl_off": "off",
-                "spds": ["low", "medium", "high", "off"],
-                "uniq_id": "{}_{}_{}".format(self._name, "wallpad", DEVICE_FAN),
-                "device": {
-                    "name": "Kocom {}".format("wallpad"),
-                    "ids": "kocom_{}".format("wallpad"),
-                    "mf": "KOCOM",
-                    "mdl": "Wallpad",
-                    "sw": SW_VERSION,
-                },
-            }
-            subscribe_list.append((ha_topic, 0))
-            subscribe_list.append((ha_payload["cmd_t"], 0))
-            # subscribe_list.append((ha_payload['stat_t'], 0))
-            subscribe_list.append((ha_payload["spd_cmd_t"], 0))
-            if remove:
-                publish_list.append({ha_topic: ""})
-            else:
-                publish_list.append({ha_topic: json.dumps(ha_payload)})
         if self.wp_light:
             for room, r_value in self.wp_list[DEVICE_LIGHT].items():
                 if type(r_value) == dict:
