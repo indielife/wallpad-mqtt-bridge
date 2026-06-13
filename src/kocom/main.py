@@ -417,6 +417,7 @@ class Kocom(rs485):
                                     room=room,
                                     sub_device=sub_device,
                                     sw_version=SW_VERSION,
+                                    packet_builder=self.packet_builder,
                                 )
                             )
 
@@ -431,6 +432,7 @@ class Kocom(rs485):
                                     room=room,
                                     sub_device=sub_device,
                                     sw_version=SW_VERSION,
+                                    packet_builder=self.packet_builder,
                                 )
                             )
 
@@ -1176,30 +1178,7 @@ class Kocom(rs485):
         if cmd == "조회":
             p_value = "0000000000000000"
         else:
-            if device == DEVICE_LIGHT or device == DEVICE_PLUG:
-                try:
-                    all_device = device + "0"
-                    for i in range(1, 9):
-                        sub_device = device + str(i)
-                        if target != sub_device:
-                            if target == all_device:
-                                if sub_device in self.wp_list[device][room]:
-                                    p_value += "ff" if value == "on" else "00"
-                                else:
-                                    p_value += "00"
-                            else:
-                                if (
-                                    sub_device in self.wp_list[device][room]
-                                    and self.wp_list[device][room][sub_device]["state"] == "on"
-                                ):
-                                    p_value += "ff"
-                                else:
-                                    p_value += "00"
-                        else:
-                            p_value += "ff" if value == "on" else "00"
-                except:
-                    logger.debug("[Make Packet] Error on DEVICE_LIGHT or DEVICE_PLUG")
-            elif device == DEVICE_THERMOSTAT:
+            if device == DEVICE_THERMOSTAT:
                 try:
                     mode = self.wp_list[device][room]["mode"]["set"]
                     target_temp = self.wp_list[device][room]["target_temp"]["set"]
