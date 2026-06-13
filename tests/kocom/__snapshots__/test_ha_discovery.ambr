@@ -308,6 +308,22 @@
       0,
     ),
     tuple(
+      'homeassistant/light/room1_scan/config',
+      0,
+    ),
+    tuple(
+      'homeassistant/light/room1_scan/set',
+      0,
+    ),
+    tuple(
+      'homeassistant/light/room1_light0/config',
+      0,
+    ),
+    tuple(
+      'homeassistant/light/room1_light0/set',
+      0,
+    ),
+    tuple(
       'homeassistant/light/room1_light1/config',
       0,
     ),
@@ -340,6 +356,22 @@
   list([
     tuple(
       'rs485/bridge/#',
+      0,
+    ),
+    tuple(
+      'homeassistant/switch/room1_scan/config',
+      0,
+    ),
+    tuple(
+      'homeassistant/switch/room1_scan/set',
+      0,
+    ),
+    tuple(
+      'homeassistant/switch/room1_plug0/config',
+      0,
+    ),
+    tuple(
+      'homeassistant/switch/room1_plug0/set',
       0,
     ),
     tuple(
