@@ -19,6 +19,7 @@ from kocom.devices import (
     Elevator,
     Fan,
     Gas,
+    GrexPacketBuilder,
     GrexVentilator,
     KocomPacketBuilder,
     Light,
@@ -1238,7 +1239,12 @@ class Grex:
         self.mqtt_cont = {"mode": "off", "speed": "off"}
 
         self.d_mqtt = self.connect_mqtt(client._mqtt, "GREX")
-        self.device = GrexVentilator(name_prefix=self._name, sw_version=SW_VERSION)
+        self.packet_builder = GrexPacketBuilder()
+        self.device = GrexVentilator(
+            name_prefix=self._name,
+            sw_version=SW_VERSION,
+            packet_builder=self.packet_builder,
+        )
 
         _t4 = threading.Thread(
             target=self.get_serial,
@@ -1401,7 +1407,7 @@ class Grex:
         p_prefix = packet[:4]
 
         if p_prefix == "d00a":
-            m_packet = self.make_response_packet(0)
+            m_packet = self.device.build_response_packet(0)
             m_chksum = self.validate_checksum(m_packet, 11)
             if m_chksum[0]:
                 self.contoller["serial"].write(bytearray.fromhex(m_packet))
@@ -1455,25 +1461,27 @@ class Grex:
                 self.send_to_homeassistant(HA_SENSOR, send_to_ha_sensor)
 
             if self.grex_cont["mode"] == "off":
-                response_packet = self.make_response_packet(0)
+                response_packet = self.device.build_response_packet(0)
                 if self.mqtt_cont["mode"] == "off" or (
                     self.mqtt_cont["mode"] == "on" and self.mqtt_cont["speed"] == "off"
                 ):
-                    control_packet = self.make_control_packet("off", "off")
+                    control_packet = self.device.build_control_packet("off", "off")
                 elif self.mqtt_cont["mode"] == "on" and self.mqtt_cont["speed"] != "off":
-                    control_packet = self.make_control_packet("manual", self.mqtt_cont["speed"])
+                    control_packet = self.device.build_control_packet(
+                        "manual", self.mqtt_cont["speed"]
+                    )
             else:
-                control_packet = self.make_control_packet(
+                control_packet = self.device.build_control_packet(
                     self.grex_cont["mode"], self.grex_cont["speed"]
                 )
                 if self.grex_cont["speed"] == "low":
-                    response_packet = self.make_response_packet(1)
+                    response_packet = self.device.build_response_packet(1)
                 elif self.grex_cont["speed"] == "medium":
-                    response_packet = self.make_response_packet(2)
+                    response_packet = self.device.build_response_packet(2)
                 elif self.grex_cont["speed"] == "high":
-                    response_packet = self.make_response_packet(3)
+                    response_packet = self.device.build_response_packet(3)
                 elif self.grex_cont["speed"] == "off":
-                    response_packet = self.make_response_packet(0)
+                    response_packet = self.device.build_response_packet(0)
 
             if response_packet != "":
                 self.contoller["serial"].write(bytearray.fromhex(response_packet))
@@ -1518,60 +1526,6 @@ class Grex:
                         send_to_ha_sensor["fan_speed"] = "대기"
                 self.send_to_homeassistant(HA_SENSOR, send_to_ha_sensor)
 
-    def make_control_packet(self, mode, speed):
-        prefix = "d08ae022"
-        if mode == "off":
-            packet_mode = "0000"
-        elif mode == "auto":
-            packet_mode = "0100"
-        elif mode == "manual":
-            packet_mode = "0200"
-        elif mode == "sleep":
-            packet_mode = "0300"
-        else:
-            return ""
-        if speed == "off":
-            packet_speed = "0000"
-        elif speed == "low":
-            packet_speed = "0101"
-        elif speed == "medium":
-            packet_speed = "0202"
-        elif speed == "high":
-            packet_speed = "0303"
-        else:
-            return ""
-        if ((mode == "auto" or mode == "sleep") and (speed == "off")) or (
-            speed == "low" or speed == "medium" or speed == "high"
-        ):
-            postfix = "0001"
-        else:
-            postfix = "0000"
-
-        packet = prefix + packet_mode + packet_speed + postfix
-        packet_checksum = self.make_checksum(packet, 10)
-        packet = packet + packet_checksum
-        return packet
-
-    def make_response_packet(self, speed):
-        prefix = "d18be021"
-        if speed == 0:
-            packet_speed = "0000"
-        elif speed == 1:
-            packet_speed = "0101"
-        elif speed == 2:
-            packet_speed = "0202"
-        elif speed == 3:
-            packet_speed = "0303"
-        if speed == 0:
-            postfix = "0000000000"
-        elif speed > 0:
-            postfix = "0000000100"
-
-        packet = prefix + packet_speed + postfix
-        packet_checksum = self.make_checksum(packet, 11)
-        packet = packet + packet_checksum
-        return packet
-
     def hex_to_list(self, hex_string):
         slide_windows = 2
         start = 0
@@ -1595,18 +1549,6 @@ class Grex:
                     else:
                         return (False, hex_list[ix])
                 sum_buf += hex_int
-
-    def make_checksum(self, packet, length):
-        hex_list = self.hex_to_list(packet)
-        sum_buf = 0
-        chksum_hex = 0
-        for ix, x in enumerate(hex_list):
-            if ix > 0:
-                hex_int = int(x, 16)
-                sum_buf += hex_int
-                if ix == length - 1:
-                    chksum_hex = f"{(sum_buf % 256):02x}"
-        return str(chksum_hex)
 
 
 def setup_logging(log_path):

@@ -1,6 +1,8 @@
 import json
+from typing import ClassVar
 
 from .base import BaseDevice
+from .grex_packet_builder import GrexPacketBuilder
 
 HA_PREFIX = "homeassistant"
 HA_FAN = "fan"
@@ -8,12 +10,28 @@ HA_SENSOR = "sensor"
 
 
 class GrexVentilator(BaseDevice):
-    def __init__(self, name_prefix: str, sw_version: str):
+    MODE_HEX_MAP: ClassVar[dict[str, str]] = {
+        "off": "0000",
+        "auto": "0100",
+        "manual": "0200",
+        "sleep": "0300",
+    }
+    SPEED_HEX_MAP: ClassVar[dict[str, str]] = {
+        "off": "0000",
+        "low": "0101",
+        "medium": "0202",
+        "high": "0303",
+    }
+
+    def __init__(
+        self, name_prefix: str, sw_version: str, packet_builder: GrexPacketBuilder | None = None
+    ):
         super().__init__(
             name_prefix=name_prefix,
             room="grex",
             sub_device="fan",
             sw_version=sw_version,
+            packet_builder=packet_builder,
         )
 
     @property
@@ -81,3 +99,33 @@ class GrexVentilator(BaseDevice):
         mode_topic = f"{HA_PREFIX}/{HA_SENSOR}/{self.room}_{self.sub_device}_mode/config"
         speed_topic = f"{HA_PREFIX}/{HA_SENSOR}/{self.room}_{self.sub_device}_speed/config"
         return [fan_topic, cmd_t, spd_cmd_t, mode_topic, speed_topic]
+
+    def build_control_packet(self, mode: str, speed: str) -> str:
+        """환기장치 본체를 제어하기 위한 패킷을 생성합니다."""
+        if not self.packet_builder:
+            return ""
+
+        mode_hex = self.MODE_HEX_MAP.get(mode)
+        speed_hex = self.SPEED_HEX_MAP.get(speed)
+
+        if not mode_hex or not speed_hex:
+            return ""
+
+        if ((mode == "auto" or mode == "sleep") and (speed == "off")) or (
+            speed in ["low", "medium", "high"]
+        ):
+            postfix_hex = "0001"
+        else:
+            postfix_hex = "0000"
+
+        return self.packet_builder.build_control(mode_hex, speed_hex, postfix_hex)
+
+    def build_response_packet(self, speed: int) -> str:
+        """월패드 컨트롤러에 상태를 동기화하기 위한 응답 패킷을 생성합니다."""
+        if not self.packet_builder:
+            return ""
+
+        speed_hex = f"0{speed}0{speed}" if speed > 0 else "0000"
+        postfix_hex = "0000000100" if speed > 0 else "0000000000"
+
+        return self.packet_builder.build_response(speed_hex, postfix_hex)

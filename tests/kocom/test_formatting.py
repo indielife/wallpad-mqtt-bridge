@@ -47,11 +47,8 @@ def test_grex_hex_to_list_format():
 
 
 def test_grex_checksum_format():
-    """Grex의 체크섬 생성 및 검증 포맷 로직을 검증합니다."""
+    """Grex의 체크섬 검증 포맷 로직을 검증합니다."""
     grex = Grex.__new__(Grex)
-    # 첫 바이트(d0)는 제외. 08 + 01 = 9 -> "09"
-    packet_without_checksum = "d00801"
-    assert grex.make_checksum(packet_without_checksum, 3) == "09"
 
     packet_with_checksum = "d0080109"
     is_valid, chk_sum_hex = grex.validate_checksum(packet_with_checksum, 3)
