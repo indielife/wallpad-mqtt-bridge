@@ -20,6 +20,7 @@ from kocom.devices import (
     Thermostat,
 )
 from kocom.rs485 import CONF_MQTT
+from kocom.state import DeviceState, KocomStateManager, RoomState, SubDeviceState
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ class Kocom:
         self.scan_packet_buf = []
 
         self.tick = time.time()
-        self.wp_list = {}
+        self.wp_list = KocomStateManager()
         self.wp_light = self.client._wp_light
         self.wp_fan = self.client._wp_fan
         self.wp_plug = self.client._wp_plug
@@ -120,74 +121,37 @@ class Kocom:
                 )
             )
         for d_name in KOCOM_DEVICE.values():
+            device_state = DeviceState()
+            self.wp_list[d_name] = device_state
+
             if d_name == DEVICE_ELEVATOR or d_name == DEVICE_GAS:
-                self.wp_list[d_name] = {}
-                self.wp_list[d_name][DEVICE_WALLPAD] = {"scan": {"tick": 0, "count": 0, "last": 0}}
-                self.wp_list[d_name][DEVICE_WALLPAD][d_name] = {
-                    "state": "off",
-                    "set": "off",
-                    "last": "state",
-                    "count": 0,
-                }
+                room_state = RoomState()
+                room_state[d_name] = SubDeviceState(state="off", set_val="off")
+                device_state[DEVICE_WALLPAD] = room_state
             elif d_name == DEVICE_FAN:
-                self.wp_list[d_name] = {}
-                self.wp_list[d_name][DEVICE_WALLPAD] = {"scan": {"tick": 0, "count": 0, "last": 0}}
-                self.wp_list[d_name][DEVICE_WALLPAD]["mode"] = {
-                    "state": "off",
-                    "set": "off",
-                    "last": "state",
-                    "count": 0,
-                }
-                self.wp_list[d_name][DEVICE_WALLPAD]["speed"] = {
-                    "state": "off",
-                    "set": "off",
-                    "last": "state",
-                    "count": 0,
-                }
+                room_state = RoomState()
+                room_state["mode"] = SubDeviceState(state="off", set_val="off")
+                room_state["speed"] = SubDeviceState(state="off", set_val="off")
+                device_state[DEVICE_WALLPAD] = room_state
             elif d_name == DEVICE_THERMOSTAT:
-                self.wp_list[d_name] = {}
                 for r_name in self.config.kocom_room_thermostat.values():
-                    self.wp_list[d_name][r_name] = {"scan": {"tick": 0, "count": 0, "last": 0}}
-                    self.wp_list[d_name][r_name]["mode"] = {
-                        "state": "off",
-                        "set": "off",
-                        "last": "state",
-                        "count": 0,
-                    }
-                    self.wp_list[d_name][r_name]["current_temp"] = {
-                        "state": 0,
-                        "set": 0,
-                        "last": "state",
-                        "count": 0,
-                    }
-                    self.wp_list[d_name][r_name]["target_temp"] = {
-                        "state": self.config.init_temp,
-                        "set": self.config.init_temp,
-                        "last": "state",
-                        "count": 0,
-                    }
+                    room_state = RoomState()
+                    room_state["mode"] = SubDeviceState(state="off", set_val="off")
+                    room_state["current_temp"] = SubDeviceState(state=0, set_val=0)
+                    room_state["target_temp"] = SubDeviceState(
+                        state=self.config.init_temp, set_val=self.config.init_temp
+                    )
+                    device_state[r_name] = room_state
             elif d_name == DEVICE_LIGHT or d_name == DEVICE_PLUG:
-                self.wp_list[d_name] = {}
                 for r_name in self.config.kocom_room.values():
-                    self.wp_list[d_name][r_name] = {"scan": {"tick": 0, "count": 0, "last": 0}}
+                    room_state = RoomState()
                     if d_name == DEVICE_LIGHT:
-                        # for i in range(0, KOCOM_LIGHT_SIZE[r_name] + 1):
                         for i in range(0, self.config.kocom_light_size.get(r_name, 0) + 1):
-                            self.wp_list[d_name][r_name][d_name + str(i)] = {
-                                "state": "off",
-                                "set": "off",
-                                "last": "state",
-                                "count": 0,
-                            }
-                    if d_name == DEVICE_PLUG:
-                        # for i in range(0, KOCOM_PLUG_SIZE[r_name] + 1):
+                            room_state[d_name + str(i)] = SubDeviceState(state="off", set_val="off")
+                    elif d_name == DEVICE_PLUG:
                         for i in range(0, self.config.kocom_plug_size.get(r_name, 0) + 1):
-                            self.wp_list[d_name][r_name][d_name + str(i)] = {
-                                "state": "on",
-                                "set": "on",
-                                "last": "state",
-                                "count": 0,
-                            }
+                            room_state[d_name + str(i)] = SubDeviceState(state="on", set_val="on")
+                    device_state[r_name] = room_state
 
         if self.wp_light:
             for room, r_value in self.wp_list.get(DEVICE_LIGHT, {}).items():
@@ -710,9 +674,8 @@ class Kocom:
     def set_list(self, device, room, value, name="kocom"):
         try:
             logger.info("[From %s]%s/%s/state = %s", name, device, room, value)
-            if (
-                "scan" in self.wp_list[device][room]
-                and type(self.wp_list[device][room]["scan"]) == dict
+            if "scan" in self.wp_list[device][room] and isinstance(
+                self.wp_list[device][room]["scan"], dict
             ):
                 self.wp_list[device][room]["scan"]["tick"] = time.time()
                 self.wp_list[device][room]["scan"]["count"] = 0
@@ -807,7 +770,7 @@ class Kocom:
                 if now - self.tick > KOCOM_INTERVAL / 1000:
                     try:
                         for device, d_list in self.wp_list.items():
-                            if type(d_list) == dict and (
+                            if isinstance(d_list, dict) and (
                                 (device == DEVICE_ELEVATOR and self.wp_elevator)
                                 or (device == DEVICE_FAN and self.wp_fan)
                                 or (device == DEVICE_GAS and self.wp_gas)
@@ -816,10 +779,10 @@ class Kocom:
                                 or (device == DEVICE_THERMOSTAT and self.wp_thermostat)
                             ):
                                 for room, r_list in d_list.items():
-                                    if type(r_list) == dict:
+                                    if isinstance(r_list, dict):
                                         if (
                                             "scan" in r_list
-                                            and type(r_list["scan"]) == dict
+                                            and isinstance(r_list["scan"], dict)
                                             and now - r_list["scan"]["tick"]
                                             > self.config.scan_interval
                                             and (
