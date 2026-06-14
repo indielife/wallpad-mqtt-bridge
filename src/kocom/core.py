@@ -303,21 +303,7 @@ class Kocom:
                 logger.info("[From HA]HomeAssistant Remove")
                 return
             elif _topic[3] == "scan":
-                for d_name in KOCOM_DEVICE.values():
-                    if d_name == DEVICE_ELEVATOR or d_name == DEVICE_GAS or d_name == DEVICE_FAN:
-                        self.wp_list[d_name][DEVICE_WALLPAD] = {
-                            "scan": {"tick": 0, "count": 0, "last": 0}
-                        }
-                    elif d_name == DEVICE_THERMOSTAT:
-                        for r_name in self.config.kocom_room_thermostat.values():
-                            self.wp_list[d_name][r_name] = {
-                                "scan": {"tick": 0, "count": 0, "last": 0}
-                            }
-                    elif d_name == DEVICE_LIGHT or d_name == DEVICE_PLUG:
-                        for r_name in self.config.kocom_room.values():
-                            self.wp_list[d_name][r_name] = {
-                                "scan": {"tick": 0, "count": 0, "last": 0}
-                            }
+                self.wp_list.reset_scan_states()
                 logger.info("[From HA]HomeAssistant Scan")
                 return
             elif _topic[3] == "packet":
@@ -670,8 +656,8 @@ class Kocom:
                 now = time.time()
                 if now - self.tick > KOCOM_INTERVAL / 1000:
                     try:
-                        for device, d_list in self.wp_list.items():
-                            if isinstance(d_list, dict) and (
+                        for device, d_state in self.wp_list.items():
+                            if not (
                                 (device == DEVICE_ELEVATOR and self.wp_elevator)
                                 or (device == DEVICE_FAN and self.wp_fan)
                                 or (device == DEVICE_GAS and self.wp_gas)
@@ -679,59 +665,41 @@ class Kocom:
                                 or (device == DEVICE_PLUG and self.wp_plug)
                                 or (device == DEVICE_THERMOSTAT and self.wp_thermostat)
                             ):
-                                for room, r_list in d_list.items():
-                                    if isinstance(r_list, dict):
-                                        if (
-                                            "scan" in r_list
-                                            and isinstance(r_list["scan"], dict)
-                                            and now - r_list["scan"]["tick"]
-                                            > self.config.scan_interval
-                                            and (
-                                                (device == DEVICE_FAN and self.wp_fan)
-                                                or (device == DEVICE_GAS and self.wp_gas)
-                                                or (device == DEVICE_LIGHT and self.wp_light)
-                                                or (device == DEVICE_PLUG and self.wp_plug)
-                                                or (
-                                                    device == DEVICE_THERMOSTAT
-                                                    and self.wp_thermostat
-                                                )
-                                            )
-                                        ):
-                                            if now - r_list["scan"]["last"] > 2:
-                                                r_list["scan"]["count"] += 1
-                                                r_list["scan"]["last"] = now
-                                                self.set_serial(device, room, "", "", cmd="조회")
-                                                time.sleep(self.config.packey_delay)
-                                            if r_list["scan"]["count"] > 4:
-                                                r_list["scan"]["tick"] = now
-                                                r_list["scan"]["count"] = 0
-                                                r_list["scan"]["last"] = 0
-                                        else:
-                                            for sub_d, sub_v in r_list.items():
-                                                if sub_d != "scan":
-                                                    if sub_v["count"] > 4:
-                                                        sub_v["count"] = 0
-                                                        sub_v["last"] = "state"
-                                                    elif sub_v["last"] == "set":
-                                                        sub_v["last"] = now
-                                                        if device == DEVICE_GAS:
-                                                            sub_v["last"] += 5
-                                                        elif device == DEVICE_ELEVATOR:
-                                                            sub_v["last"] = "state"
-                                                        self.set_serial(
-                                                            device,
-                                                            room,
-                                                            sub_d,
-                                                            sub_v["set"],
-                                                        )
-                                                    elif (
-                                                        type(sub_v["last"]) == float
-                                                        and now - sub_v["last"] > 1
-                                                    ):
-                                                        sub_v["last"] = "set"
-                                                        sub_v["count"] += 1
-                    except:
-                        logger.debug("[Scan]Error")
+                                continue
+
+                            for room, r_state in d_state.items():
+                                scan = r_state.scan
+                                # 엘리베이터를 제외한 기기들의 주기적 스캔/조회 처리
+                                if (
+                                    now - scan.tick > self.config.scan_interval
+                                    and device != DEVICE_ELEVATOR
+                                ):
+                                    if now - scan.last > 2:
+                                        scan.count += 1
+                                        scan.last = now
+                                        self.set_serial(device, room, "", "", cmd="조회")
+                                        time.sleep(self.config.packey_delay)
+                                    if scan.count > 4:
+                                        scan.tick = now
+                                        scan.count = 0
+                                        scan.last = 0
+                                else:
+                                    for sub_d, sub_v in r_state.sub_devices.items():
+                                        if sub_v.count > 4:
+                                            sub_v.count = 0
+                                            sub_v.last = "state"
+                                        elif sub_v.last == "set":
+                                            sub_v.last = now
+                                            if device == DEVICE_GAS:
+                                                sub_v.last += 5
+                                            elif device == DEVICE_ELEVATOR:
+                                                sub_v.last = "state"
+                                            self.set_serial(device, room, sub_d, sub_v.set)
+                                        elif isinstance(sub_v.last, float) and now - sub_v.last > 1:
+                                            sub_v.last = "set"
+                                            sub_v.count += 1
+                    except Exception as e:
+                        logger.debug("[Scan]Error: %r", e)
             if not self.connected:
                 logger.debug("[ERROR] 서버 연결이 끊어져 scan_list Thread를 종료합니다.")
                 break
