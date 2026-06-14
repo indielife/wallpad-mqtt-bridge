@@ -120,12 +120,12 @@ class GrexVentilator(BaseDevice):
 
         return self.packet_builder.build_control(mode_hex, speed_hex, postfix_hex)
 
-    def build_response_packet(self, speed: int) -> str:
+    def build_response_packet(self, mode: str, speed: str) -> str:
         """월패드 컨트롤러에 상태를 동기화하기 위한 응답 패킷을 생성합니다."""
         if not self.packet_builder:
             return ""
 
-        speed_hex = f"0{speed}0{speed}" if speed > 0 else "0000"
-        postfix_hex = "0000000100" if speed > 0 else "0000000000"
+        speed_hex = self.SPEED_HEX_MAP.get(speed, "0000")
+        postfix_hex = "0000000100" if speed in ["low", "medium", "high"] else "0000000000"
 
         return self.packet_builder.build_response(speed_hex, postfix_hex)

@@ -1407,7 +1407,7 @@ class Grex:
         p_prefix = packet[:4]
 
         if p_prefix == "d00a":
-            m_packet = self.device.build_response_packet(0)
+            m_packet = self.device.build_response_packet("off", "off")
             m_chksum = self.validate_checksum(m_packet, 11)
             if m_chksum[0]:
                 self.contoller["serial"].write(bytearray.fromhex(m_packet))
@@ -1461,7 +1461,7 @@ class Grex:
                 self.send_to_homeassistant(HA_SENSOR, send_to_ha_sensor)
 
             if self.grex_cont["mode"] == "off":
-                response_packet = self.device.build_response_packet(0)
+                response_packet = self.device.build_response_packet("off", "off")
                 if self.mqtt_cont["mode"] == "off" or (
                     self.mqtt_cont["mode"] == "on" and self.mqtt_cont["speed"] == "off"
                 ):
@@ -1474,14 +1474,9 @@ class Grex:
                 control_packet = self.device.build_control_packet(
                     self.grex_cont["mode"], self.grex_cont["speed"]
                 )
-                if self.grex_cont["speed"] == "low":
-                    response_packet = self.device.build_response_packet(1)
-                elif self.grex_cont["speed"] == "medium":
-                    response_packet = self.device.build_response_packet(2)
-                elif self.grex_cont["speed"] == "high":
-                    response_packet = self.device.build_response_packet(3)
-                elif self.grex_cont["speed"] == "off":
-                    response_packet = self.device.build_response_packet(0)
+                response_packet = self.device.build_response_packet(
+                    self.grex_cont["mode"], self.grex_cont["speed"]
+                )
 
             if response_packet != "":
                 self.contoller["serial"].write(bytearray.fromhex(response_packet))
