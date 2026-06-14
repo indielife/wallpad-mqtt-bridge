@@ -206,7 +206,7 @@ class RS485:
         return soc
 
 
-class Kocom(RS485):
+class Kocom:
     def __init__(self, config: AppConfig, client, name, device, packet_len):
         self.config = config
         self.client = client
