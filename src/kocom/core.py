@@ -150,10 +150,6 @@ KOCOM_ROOM_REV[DEVICE_WALLPAD] = "00"
 KOCOM_INTERVAL = 100
 VENTILATOR_INTERVAL = 150
 
-# GREX 그렉스 전열교환기 패킷 기본정보
-GREX_MODE = {"0100": "auto", "0200": "manual", "0300": "sleep", "0000": "off"}
-GREX_SPEED = {"0101": "low", "0202": "medium", "0303": "high", "0000": "off"}
-
 # CONFIG 파일 변수값
 CONF_FILE = "rs485.conf"
 CONF_LOGNAME = "RS485"
@@ -1234,6 +1230,10 @@ class Kocom(rs485):
 
 
 class Grex:
+    # GREX 전열교환기 패킷 기본정보
+    MODE = {"0100": "auto", "0200": "manual", "0300": "sleep", "0000": "off"}
+    SPEED = {"0101": "low", "0202": "medium", "0303": "high", "0000": "off"}
+
     def __init__(self, client, cont, vent):
         self._name = "grex"
         self.contoller = cont
@@ -1431,11 +1431,11 @@ class Grex:
             p_speed = packet[12:16]
 
             if (
-                self.grex_cont["mode"] != GREX_MODE[p_mode]
-                or self.grex_cont["speed"] != GREX_SPEED[p_speed]
+                self.grex_cont["mode"] != self.MODE[p_mode]
+                or self.grex_cont["speed"] != self.SPEED[p_speed]
             ):
-                self.grex_cont["mode"] = GREX_MODE[p_mode]
-                self.grex_cont["speed"] = GREX_SPEED[p_speed]
+                self.grex_cont["mode"] = self.MODE[p_mode]
+                self.grex_cont["speed"] = self.SPEED[p_speed]
                 logger.info(
                     "[From %s]mode:%s / speed:%s",
                     packet_name,
@@ -1499,8 +1499,8 @@ class Grex:
 
         elif p_prefix == "d18b":
             p_speed = packet[8:12]
-            if self.vent_cont["speed"] != GREX_SPEED[p_speed]:
-                self.vent_cont["speed"] = GREX_SPEED[p_speed]
+            if self.vent_cont["speed"] != self.SPEED[p_speed]:
+                self.vent_cont["speed"] = self.SPEED[p_speed]
                 logger.info("[From %s]speed:%s", packet_name, self.vent_cont["speed"])
 
                 send_to_ha_fan = {"mode": "off", "speed": "off"}
