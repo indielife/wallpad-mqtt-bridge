@@ -20,6 +20,7 @@ from kocom.devices import (
     Thermostat,
 )
 from kocom.rs485 import CONF_MQTT
+from kocom.state import DeviceState, KocomStateManager, RoomState, SubDeviceState
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ class Kocom:
         self.scan_packet_buf = []
 
         self.tick = time.time()
-        self.wp_list = {}
+        self.wp_list = KocomStateManager()
         self.wp_light = self.client._wp_light
         self.wp_fan = self.client._wp_fan
         self.wp_plug = self.client._wp_plug
@@ -120,74 +121,37 @@ class Kocom:
                 )
             )
         for d_name in KOCOM_DEVICE.values():
+            device_state = DeviceState()
+            self.wp_list[d_name] = device_state
+
             if d_name == DEVICE_ELEVATOR or d_name == DEVICE_GAS:
-                self.wp_list[d_name] = {}
-                self.wp_list[d_name][DEVICE_WALLPAD] = {"scan": {"tick": 0, "count": 0, "last": 0}}
-                self.wp_list[d_name][DEVICE_WALLPAD][d_name] = {
-                    "state": "off",
-                    "set": "off",
-                    "last": "state",
-                    "count": 0,
-                }
+                room_state = RoomState()
+                room_state[d_name] = SubDeviceState(state="off", set_val="off")
+                device_state[DEVICE_WALLPAD] = room_state
             elif d_name == DEVICE_FAN:
-                self.wp_list[d_name] = {}
-                self.wp_list[d_name][DEVICE_WALLPAD] = {"scan": {"tick": 0, "count": 0, "last": 0}}
-                self.wp_list[d_name][DEVICE_WALLPAD]["mode"] = {
-                    "state": "off",
-                    "set": "off",
-                    "last": "state",
-                    "count": 0,
-                }
-                self.wp_list[d_name][DEVICE_WALLPAD]["speed"] = {
-                    "state": "off",
-                    "set": "off",
-                    "last": "state",
-                    "count": 0,
-                }
+                room_state = RoomState()
+                room_state["mode"] = SubDeviceState(state="off", set_val="off")
+                room_state["speed"] = SubDeviceState(state="off", set_val="off")
+                device_state[DEVICE_WALLPAD] = room_state
             elif d_name == DEVICE_THERMOSTAT:
-                self.wp_list[d_name] = {}
                 for r_name in self.config.kocom_room_thermostat.values():
-                    self.wp_list[d_name][r_name] = {"scan": {"tick": 0, "count": 0, "last": 0}}
-                    self.wp_list[d_name][r_name]["mode"] = {
-                        "state": "off",
-                        "set": "off",
-                        "last": "state",
-                        "count": 0,
-                    }
-                    self.wp_list[d_name][r_name]["current_temp"] = {
-                        "state": 0,
-                        "set": 0,
-                        "last": "state",
-                        "count": 0,
-                    }
-                    self.wp_list[d_name][r_name]["target_temp"] = {
-                        "state": self.config.init_temp,
-                        "set": self.config.init_temp,
-                        "last": "state",
-                        "count": 0,
-                    }
+                    room_state = RoomState()
+                    room_state["mode"] = SubDeviceState(state="off", set_val="off")
+                    room_state["current_temp"] = SubDeviceState(state=0, set_val=0)
+                    room_state["target_temp"] = SubDeviceState(
+                        state=self.config.init_temp, set_val=self.config.init_temp
+                    )
+                    device_state[r_name] = room_state
             elif d_name == DEVICE_LIGHT or d_name == DEVICE_PLUG:
-                self.wp_list[d_name] = {}
                 for r_name in self.config.kocom_room.values():
-                    self.wp_list[d_name][r_name] = {"scan": {"tick": 0, "count": 0, "last": 0}}
+                    room_state = RoomState()
                     if d_name == DEVICE_LIGHT:
-                        # for i in range(0, KOCOM_LIGHT_SIZE[r_name] + 1):
                         for i in range(0, self.config.kocom_light_size.get(r_name, 0) + 1):
-                            self.wp_list[d_name][r_name][d_name + str(i)] = {
-                                "state": "off",
-                                "set": "off",
-                                "last": "state",
-                                "count": 0,
-                            }
-                    if d_name == DEVICE_PLUG:
-                        # for i in range(0, KOCOM_PLUG_SIZE[r_name] + 1):
+                            room_state[d_name + str(i)] = SubDeviceState(state="off", set_val="off")
+                    elif d_name == DEVICE_PLUG:
                         for i in range(0, self.config.kocom_plug_size.get(r_name, 0) + 1):
-                            self.wp_list[d_name][r_name][d_name + str(i)] = {
-                                "state": "on",
-                                "set": "on",
-                                "last": "state",
-                                "count": 0,
-                            }
+                            room_state[d_name + str(i)] = SubDeviceState(state="on", set_val="on")
+                    device_state[r_name] = room_state
 
         if self.wp_light:
             for room, r_value in self.wp_list.get(DEVICE_LIGHT, {}).items():
@@ -339,21 +303,7 @@ class Kocom:
                 logger.info("[From HA]HomeAssistant Remove")
                 return
             elif _topic[3] == "scan":
-                for d_name in KOCOM_DEVICE.values():
-                    if d_name == DEVICE_ELEVATOR or d_name == DEVICE_GAS or d_name == DEVICE_FAN:
-                        self.wp_list[d_name][DEVICE_WALLPAD] = {
-                            "scan": {"tick": 0, "count": 0, "last": 0}
-                        }
-                    elif d_name == DEVICE_THERMOSTAT:
-                        for r_name in self.config.kocom_room_thermostat.values():
-                            self.wp_list[d_name][r_name] = {
-                                "scan": {"tick": 0, "count": 0, "last": 0}
-                            }
-                    elif d_name == DEVICE_LIGHT or d_name == DEVICE_PLUG:
-                        for r_name in self.config.kocom_room.values():
-                            self.wp_list[d_name][r_name] = {
-                                "scan": {"tick": 0, "count": 0, "last": 0}
-                            }
+                self.wp_list.reset_scan_states()
                 logger.info("[From HA]HomeAssistant Scan")
                 return
             elif _topic[3] == "packet":
@@ -402,19 +352,19 @@ class Kocom:
                         payload = "off"
                         logger.info("[From HA]Error GAS Cannot Set to ON")
                     else:
-                        self.wp_list[device][room][sub_device][command] = payload
-                        self.wp_list[device][room][sub_device]["last"] = command
+                        self.wp_list.update_from_ha(
+                            device, room, sub_device, command, payload, self.default_speed
+                        )
                 elif device == DEVICE_ELEVATOR:
+                    self.wp_list.update_from_ha(
+                        device, room, sub_device, command, payload, self.default_speed
+                    )
                     if payload == "off":
-                        self.wp_list[device][room][sub_device][command] = payload
-                        self.wp_list[device][room][sub_device]["last"] = "state"
                         self.send_to_homeassistant(device, DEVICE_WALLPAD, payload)
-                    else:
-                        self.wp_list[device][room][sub_device][command] = payload
-                        self.wp_list[device][room][sub_device]["last"] = command
                 else:
-                    self.wp_list[device][room][sub_device][command] = payload
-                    self.wp_list[device][room][sub_device]["last"] = command
+                    self.wp_list.update_from_ha(
+                        device, room, sub_device, command, payload, self.default_speed
+                    )
                 logger.info("[From HA]%s/%s/%s/%s = %s", device, room, sub_device, command, payload)
             except Exception as e:
                 logger.error("[From HA] %s = %s, %r", topic, payload, e)
@@ -422,25 +372,19 @@ class Kocom:
             device = DEVICE_THERMOSTAT
             room = topic[2]
             try:
-                if command != "mode":
-                    self.wp_list[device][room]["target_temp"]["set"] = int(float(payload))
-                    self.wp_list[device][room]["mode"]["set"] = "heat"
-                    self.wp_list[device][room]["target_temp"]["last"] = "set"
-                    self.wp_list[device][room]["mode"]["last"] = "set"
-                elif command == "mode":
-                    self.wp_list[device][room]["mode"]["set"] = payload
-                    self.wp_list[device][room]["mode"]["last"] = "set"
+                self.wp_list.update_from_ha(device, room, "", command, payload, self.default_speed)
+                room_state = self.wp_list[device][room]
                 ha_payload = {
-                    "mode": self.wp_list[device][room]["mode"]["set"],
-                    "target_temp": self.wp_list[device][room]["target_temp"]["set"],
-                    "current_temp": self.wp_list[device][room]["current_temp"]["state"],
+                    "mode": room_state["mode"]["set"],
+                    "target_temp": room_state["target_temp"]["set"],
+                    "current_temp": room_state["current_temp"]["state"],
                 }
                 logger.info(
                     "[From HA]%s/%s/set = [mode=%s, target_temp=%s]",
                     device,
                     room,
-                    self.wp_list[device][room]["mode"]["set"],
-                    self.wp_list[device][room]["target_temp"]["set"],
+                    room_state["mode"]["set"],
+                    room_state["target_temp"]["set"],
                 )
                 self.send_to_homeassistant(device, room, ha_payload)
             except Exception as e:
@@ -449,26 +393,18 @@ class Kocom:
             device = DEVICE_FAN
             room = topic[2]
             try:
-                if command != "mode":
-                    self.wp_list[device][room]["speed"]["set"] = payload
-                    self.wp_list[device][room]["mode"]["set"] = "on"
-                elif command == "mode":
-                    self.wp_list[device][room]["speed"]["set"] = (
-                        self.default_speed if payload == "on" else "off"
-                    )
-                    self.wp_list[device][room]["mode"]["set"] = payload
-                self.wp_list[device][room]["speed"]["last"] = "set"
-                self.wp_list[device][room]["mode"]["last"] = "set"
+                self.wp_list.update_from_ha(device, room, "", command, payload, self.default_speed)
+                room_state = self.wp_list[device][room]
                 ha_payload = {
-                    "mode": self.wp_list[device][room]["mode"]["set"],
-                    "speed": self.wp_list[device][room]["speed"]["set"],
+                    "mode": room_state["mode"]["set"],
+                    "speed": room_state["speed"]["set"],
                 }
                 logger.info(
                     "[From HA]%s/%s/set = [mode=%s, speed=%s]",
                     device,
                     room,
-                    self.wp_list[device][room]["mode"]["set"],
-                    self.wp_list[device][room]["speed"]["set"],
+                    room_state["mode"]["set"],
+                    room_state["speed"]["set"],
                 )
                 self.send_to_homeassistant(device, room, ha_payload)
             except Exception as e:
@@ -710,95 +646,9 @@ class Kocom:
     def set_list(self, device, room, value, name="kocom"):
         try:
             logger.info("[From %s]%s/%s/state = %s", name, device, room, value)
-            if (
-                "scan" in self.wp_list[device][room]
-                and type(self.wp_list[device][room]["scan"]) == dict
-            ):
-                self.wp_list[device][room]["scan"]["tick"] = time.time()
-                self.wp_list[device][room]["scan"]["count"] = 0
-                self.wp_list[device][room]["scan"]["last"] = 0
-            if device == DEVICE_GAS or device == DEVICE_ELEVATOR:
-                self.wp_list[device][room][device]["state"] = value
-                self.wp_list[device][room][device]["last"] = "state"
-                self.wp_list[device][room][device]["count"] = 0
-            elif device == DEVICE_FAN:
-                for sub, v in value.items():
-                    try:
-                        if sub == "mode":
-                            self.wp_list[device][room][sub]["state"] = v
-                            self.wp_list[device][room]["speed"]["state"] = (
-                                "off" if v == "off" else self.default_speed
-                            )
-                        else:
-                            self.wp_list[device][room][sub]["state"] = v
-                            self.wp_list[device][room]["mode"]["state"] = (
-                                "off" if v == "off" else "on"
-                            )
-                        if (
-                            self.wp_list[device][room][sub]["last"] == "set"
-                            or type(self.wp_list[device][room][sub]["last"]) == float
-                        ) and self.wp_list[device][room][sub]["set"] == self.wp_list[device][room][
-                            sub
-                        ]["state"]:
-                            self.wp_list[device][room][sub]["last"] = "state"
-                            self.wp_list[device][room][sub]["count"] = 0
-                    except:
-                        logger.info(
-                            "[From %s]Error SetListDevice %s/%s/%s/state = %s",
-                            name,
-                            device,
-                            room,
-                            sub,
-                            v,
-                        )
-            elif device == DEVICE_LIGHT or device == DEVICE_PLUG:
-                for sub, v in value.items():
-                    try:
-                        self.wp_list[device][room][sub]["state"] = v
-                        if (
-                            self.wp_list[device][room][sub]["last"] == "set"
-                            or type(self.wp_list[device][room][sub]["last"]) == float
-                        ) and self.wp_list[device][room][sub]["set"] == self.wp_list[device][room][
-                            sub
-                        ]["state"]:
-                            self.wp_list[device][room][sub]["last"] = "state"
-                            self.wp_list[device][room][sub]["count"] = 0
-                    except:
-                        logger.info(
-                            "[From %s]Error SetListDevice %s/%s/%s/state = %s",
-                            name,
-                            device,
-                            room,
-                            sub,
-                            v,
-                        )
-            elif device == DEVICE_THERMOSTAT:
-                for sub, v in value.items():
-                    try:
-                        if sub == "mode":
-                            self.wp_list[device][room][sub]["state"] = v
-                        else:
-                            self.wp_list[device][room][sub]["state"] = int(float(v))
-                            self.wp_list[device][room]["mode"]["state"] = "heat"
-                        if (
-                            self.wp_list[device][room][sub]["last"] == "set"
-                            or type(self.wp_list[device][room][sub]["last"]) == float
-                        ) and self.wp_list[device][room][sub]["set"] == self.wp_list[device][room][
-                            sub
-                        ]["state"]:
-                            self.wp_list[device][room][sub]["last"] = "state"
-                            self.wp_list[device][room][sub]["count"] = 0
-                    except:
-                        logger.info(
-                            "[From %s]Error SetListDevice %s/%s/%s/state = %s",
-                            name,
-                            device,
-                            room,
-                            sub,
-                            v,
-                        )
-        except:
-            logger.info("[From %s]Error SetList %s/%s = %s", name, device, room, value)
+            self.wp_list.update_from_rs485(device, room, value, self.default_speed)
+        except Exception as e:
+            logger.info("[From %s]Error SetList %s/%s = %s (%r)", name, device, room, value, e)
 
     def scan_list(self):
         while True:
@@ -806,8 +656,8 @@ class Kocom:
                 now = time.time()
                 if now - self.tick > KOCOM_INTERVAL / 1000:
                     try:
-                        for device, d_list in self.wp_list.items():
-                            if type(d_list) == dict and (
+                        for device, d_state in self.wp_list.items():
+                            if not (
                                 (device == DEVICE_ELEVATOR and self.wp_elevator)
                                 or (device == DEVICE_FAN and self.wp_fan)
                                 or (device == DEVICE_GAS and self.wp_gas)
@@ -815,59 +665,41 @@ class Kocom:
                                 or (device == DEVICE_PLUG and self.wp_plug)
                                 or (device == DEVICE_THERMOSTAT and self.wp_thermostat)
                             ):
-                                for room, r_list in d_list.items():
-                                    if type(r_list) == dict:
-                                        if (
-                                            "scan" in r_list
-                                            and type(r_list["scan"]) == dict
-                                            and now - r_list["scan"]["tick"]
-                                            > self.config.scan_interval
-                                            and (
-                                                (device == DEVICE_FAN and self.wp_fan)
-                                                or (device == DEVICE_GAS and self.wp_gas)
-                                                or (device == DEVICE_LIGHT and self.wp_light)
-                                                or (device == DEVICE_PLUG and self.wp_plug)
-                                                or (
-                                                    device == DEVICE_THERMOSTAT
-                                                    and self.wp_thermostat
-                                                )
-                                            )
-                                        ):
-                                            if now - r_list["scan"]["last"] > 2:
-                                                r_list["scan"]["count"] += 1
-                                                r_list["scan"]["last"] = now
-                                                self.set_serial(device, room, "", "", cmd="조회")
-                                                time.sleep(self.config.packey_delay)
-                                            if r_list["scan"]["count"] > 4:
-                                                r_list["scan"]["tick"] = now
-                                                r_list["scan"]["count"] = 0
-                                                r_list["scan"]["last"] = 0
-                                        else:
-                                            for sub_d, sub_v in r_list.items():
-                                                if sub_d != "scan":
-                                                    if sub_v["count"] > 4:
-                                                        sub_v["count"] = 0
-                                                        sub_v["last"] = "state"
-                                                    elif sub_v["last"] == "set":
-                                                        sub_v["last"] = now
-                                                        if device == DEVICE_GAS:
-                                                            sub_v["last"] += 5
-                                                        elif device == DEVICE_ELEVATOR:
-                                                            sub_v["last"] = "state"
-                                                        self.set_serial(
-                                                            device,
-                                                            room,
-                                                            sub_d,
-                                                            sub_v["set"],
-                                                        )
-                                                    elif (
-                                                        type(sub_v["last"]) == float
-                                                        and now - sub_v["last"] > 1
-                                                    ):
-                                                        sub_v["last"] = "set"
-                                                        sub_v["count"] += 1
-                    except:
-                        logger.debug("[Scan]Error")
+                                continue
+
+                            for room, r_state in d_state.items():
+                                scan = r_state.scan
+                                # 엘리베이터를 제외한 기기들의 주기적 스캔/조회 처리
+                                if (
+                                    now - scan.tick > self.config.scan_interval
+                                    and device != DEVICE_ELEVATOR
+                                ):
+                                    if now - scan.last > 2:
+                                        scan.count += 1
+                                        scan.last = now
+                                        self.set_serial(device, room, "", "", cmd="조회")
+                                        time.sleep(self.config.packey_delay)
+                                    if scan.count > 4:
+                                        scan.tick = now
+                                        scan.count = 0
+                                        scan.last = 0
+                                else:
+                                    for sub_d, sub_v in r_state.sub_devices.items():
+                                        if sub_v.count > 4:
+                                            sub_v.count = 0
+                                            sub_v.last = "state"
+                                        elif sub_v.last == "set":
+                                            sub_v.last = now
+                                            if device == DEVICE_GAS:
+                                                sub_v.last += 5
+                                            elif device == DEVICE_ELEVATOR:
+                                                sub_v.last = "state"
+                                            self.set_serial(device, room, sub_d, sub_v.set)
+                                        elif isinstance(sub_v.last, float) and now - sub_v.last > 1:
+                                            sub_v.last = "set"
+                                            sub_v.count += 1
+                    except Exception as e:
+                        logger.debug("[Scan]Error: %r", e)
             if not self.connected:
                 logger.debug("[ERROR] 서버 연결이 끊어져 scan_list Thread를 종료합니다.")
                 break
