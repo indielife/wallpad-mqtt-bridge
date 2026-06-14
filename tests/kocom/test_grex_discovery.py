@@ -26,6 +26,7 @@ def grex_factory():
 
         def _create():
             mock_config = MagicMock()
+            mock_config.sw_version = "RS485 Compilation 0.1.0"
             mock_client = MagicMock()
             mock_client._mqtt = {
                 "server": "test",

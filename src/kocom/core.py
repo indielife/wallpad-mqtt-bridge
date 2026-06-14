@@ -11,7 +11,6 @@ import paho.mqtt.client as mqtt
 import serial
 
 from kocom.config import AppConfig
-from kocom.constants import SW_VERSION
 from kocom.devices import (
     Elevator,
     Fan,
@@ -31,13 +30,9 @@ logger = logging.getLogger(__name__)
 ################################################## K O C O M ##################################################
 # 본인에 맞게 수정하세요
 
-# 보일러 초기값
-INIT_TEMP = 22
-# 환풍기 초기속도 ['low', 'medium', 'high']
-DEFAULT_SPEED = "medium"
 # 조명 / 플러그 갯수
-KOCOM_LIGHT_SIZE = {"livingroom": 3, "bedroom": 2, "room1": 2, "room2": 2, "kitchen": 3}
-KOCOM_PLUG_SIZE = {"livingroom": 2, "bedroom": 2, "room1": 2, "room2": 2, "kitchen": 2}
+# KOCOM_LIGHT_SIZE = {"livingroom": 3, "bedroom": 2, "room1": 2, "room2": 2, "kitchen": 3}
+# KOCOM_PLUG_SIZE = {"livingroom": 2, "bedroom": 2, "room1": 2, "room2": 2, "kitchen": 2}
 
 # 방 패킷에 따른 방이름 (패킷1: 방이름1, 패킷2: 방이름2 . . .)
 # 월패드에서 장치를 작동하며 방이름(livingroom, bedroom, room1, room2, kitchen 등)을 확인하여 본인의 상황에 맞게 바꾸세요
@@ -56,26 +51,20 @@ KOCOM_ROOM_THERMOSTAT = {
     "03": "room2",
 }
 
-# TIME 변수(초)
-SCAN_INTERVAL = 300  # 월패드의 상태값 조회 간격
-SCANNING_INTERVAL = 0.8  # 상태값 조회 시 패킷전송 간격
 ####################### Start Here by Zooil ###########################
 option_file = "/data/options.json"
 if os.path.isfile(option_file):
     with open(option_file) as json_file:
         json_data = json.load(json_file)
-        INIT_TEMP = json_data["Advanced"]["INIT_TEMP"]
-        SCAN_INTERVAL = json_data["Advanced"]["SCAN_INTERVAL"]
-        SCANNING_INTERVAL = json_data["Advanced"]["SCANNING_INTERVAL"]
-        DEFAULT_SPEED = json_data["Advanced"]["DEFAULT_SPEED"]
-        KOCOM_LIGHT_SIZE = {}
-        dict_data = json_data["KOCOM_LIGHT_SIZE"]
-        for i in dict_data:
-            KOCOM_LIGHT_SIZE[i["name"]] = i["number"]
-        KOCOM_PLUG_SIZE = {}
-        dict_data = json_data["KOCOM_PLUG_SIZE"]
-        for i in dict_data:
-            KOCOM_PLUG_SIZE[i["name"]] = i["number"]
+
+        # KOCOM_LIGHT_SIZE = {}
+        # dict_data = json_data["KOCOM_LIGHT_SIZE"]
+        # for i in dict_data:
+        #     KOCOM_LIGHT_SIZE[i["name"]] = i["number"]
+        # KOCOM_PLUG_SIZE = {}
+        # dict_data = json_data["KOCOM_PLUG_SIZE"]
+        # for i in dict_data:
+        #     KOCOM_PLUG_SIZE[i["name"]] = i["number"]
         num = 0
         KOCOM_ROOM = {}
         list_data = json_data["KOCOM_ROOM"]
@@ -290,11 +279,12 @@ class RS485:
 
 class Kocom(RS485):
     def __init__(self, config: AppConfig, client, name, device, packet_len):
+        self.config = config
         self.client = client
         self._name = name
         self.connected = True
 
-        self.default_speed = DEFAULT_SPEED
+        self.default_speed = config.default_speed
         if self.default_speed not in ["low", "medium", "high"]:
             logger.info(
                 "[Error] Kocom DEFAULT_SPEED 설정오류로 medium 으로 설정. %s -> medium",
@@ -322,7 +312,7 @@ class Kocom(RS485):
             self.devices.append(
                 Elevator(
                     name_prefix=self._name,
-                    sw_version=SW_VERSION,
+                    sw_version=self.config.sw_version,
                     packet_builder=self.packet_builder,
                 )
             )
@@ -330,7 +320,7 @@ class Kocom(RS485):
             self.devices.append(
                 Gas(
                     name_prefix=self._name,
-                    sw_version=SW_VERSION,
+                    sw_version=self.config.sw_version,
                     packet_builder=self.packet_builder,
                 )
             )
@@ -338,7 +328,7 @@ class Kocom(RS485):
             self.devices.append(
                 Fan(
                     name_prefix=self._name,
-                    sw_version=SW_VERSION,
+                    sw_version=self.config.sw_version,
                     packet_builder=self.packet_builder,
                 )
             )
@@ -384,8 +374,8 @@ class Kocom(RS485):
                         "count": 0,
                     }
                     self.wp_list[d_name][r_name]["target_temp"] = {
-                        "state": INIT_TEMP,
-                        "set": INIT_TEMP,
+                        "state": self.config.init_temp,
+                        "set": self.config.init_temp,
                         "last": "state",
                         "count": 0,
                     }
@@ -394,7 +384,8 @@ class Kocom(RS485):
                 for r_name in KOCOM_ROOM.values():
                     self.wp_list[d_name][r_name] = {"scan": {"tick": 0, "count": 0, "last": 0}}
                     if d_name == DEVICE_LIGHT:
-                        for i in range(0, KOCOM_LIGHT_SIZE[r_name] + 1):
+                        # for i in range(0, KOCOM_LIGHT_SIZE[r_name] + 1):
+                        for i in range(0, self.config.kocom_light_size.get(r_name, 0) + 1):
                             self.wp_list[d_name][r_name][d_name + str(i)] = {
                                 "state": "off",
                                 "set": "off",
@@ -402,7 +393,8 @@ class Kocom(RS485):
                                 "count": 0,
                             }
                     if d_name == DEVICE_PLUG:
-                        for i in range(0, KOCOM_PLUG_SIZE[r_name] + 1):
+                        # for i in range(0, KOCOM_PLUG_SIZE[r_name] + 1):
+                        for i in range(0, self.config.kocom_plug_size.get(r_name, 0) + 1):
                             self.wp_list[d_name][r_name][d_name + str(i)] = {
                                 "state": "on",
                                 "set": "on",
@@ -420,7 +412,7 @@ class Kocom(RS485):
                                     name_prefix=self._name,
                                     room=room,
                                     sub_device=sub_device,
-                                    sw_version=SW_VERSION,
+                                    sw_version=self.config.sw_version,
                                     packet_builder=self.packet_builder,
                                 )
                             )
@@ -435,7 +427,7 @@ class Kocom(RS485):
                                     name_prefix=self._name,
                                     room=room,
                                     sub_device=sub_device,
-                                    sw_version=SW_VERSION,
+                                    sw_version=self.config.sw_version,
                                     packet_builder=self.packet_builder,
                                 )
                             )
@@ -446,7 +438,7 @@ class Kocom(RS485):
                     Thermostat(
                         name_prefix=self._name,
                         room=room,
-                        sw_version=SW_VERSION,
+                        sw_version=self.config.sw_version,
                         packet_builder=self.packet_builder,
                     )
                 )
@@ -1041,7 +1033,8 @@ class Kocom(RS485):
                                         if (
                                             "scan" in r_list
                                             and type(r_list["scan"]) == dict
-                                            and now - r_list["scan"]["tick"] > SCAN_INTERVAL
+                                            and now - r_list["scan"]["tick"]
+                                            > self.config.scan_interval
                                             and (
                                                 (device == DEVICE_FAN and self.wp_fan)
                                                 or (device == DEVICE_GAS and self.wp_gas)
@@ -1057,7 +1050,7 @@ class Kocom(RS485):
                                                 r_list["scan"]["count"] += 1
                                                 r_list["scan"]["last"] = now
                                                 self.set_serial(device, room, "", "", cmd="조회")
-                                                time.sleep(SCANNING_INTERVAL)
+                                                time.sleep(self.config.packey_delay)
                                             if r_list["scan"]["count"] > 4:
                                                 r_list["scan"]["tick"] = now
                                                 r_list["scan"]["count"] = 0
@@ -1198,9 +1191,12 @@ class Kocom(RS485):
         switch = {}
         on_count = 0
         to_i = (
-            KOCOM_LIGHT_SIZE.get(room) + 1
+            # KOCOM_LIGHT_SIZE.get(room) + 1
+            # if device == DEVICE_LIGHT
+            # else KOCOM_PLUG_SIZE.get(room) + 1
+            self.config.kocom_light_size.get(room, 0) + 1
             if device == DEVICE_LIGHT
-            else KOCOM_PLUG_SIZE.get(room) + 1
+            else self.config.kocom_plug_size.get(room, 0) + 1
         )
         for i in range(1, to_i):
             switch[device + str(i)] = "off" if value[i * 2 - 2 : i * 2] == "00" else "on"
@@ -1216,13 +1212,13 @@ class Kocom(RS485):
         thermo["current_temp"] = int(value[8:10], 16)
         if heat_mode == "heat" and away_mode == "on":
             thermo["mode"] = "fan_only"
-            thermo["target_temp"] = INIT_TEMP if not init_temp else int(init_temp)
+            thermo["target_temp"] = self.config.init_temp if not init_temp else int(init_temp)
         elif heat_mode == "heat" and away_mode == "off":
             thermo["mode"] = "heat"
             thermo["target_temp"] = int(value[4:6], 16)
         elif heat_mode == "off":
             thermo["mode"] = "off"
-            thermo["target_temp"] = INIT_TEMP if not init_temp else int(init_temp)
+            thermo["target_temp"] = self.config.init_temp if not init_temp else int(init_temp)
         return thermo
 
 
@@ -1232,6 +1228,7 @@ class Grex:
     SPEED = {"0101": "low", "0202": "medium", "0303": "high", "0000": "off"}
 
     def __init__(self, config: AppConfig, client, cont, vent):
+        self.config = config
         self._name = "grex"
         self.contoller = cont
         self.ventilator = vent
@@ -1239,7 +1236,7 @@ class Grex:
         self.vent_cont = {"mode": "off", "speed": "off"}
         self.mqtt_cont = {"mode": "off", "speed": "off"}
 
-        self.default_speed = DEFAULT_SPEED
+        self.default_speed = config.default_speed
         if self.default_speed not in ["low", "medium", "high"]:
             logger.info(
                 "[Error] Grex DEFAULT_SPEED 설정오류로 medium 으로 설정. %s -> medium",
@@ -1251,7 +1248,7 @@ class Grex:
         self.packet_builder = GrexPacketBuilder()
         self.device = GrexVentilator(
             name_prefix=self._name,
-            sw_version=SW_VERSION,
+            sw_version=self.config.sw_version,
             packet_builder=self.packet_builder,
         )
 

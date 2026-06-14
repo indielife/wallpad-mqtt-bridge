@@ -1,6 +1,6 @@
 {
   "name": "Kocom Wallpad (Local Custom)",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "slug": "kocom_wallpad",
   "description": "Kocom Wallpad Controller for Homeassistant",
   "arch": [
@@ -51,7 +51,7 @@
     "Advanced": {
       "INIT_TEMP": 22,
       "SCAN_INTERVAL": 300,
-      "SCANNING_INTERVAL": 0.8,
+      "PACKET_DELAY": 0.8,
       "DEFAULT_SPEED" : "medium",
       "LOGLEVEL" : "info"
     },
@@ -151,7 +151,7 @@
     "Advanced": {
       "INIT_TEMP": "int(10,30)",
       "SCAN_INTERVAL": "int(100,1000)",
-      "SCANNING_INTERVAL": "float",
+      "PACKET_DELAY": "float",
       "DEFAULT_SPEED" : "str",
       "LOGLEVEL" : "str"
     },

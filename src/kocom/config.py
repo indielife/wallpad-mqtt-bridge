@@ -3,6 +3,8 @@ import json
 import logging
 import os
 
+from kocom.constants import SW_VERSION
+
 logger = logging.getLogger(__name__)
 
 
@@ -15,10 +17,11 @@ class AppConfig:
     def __init__(self, options_path="/data/options.json"):
         self.options_path = options_path
 
+        self.sw_version = SW_VERSION
         # options.json 설정 변수
         self.init_temp = 22
         self.scan_interval = 300
-        self.scanning_interval = 0.8
+        self.packey_delay = 0.8
         self.default_speed = "medium"
         self.log_level = "info"
 
@@ -54,7 +57,7 @@ class AppConfig:
         adv = json_data.get("Advanced", {})
         self.init_temp = adv.get("INIT_TEMP", self.init_temp)
         self.scan_interval = adv.get("SCAN_INTERVAL", self.scan_interval)
-        self.scanning_interval = adv.get("SCANNING_INTERVAL", self.scanning_interval)
+        self.packey_delay = adv.get("PACKET_DELAY", self.packey_delay)
         self.default_speed = adv.get("DEFAULT_SPEED", self.default_speed)
         self.log_level = adv.get("LOGLEVEL", self.log_level).lower()
 

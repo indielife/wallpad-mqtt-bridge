@@ -26,7 +26,7 @@ SAMPLE_OPTIONS_JSON = {
     "Advanced": {
         "INIT_TEMP": 24,
         "SCAN_INTERVAL": 500,
-        "SCANNING_INTERVAL": 1.5,
+        "PACKET_DELAY": 1.5,
         "DEFAULT_SPEED": "high",
         "LOGLEVEL": "debug",
     },
@@ -48,7 +48,7 @@ def test_app_config_load(mock_isfile):
         # 1. Advanced 설정 검증
         assert config.init_temp == 24
         assert config.scan_interval == 500
-        assert config.scanning_interval == 1.5
+        assert config.packey_delay == 1.5
         assert config.default_speed == "high"
         assert config.log_level == "debug"
 

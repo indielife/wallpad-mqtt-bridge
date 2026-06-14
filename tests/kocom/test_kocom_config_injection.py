@@ -15,7 +15,15 @@ from kocom.core import (
 
 @pytest.fixture
 def mock_config():
-    return MagicMock()
+    config = MagicMock()
+    config.init_temp = 22
+    config.scan_interval = 300
+    config.packet_delay = 0.8
+    config.default_speed = "medium"
+    config.kocom_light_size = {"livingroom": 3}
+    config.kocom_plug_size = {"livingroom": 2}
+    config.sw_version = "0.1.0"
+    return config
 
 
 @pytest.fixture

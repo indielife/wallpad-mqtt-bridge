@@ -26,14 +26,20 @@ def kocom_factory():
         patch("kocom.core.Kocom.scan_list"),
         patch("kocom.core.KOCOM_ROOM", {"00": "room1"}),
         patch("kocom.core.KOCOM_ROOM_THERMOSTAT", {"00": "room1"}),
-        patch("kocom.core.KOCOM_LIGHT_SIZE", {"room1": 1}),
-        patch("kocom.core.KOCOM_PLUG_SIZE", {"room1": 1}),
     ):
         mock_mqtt_instance = MagicMock()
         mock_connect_mqtt.return_value = mock_mqtt_instance
 
         def _create(active_device: str):
             mock_config = MagicMock()
+            mock_config.init_temp = 22
+            mock_config.scan_interval = 300
+            mock_config.packet_delay = 0.8
+            mock_config.default_speed = "medium"
+            mock_config.kocom_light_size = {"room1": 1}
+            mock_config.kocom_plug_size = {"room1": 1}
+            mock_config.sw_version = "RS485 Compilation 0.1.0"
+
             mock_client = MagicMock()
             mock_client._wp_light = active_device == "light"
             mock_client._wp_fan = active_device == "fan"
