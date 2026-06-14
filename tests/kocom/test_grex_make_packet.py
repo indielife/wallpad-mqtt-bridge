@@ -1,7 +1,7 @@
 import pytest
 
+from kocom.core import Grex
 from kocom.devices import GrexPacketBuilder, GrexVentilator
-from kocom.main import Grex
 
 
 @pytest.fixture

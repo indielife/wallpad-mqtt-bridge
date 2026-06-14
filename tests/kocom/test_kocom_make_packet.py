@@ -1,7 +1,6 @@
 import pytest
 
-from kocom.devices import Elevator, Fan, Gas, KocomPacketBuilder, Light, Thermostat
-from kocom.main import (
+from kocom.core import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
     DEVICE_GAS,
@@ -9,6 +8,7 @@ from kocom.main import (
     DEVICE_THERMOSTAT,
     Kocom,
 )
+from kocom.devices import Elevator, Fan, Gas, KocomPacketBuilder, Light, Thermostat
 
 
 @pytest.fixture
