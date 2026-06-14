@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from kocom.main import (
+from kocom.core import (
     DEVICE_FAN,
     HA_FAN,
     HA_PREFIX,
@@ -18,13 +18,15 @@ def grex_factory():
     Grex 인스턴스와 mock_mqtt_instance를 생성해주는 팩토리 픽스처.
     """
     with (
-        patch("kocom.main.Grex.connect_mqtt") as mock_connect_mqtt,
-        patch("kocom.main.threading.Thread"),
+        patch("kocom.core.Grex.connect_mqtt") as mock_connect_mqtt,
+        patch("kocom.core.threading.Thread"),
     ):
         mock_mqtt_instance = MagicMock()
         mock_connect_mqtt.return_value = mock_mqtt_instance
 
         def _create():
+            mock_config = MagicMock()
+            mock_config.sw_version = "RS485 Compilation 0.1.0"
             mock_client = MagicMock()
             mock_client._mqtt = {
                 "server": "test",
@@ -36,7 +38,7 @@ def grex_factory():
             mock_cont = {"serial": MagicMock(), "name": "grex_controller", "length": 11}
             mock_vent = {"serial": MagicMock(), "name": "grex_ventilator", "length": 12}
 
-            grex = Grex(mock_client, mock_cont, mock_vent)
+            grex = Grex(mock_config, mock_client, mock_cont, mock_vent)
             return grex, mock_mqtt_instance
 
         yield _create

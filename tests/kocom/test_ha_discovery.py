@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from kocom.main import (
+from kocom.core import (
     DEVICE_ELEVATOR,
     DEVICE_GAS,
     HA_PREFIX,
@@ -14,20 +14,34 @@ from kocom.main import (
 
 
 @pytest.fixture
-def kocom_factory():
+def mock_config():
+    """테스트용 가짜 AppConfig 설정을 생성하는 픽스처"""
+    config = MagicMock()
+    config.init_temp = 22
+    config.scan_interval = 300
+    config.packet_delay = 0.8
+    config.default_speed = "medium"
+    config.kocom_light_size = {"room1": 1}
+    config.kocom_plug_size = {"room1": 1}
+    config.sw_version = "RS485 Compilation 0.1.0"
+    config.kocom_room = {"00": "room1"}
+    config.kocom_room_thermostat = {"00": "room1"}
+    config.kocom_room_rev = {"room1": "00", "wallpad": "00"}
+    config.kocom_room_thermostat_rev = {"room1": "00"}
+    return config
+
+
+@pytest.fixture
+def kocom_factory(mock_config):
     """
     Kocom 인스턴스와 mock_mqtt_instance를 생성해주는 팩토리 픽스처.
     활성화할 디바이스 이름을 전달받아 해당 디바이스만 True로 설정합니다.
     """
     with (
-        patch("kocom.main.Kocom.connect_mqtt") as mock_connect_mqtt,
-        patch("kocom.main.threading.Thread"),
-        patch("kocom.main.Kocom.get_serial"),
-        patch("kocom.main.Kocom.scan_list"),
-        patch("kocom.main.KOCOM_ROOM", {"00": "room1"}),
-        patch("kocom.main.KOCOM_ROOM_THERMOSTAT", {"00": "room1"}),
-        patch("kocom.main.KOCOM_LIGHT_SIZE", {"room1": 1}),
-        patch("kocom.main.KOCOM_PLUG_SIZE", {"room1": 1}),
+        patch("kocom.core.Kocom.connect_mqtt") as mock_connect_mqtt,
+        patch("kocom.core.threading.Thread"),
+        patch("kocom.core.Kocom.get_serial"),
+        patch("kocom.core.Kocom.scan_list"),
     ):
         mock_mqtt_instance = MagicMock()
         mock_connect_mqtt.return_value = mock_mqtt_instance
@@ -49,7 +63,9 @@ def kocom_factory():
             mock_client._type = "serial"
             mock_client._connect = {"test_device": MagicMock()}
 
-            wallpad = Kocom(mock_client, name="test_name", device="test_device", packet_len=10)
+            wallpad = Kocom(
+                mock_config, mock_client, name="test_name", device="test_device", packet_len=10
+            )
 
             return wallpad, mock_mqtt_instance
 

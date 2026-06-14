@@ -54,7 +54,7 @@ Wallpad:
 Advanced:
   INIT_TEMP: 22
   SCAN_INTERVAL: 300
-  SCANNING_INTERVAL: 0.8
+  PACKET_DELAY: 0.8
   DEFAULT_SPEED: medium
   LOGLEVEL: info
 KOCOM_LIGHT_SIZE:
@@ -148,7 +148,7 @@ elevator: true               // 엘레베이터
 ```yaml
 INIT_TEMP: 22           // 보일러 초기값
 SCAN_INTERVAL: 300      // 월패드의 상태값 조회 간격
-SCANNING_INTERVAL: 0.5  // 상태값 조회 시 패킷전송 간격
+PACKET_DELAY: 0.5  // 상태값 조회 시 패킷전송 간격
 DEFAULT_SPEED: medium   //환풍기 초기속도 low, medium, high
 LOGLEVEL: info , debug, info, warn 중에 하나
 ```
