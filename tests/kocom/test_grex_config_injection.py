@@ -6,6 +6,11 @@ from kocom.core import DEFAULT_SPEED, Grex
 
 
 @pytest.fixture
+def mock_config():
+    return MagicMock()
+
+
+@pytest.fixture
 def mock_rs485():
     """기존 RS485 객체의 역할을 흉내내는 모킹 객체입니다."""
     mock = MagicMock()
@@ -13,7 +18,7 @@ def mock_rs485():
     return mock
 
 
-def test_grex_initial_state(mock_rs485):
+def test_grex_initial_state(mock_config, mock_rs485):
     """Grex 객체 생성 시 내부 상태와 통신 의존성들이 정상적으로 초기화되는지 검증합니다."""
     mock_cont = {"serial": MagicMock(), "name": "grex_controller", "length": 11}
     mock_vent = {"serial": MagicMock(), "name": "grex_ventilator", "length": 12}
@@ -22,7 +27,7 @@ def test_grex_initial_state(mock_rs485):
         patch("kocom.core.Grex.connect_mqtt"),
         patch("kocom.core.threading.Thread"),
     ):
-        grex = Grex(mock_rs485, mock_cont, mock_vent)
+        grex = Grex(mock_config, mock_rs485, mock_cont, mock_vent)
 
         # 1. 글로벌 변수 의존성 세팅 검증
         assert grex.default_speed == "medium"
@@ -37,7 +42,7 @@ def test_grex_initial_state(mock_rs485):
         assert grex.device.name_prefix == "grex"
 
 
-def test_grex_default_speed_fallback(mock_rs485):
+def test_grex_default_speed_fallback(mock_config, mock_rs485):
     """Grex 객체 생성 시 잘못된 default_speed가 주어지면 medium으로 강제 설정되는지 검증합니다."""
     mock_cont = {"serial": MagicMock(), "name": "grex_controller", "length": 11}
     mock_vent = {"serial": MagicMock(), "name": "grex_ventilator", "length": 12}
@@ -47,7 +52,7 @@ def test_grex_default_speed_fallback(mock_rs485):
         patch("kocom.core.Grex.connect_mqtt"),
         patch("kocom.core.threading.Thread"),
     ):
-        grex = Grex(mock_rs485, mock_cont, mock_vent)
+        grex = Grex(mock_config, mock_rs485, mock_cont, mock_vent)
 
         # 이상한 값이 들어와도 medium으로 방어되는지 검증
         assert grex.default_speed == "medium"

@@ -70,7 +70,7 @@ if __name__ == "__main__":
                     try:
                         logger.info("[CONFIG] %s 초기화", name)
                         if name == "kocom":
-                            kocom = Kocom(rs485, name, device, 42)
+                            kocom = Kocom(config, rs485, name, device, 42)
                         elif name == "grex_ventilator":
                             grex_ventilator = {
                                 "serial": rs485._connect[device],
@@ -88,11 +88,11 @@ if __name__ == "__main__":
         elif rs485._type == "socket":
             name = rs485._device
             if name == "kocom":
-                kocom = Kocom(rs485, name, name, 42)
+                kocom = Kocom(config, rs485, name, name, 42)
                 if not kocom.connection_lost():
                     logger.info("[ERROR] 서버 연결이 끊어져 1분 후 재접속을 시도합니다.")
                     time.sleep(60)
                     connection_flag = False
 
         if grex_ventilator is not False and grex_controller is not False:
-            _grex = Grex(rs485, grex_controller, grex_ventilator)
+            _grex = Grex(config, rs485, grex_controller, grex_ventilator)

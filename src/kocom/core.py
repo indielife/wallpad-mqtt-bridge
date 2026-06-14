@@ -10,6 +10,7 @@ import time
 import paho.mqtt.client as mqtt
 import serial
 
+from kocom.config import AppConfig
 from kocom.constants import SW_VERSION
 from kocom.devices import (
     Elevator,
@@ -288,7 +289,7 @@ class RS485:
 
 
 class Kocom(RS485):
-    def __init__(self, client, name, device, packet_len):
+    def __init__(self, config: AppConfig, client, name, device, packet_len):
         self.client = client
         self._name = name
         self.connected = True
@@ -1230,7 +1231,7 @@ class Grex:
     MODE = {"0100": "auto", "0200": "manual", "0300": "sleep", "0000": "off"}
     SPEED = {"0101": "low", "0202": "medium", "0303": "high", "0000": "off"}
 
-    def __init__(self, client, cont, vent):
+    def __init__(self, config: AppConfig, client, cont, vent):
         self._name = "grex"
         self.contoller = cont
         self.ventilator = vent

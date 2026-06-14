@@ -33,6 +33,7 @@ def kocom_factory():
         mock_connect_mqtt.return_value = mock_mqtt_instance
 
         def _create(active_device: str):
+            mock_config = MagicMock()
             mock_client = MagicMock()
             mock_client._wp_light = active_device == "light"
             mock_client._wp_fan = active_device == "fan"
@@ -49,7 +50,9 @@ def kocom_factory():
             mock_client._type = "serial"
             mock_client._connect = {"test_device": MagicMock()}
 
-            wallpad = Kocom(mock_client, name="test_name", device="test_device", packet_len=10)
+            wallpad = Kocom(
+                mock_config, mock_client, name="test_name", device="test_device", packet_len=10
+            )
 
             return wallpad, mock_mqtt_instance
 
