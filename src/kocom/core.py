@@ -660,94 +660,9 @@ class Kocom:
     def set_list(self, device, room, value, name="kocom"):
         try:
             logger.info("[From %s]%s/%s/state = %s", name, device, room, value)
-            if "scan" in self.wp_list[device][room] and isinstance(
-                self.wp_list[device][room]["scan"], dict
-            ):
-                self.wp_list[device][room]["scan"]["tick"] = time.time()
-                self.wp_list[device][room]["scan"]["count"] = 0
-                self.wp_list[device][room]["scan"]["last"] = 0
-            if device == DEVICE_GAS or device == DEVICE_ELEVATOR:
-                self.wp_list[device][room][device]["state"] = value
-                self.wp_list[device][room][device]["last"] = "state"
-                self.wp_list[device][room][device]["count"] = 0
-            elif device == DEVICE_FAN:
-                for sub, v in value.items():
-                    try:
-                        if sub == "mode":
-                            self.wp_list[device][room][sub]["state"] = v
-                            self.wp_list[device][room]["speed"]["state"] = (
-                                "off" if v == "off" else self.default_speed
-                            )
-                        else:
-                            self.wp_list[device][room][sub]["state"] = v
-                            self.wp_list[device][room]["mode"]["state"] = (
-                                "off" if v == "off" else "on"
-                            )
-                        if (
-                            self.wp_list[device][room][sub]["last"] == "set"
-                            or type(self.wp_list[device][room][sub]["last"]) == float
-                        ) and self.wp_list[device][room][sub]["set"] == self.wp_list[device][room][
-                            sub
-                        ]["state"]:
-                            self.wp_list[device][room][sub]["last"] = "state"
-                            self.wp_list[device][room][sub]["count"] = 0
-                    except:
-                        logger.info(
-                            "[From %s]Error SetListDevice %s/%s/%s/state = %s",
-                            name,
-                            device,
-                            room,
-                            sub,
-                            v,
-                        )
-            elif device == DEVICE_LIGHT or device == DEVICE_PLUG:
-                for sub, v in value.items():
-                    try:
-                        self.wp_list[device][room][sub]["state"] = v
-                        if (
-                            self.wp_list[device][room][sub]["last"] == "set"
-                            or type(self.wp_list[device][room][sub]["last"]) == float
-                        ) and self.wp_list[device][room][sub]["set"] == self.wp_list[device][room][
-                            sub
-                        ]["state"]:
-                            self.wp_list[device][room][sub]["last"] = "state"
-                            self.wp_list[device][room][sub]["count"] = 0
-                    except:
-                        logger.info(
-                            "[From %s]Error SetListDevice %s/%s/%s/state = %s",
-                            name,
-                            device,
-                            room,
-                            sub,
-                            v,
-                        )
-            elif device == DEVICE_THERMOSTAT:
-                for sub, v in value.items():
-                    try:
-                        if sub == "mode":
-                            self.wp_list[device][room][sub]["state"] = v
-                        else:
-                            self.wp_list[device][room][sub]["state"] = int(float(v))
-                            self.wp_list[device][room]["mode"]["state"] = "heat"
-                        if (
-                            self.wp_list[device][room][sub]["last"] == "set"
-                            or type(self.wp_list[device][room][sub]["last"]) == float
-                        ) and self.wp_list[device][room][sub]["set"] == self.wp_list[device][room][
-                            sub
-                        ]["state"]:
-                            self.wp_list[device][room][sub]["last"] = "state"
-                            self.wp_list[device][room][sub]["count"] = 0
-                    except:
-                        logger.info(
-                            "[From %s]Error SetListDevice %s/%s/%s/state = %s",
-                            name,
-                            device,
-                            room,
-                            sub,
-                            v,
-                        )
-        except:
-            logger.info("[From %s]Error SetList %s/%s = %s", name, device, room, value)
+            self.wp_list.update_from_rs485(device, room, value, self.default_speed)
+        except Exception as e:
+            logger.info("[From %s]Error SetList %s/%s = %s (%r)", name, device, room, value, e)
 
     def scan_list(self):
         while True:
