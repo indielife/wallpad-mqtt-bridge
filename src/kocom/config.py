@@ -3,7 +3,7 @@ import json
 import logging
 import os
 
-from kocom.constants import SW_VERSION
+from kocom.version import SW_VERSION
 
 logger = logging.getLogger(__name__)
 
