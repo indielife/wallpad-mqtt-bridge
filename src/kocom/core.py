@@ -26,9 +26,6 @@ from kocom.devices import (
 logger = logging.getLogger(__name__)
 
 
-# Log Level
-CONF_LOGLEVEL = "info"  # debug, info, warn
-
 ###############################################################################################################
 ################################################## K O C O M ##################################################
 # 본인에 맞게 수정하세요
@@ -70,7 +67,6 @@ if os.path.isfile(option_file):
         SCAN_INTERVAL = json_data["Advanced"]["SCAN_INTERVAL"]
         SCANNING_INTERVAL = json_data["Advanced"]["SCANNING_INTERVAL"]
         DEFAULT_SPEED = json_data["Advanced"]["DEFAULT_SPEED"]
-        CONF_LOGLEVEL = json_data["Advanced"]["LOGLEVEL"]
         KOCOM_LIGHT_SIZE = {}
         dict_data = json_data["KOCOM_LIGHT_SIZE"]
         for i in dict_data:
