@@ -6,7 +6,8 @@ import sys
 import time
 
 from kocom.config import AppConfig
-from kocom.core import RS485, Grex, Kocom
+from kocom.core import Grex, Kocom
+from kocom.rs485 import RS485
 
 logger = logging.getLogger(__name__)
 
