@@ -6,7 +6,7 @@ import sys
 import time
 
 from kocom.constants import SW_VERSION
-from kocom.core import CONF_LOGLEVEL, Grex, Kocom, rs485
+from kocom.core import CONF_LOGLEVEL, RS485, Grex, Kocom
 
 logger = logging.getLogger(__name__)
 
@@ -56,42 +56,42 @@ if __name__ == "__main__":
     if CONF_LOGLEVEL == "warn":
         logger.setLevel(logging.WARN)
 
-    _grex_ventilator = False
-    _grex_controller = False
+    grex_ventilator = False
+    grex_controller = False
     connection_flag = False
     while not connection_flag:
-        r = rs485()
+        rs485 = RS485()
         connection_flag = True
-        if r._type == "serial":
-            for device in r._device:
-                if r._connect[device].isOpen():
-                    _name = r._device[device]
+        if rs485._type == "serial":
+            for device in rs485._device:
+                if rs485._connect[device].isOpen():
+                    name = rs485._device[device]
                     try:
-                        logger.info("[CONFIG] %s 초기화", _name)
-                        if _name == "kocom":
-                            kocom = Kocom(r, _name, device, 42)
-                        elif _name == "grex_ventilator":
-                            _grex_ventilator = {
-                                "serial": r._connect[device],
-                                "name": _name,
+                        logger.info("[CONFIG] %s 초기화", name)
+                        if name == "kocom":
+                            kocom = Kocom(rs485, name, device, 42)
+                        elif name == "grex_ventilator":
+                            grex_ventilator = {
+                                "serial": rs485._connect[device],
+                                "name": name,
                                 "length": 12,
                             }
-                        elif _name == "grex_controller":
-                            _grex_controller = {
-                                "serial": r._connect[device],
-                                "name": _name,
+                        elif name == "grex_controller":
+                            grex_controller = {
+                                "serial": rs485._connect[device],
+                                "name": name,
                                 "length": 11,
                             }
                     except Exception as e:
-                        logger.info("[CONFIG] %s 초기화 실패: %r", _name, e)
-        elif r._type == "socket":
-            _name = r._device
-            if _name == "kocom":
-                kocom = Kocom(r, _name, _name, 42)
+                        logger.info("[CONFIG] %s 초기화 실패: %r", name, e)
+        elif rs485._type == "socket":
+            name = rs485._device
+            if name == "kocom":
+                kocom = Kocom(rs485, name, name, 42)
                 if not kocom.connection_lost():
                     logger.info("[ERROR] 서버 연결이 끊어져 1분 후 재접속을 시도합니다.")
                     time.sleep(60)
                     connection_flag = False
 
-        if _grex_ventilator is not False and _grex_controller is not False:
-            _grex = Grex(r, _grex_controller, _grex_ventilator)
+        if grex_ventilator is not False and grex_controller is not False:
+            _grex = Grex(rs485, grex_controller, grex_ventilator)

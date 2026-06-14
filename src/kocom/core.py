@@ -162,7 +162,7 @@ CONF_SOCKET = "Socket"
 CONF_SOCKET_DEVICE = "SocketDevice"
 
 
-class rs485:
+class RS485:
     def __init__(self):
         self._mqtt_config = {}
         self._port_url = {}
@@ -291,7 +291,7 @@ class rs485:
         return soc
 
 
-class Kocom(rs485):
+class Kocom(RS485):
     def __init__(self, client, name, device, packet_len):
         self.client = client
         self._name = name
