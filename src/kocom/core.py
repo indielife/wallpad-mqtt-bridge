@@ -26,74 +26,6 @@ from kocom.devices import (
 logger = logging.getLogger(__name__)
 
 
-###############################################################################################################
-################################################## K O C O M ##################################################
-# 본인에 맞게 수정하세요
-
-# 조명 / 플러그 갯수
-# KOCOM_LIGHT_SIZE = {"livingroom": 3, "bedroom": 2, "room1": 2, "room2": 2, "kitchen": 3}
-# KOCOM_PLUG_SIZE = {"livingroom": 2, "bedroom": 2, "room1": 2, "room2": 2, "kitchen": 2}
-
-# 방 패킷에 따른 방이름 (패킷1: 방이름1, 패킷2: 방이름2 . . .)
-# 월패드에서 장치를 작동하며 방이름(livingroom, bedroom, room1, room2, kitchen 등)을 확인하여 본인의 상황에 맞게 바꾸세요
-# 조명/콘센트와 난방의 방패킷이 달라서 두개로 나뉘어있습니다.
-KOCOM_ROOM = {
-    "00": "livingroom",
-    "01": "bedroom",
-    "02": "room2",
-    "03": "room1",
-    "04": "kitchen",
-}
-KOCOM_ROOM_THERMOSTAT = {
-    "00": "livingroom",
-    "01": "bedroom",
-    "02": "room1",
-    "03": "room2",
-}
-
-####################### Start Here by Zooil ###########################
-option_file = "/data/options.json"
-if os.path.isfile(option_file):
-    with open(option_file) as json_file:
-        json_data = json.load(json_file)
-
-        # KOCOM_LIGHT_SIZE = {}
-        # dict_data = json_data["KOCOM_LIGHT_SIZE"]
-        # for i in dict_data:
-        #     KOCOM_LIGHT_SIZE[i["name"]] = i["number"]
-        # KOCOM_PLUG_SIZE = {}
-        # dict_data = json_data["KOCOM_PLUG_SIZE"]
-        # for i in dict_data:
-        #     KOCOM_PLUG_SIZE[i["name"]] = i["number"]
-        num = 0
-        KOCOM_ROOM = {}
-        list_data = json_data["KOCOM_ROOM"]
-        for i in list_data:
-            if num < 10:
-                num_key = "0%d" % (num)
-            else:
-                num_key = "%d" % (num)
-            KOCOM_ROOM[num_key] = i
-            num += 1
-        num = 0
-        KOCOM_ROOM_THERMOSTAT = {}
-        list_data = json_data["KOCOM_ROOM_THERMOSTAT"]
-        for i in list_data:
-            if num < 10:
-                num_key = "0%d" % (num)
-            else:
-                num_key = "%d" % (num)
-            KOCOM_ROOM_THERMOSTAT[num_key] = i
-            num += 1
-####################### End Here by Zooil ###########################
-###############################################################################################################
-
-###############################################################################################################
-################################################# 수 정 금 지 ##################################################
-################################################# 수 정 금 지 ##################################################
-################################################# 수 정 금 지 ##################################################
-###############################################################################################################
-
 # HA MQTT Discovery
 HA_PREFIX = "homeassistant"
 HA_SWITCH = "switch"
@@ -125,12 +57,9 @@ KOCOM_COMMAND = {"3a": "조회", "00": "상태", "01": "on", "02": "off"}
 KOCOM_TYPE = {"30b": "send", "30d": "ack"}
 KOCOM_FAN_SPEED = {"4": "low", "8": "medium", "c": "high", "0": "off"}
 KOCOM_DEVICE_REV = {v: k for k, v in KOCOM_DEVICE.items()}
-KOCOM_ROOM_REV = {v: k for k, v in KOCOM_ROOM.items()}
-KOCOM_ROOM_THERMOSTAT_REV = {v: k for k, v in KOCOM_ROOM_THERMOSTAT.items()}
 KOCOM_COMMAND_REV = {v: k for k, v in KOCOM_COMMAND.items()}
 KOCOM_TYPE_REV = {v: k for k, v in KOCOM_TYPE.items()}
 KOCOM_FAN_SPEED_REV = {v: k for k, v in KOCOM_FAN_SPEED.items()}
-KOCOM_ROOM_REV[DEVICE_WALLPAD] = "00"
 
 # KOCOM TIME 변수
 KOCOM_INTERVAL = 100
@@ -359,7 +288,7 @@ class Kocom(RS485):
                 }
             elif d_name == DEVICE_THERMOSTAT:
                 self.wp_list[d_name] = {}
-                for r_name in KOCOM_ROOM_THERMOSTAT.values():
+                for r_name in self.config.kocom_room_thermostat.values():
                     self.wp_list[d_name][r_name] = {"scan": {"tick": 0, "count": 0, "last": 0}}
                     self.wp_list[d_name][r_name]["mode"] = {
                         "state": "off",
@@ -381,7 +310,7 @@ class Kocom(RS485):
                     }
             elif d_name == DEVICE_LIGHT or d_name == DEVICE_PLUG:
                 self.wp_list[d_name] = {}
-                for r_name in KOCOM_ROOM.values():
+                for r_name in self.config.kocom_room.values():
                     self.wp_list[d_name][r_name] = {"scan": {"tick": 0, "count": 0, "last": 0}}
                     if d_name == DEVICE_LIGHT:
                         # for i in range(0, KOCOM_LIGHT_SIZE[r_name] + 1):
@@ -558,12 +487,12 @@ class Kocom(RS485):
                             "scan": {"tick": 0, "count": 0, "last": 0}
                         }
                     elif d_name == DEVICE_THERMOSTAT:
-                        for r_name in KOCOM_ROOM_THERMOSTAT.values():
+                        for r_name in self.config.kocom_room_thermostat.values():
                             self.wp_list[d_name][r_name] = {
                                 "scan": {"tick": 0, "count": 0, "last": 0}
                             }
                     elif d_name == DEVICE_LIGHT or d_name == DEVICE_PLUG:
-                        for r_name in KOCOM_ROOM.values():
+                        for r_name in self.config.kocom_room.values():
                             self.wp_list[d_name][r_name] = {
                                 "scan": {"tick": 0, "count": 0, "last": 0}
                             }
@@ -840,15 +769,15 @@ class Kocom(RS485):
             v["command"] = KOCOM_COMMAND.get(p["command"])
             v["src_device"] = KOCOM_DEVICE.get(p["src_device"])
             v["src_room"] = (
-                KOCOM_ROOM.get(p["src_room"])
+                self.config.kocom_room.get(p["src_room"])
                 if v["src_device"] != DEVICE_THERMOSTAT
-                else KOCOM_ROOM_THERMOSTAT.get(p["src_room"])
+                else self.config.kocom_room_thermostat.get(p["src_room"])
             )
             v["dst_device"] = KOCOM_DEVICE.get(p["dst_device"])
             v["dst_room"] = (
-                KOCOM_ROOM.get(p["dst_room"])
+                self.config.kocom_room.get(p["dst_room"])
                 if v["src_device"] != DEVICE_THERMOSTAT
-                else KOCOM_ROOM_THERMOSTAT.get(p["dst_room"])
+                else self.config.kocom_room_thermostat.get(p["dst_room"])
             )
             v["value"] = p["value"]
             if v["src_device"] == DEVICE_FAN:
@@ -1160,9 +1089,9 @@ class Kocom(RS485):
                 value=value,
                 room_state=room_state,
                 device_rev=KOCOM_DEVICE_REV,
-                room_rev=KOCOM_ROOM_REV,
+                room_rev=self.config.kocom_room_rev,
                 cmd_rev=KOCOM_COMMAND_REV,
-                room_thermostat_rev=KOCOM_ROOM_THERMOSTAT_REV,
+                room_thermostat_rev=self.config.kocom_room_thermostat_rev,
                 fan_speed_rev=KOCOM_FAN_SPEED_REV,
             )
             if built_packet:
@@ -1174,8 +1103,8 @@ class Kocom(RS485):
                 device=device,
                 room=room,
                 device_rev=KOCOM_DEVICE_REV,
-                room_rev=KOCOM_ROOM_REV,
-                room_thermostat_rev=KOCOM_ROOM_THERMOSTAT_REV,
+                room_rev=self.config.kocom_room_rev,
+                room_thermostat_rev=self.config.kocom_room_thermostat_rev,
                 cmd_rev=KOCOM_COMMAND_REV,
             )
 

@@ -14,7 +14,25 @@ from kocom.core import (
 
 
 @pytest.fixture
-def kocom_factory():
+def mock_config():
+    """테스트용 가짜 AppConfig 설정을 생성하는 픽스처"""
+    config = MagicMock()
+    config.init_temp = 22
+    config.scan_interval = 300
+    config.packet_delay = 0.8
+    config.default_speed = "medium"
+    config.kocom_light_size = {"room1": 1}
+    config.kocom_plug_size = {"room1": 1}
+    config.sw_version = "RS485 Compilation 0.1.0"
+    config.kocom_room = {"00": "room1"}
+    config.kocom_room_thermostat = {"00": "room1"}
+    config.kocom_room_rev = {"room1": "00", "wallpad": "00"}
+    config.kocom_room_thermostat_rev = {"room1": "00"}
+    return config
+
+
+@pytest.fixture
+def kocom_factory(mock_config):
     """
     Kocom 인스턴스와 mock_mqtt_instance를 생성해주는 팩토리 픽스처.
     활성화할 디바이스 이름을 전달받아 해당 디바이스만 True로 설정합니다.
@@ -24,22 +42,11 @@ def kocom_factory():
         patch("kocom.core.threading.Thread"),
         patch("kocom.core.Kocom.get_serial"),
         patch("kocom.core.Kocom.scan_list"),
-        patch("kocom.core.KOCOM_ROOM", {"00": "room1"}),
-        patch("kocom.core.KOCOM_ROOM_THERMOSTAT", {"00": "room1"}),
     ):
         mock_mqtt_instance = MagicMock()
         mock_connect_mqtt.return_value = mock_mqtt_instance
 
         def _create(active_device: str):
-            mock_config = MagicMock()
-            mock_config.init_temp = 22
-            mock_config.scan_interval = 300
-            mock_config.packet_delay = 0.8
-            mock_config.default_speed = "medium"
-            mock_config.kocom_light_size = {"room1": 1}
-            mock_config.kocom_plug_size = {"room1": 1}
-            mock_config.sw_version = "RS485 Compilation 0.1.0"
-
             mock_client = MagicMock()
             mock_client._wp_light = active_device == "light"
             mock_client._wp_fan = active_device == "fan"

@@ -75,3 +75,57 @@ def test_app_config_load(mock_isfile):
         assert config.wp_list["plug"] is False
         assert config.wp_list["gas"] is True
         assert config.wp_list["fan"] is False
+
+
+@patch("kocom.config.os.path.isfile", return_value=False)
+def test_app_config_defaults(mock_isfile):
+    """options.json 파일이 없을 때 기본 방 설정 및 역방향 맵핑 프로퍼티가 올바르게 로드되는지 검증합니다."""
+    config = AppConfig(options_path="/fake/nonexistent.json")
+    config.load()
+
+    # 1. 기본 방 정보 검증
+    assert config.kocom_room == {
+        "00": "livingroom",
+        "01": "bedroom",
+        "02": "room2",
+        "03": "room1",
+        "04": "kitchen",
+    }
+    assert config.kocom_room_thermostat == {
+        "00": "livingroom",
+        "01": "bedroom",
+        "02": "room1",
+        "03": "room2",
+    }
+
+    # 2. 기본 역방향 맵핑 검증
+    assert config.kocom_room_rev == {
+        "livingroom": "00",
+        "bedroom": "01",
+        "room2": "02",
+        "room1": "03",
+        "kitchen": "04",
+        "wallpad": "00",
+    }
+    assert config.kocom_room_thermostat_rev == {
+        "livingroom": "00",
+        "bedroom": "01",
+        "room1": "02",
+        "room2": "03",
+    }
+
+    # 3. 기본 기기 개수 검증
+    assert config.kocom_light_size == {
+        "livingroom": 3,
+        "bedroom": 2,
+        "room1": 2,
+        "room2": 2,
+        "kitchen": 3,
+    }
+    assert config.kocom_plug_size == {
+        "livingroom": 2,
+        "bedroom": 2,
+        "room1": 2,
+        "room2": 2,
+        "kitchen": 2,
+    }

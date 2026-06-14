@@ -23,6 +23,33 @@ def mock_config():
     config.kocom_light_size = {"livingroom": 3}
     config.kocom_plug_size = {"livingroom": 2}
     config.sw_version = "0.1.0"
+    config.kocom_room = {
+        "00": "livingroom",
+        "01": "bedroom",
+        "02": "room2",
+        "03": "room1",
+        "04": "kitchen",
+    }
+    config.kocom_room_thermostat = {
+        "00": "livingroom",
+        "01": "bedroom",
+        "02": "room1",
+        "03": "room2",
+    }
+    config.kocom_room_rev = {
+        "livingroom": "00",
+        "bedroom": "01",
+        "room2": "02",
+        "room1": "03",
+        "kitchen": "04",
+        "wallpad": "00",
+    }
+    config.kocom_room_thermostat_rev = {
+        "livingroom": "00",
+        "bedroom": "01",
+        "room1": "02",
+        "room2": "03",
+    }
     return config
 
 

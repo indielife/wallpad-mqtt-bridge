@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import pytest
 
 from kocom.core import (
@@ -15,6 +17,35 @@ from kocom.devices import Elevator, Fan, Gas, KocomPacketBuilder, Light, Thermos
 def kocom_instance():
     """무거운 초기화를 우회하고 패킷 생성에 필요한 최소한의 상태만 구성한 Kocom 인스턴스"""
     kocom = Kocom.__new__(Kocom)
+    mock_config = MagicMock()
+    mock_config.kocom_room = {
+        "00": "livingroom",
+        "01": "bedroom",
+        "02": "room2",
+        "03": "room1",
+        "04": "kitchen",
+    }
+    mock_config.kocom_room_thermostat = {
+        "00": "livingroom",
+        "01": "bedroom",
+        "02": "room1",
+        "03": "room2",
+    }
+    mock_config.kocom_room_rev = {
+        "livingroom": "00",
+        "bedroom": "01",
+        "room2": "02",
+        "room1": "03",
+        "kitchen": "04",
+        "wallpad": "00",
+    }
+    mock_config.kocom_room_thermostat_rev = {
+        "livingroom": "00",
+        "bedroom": "01",
+        "room1": "02",
+        "room2": "03",
+    }
+    kocom.config = mock_config
     kocom.wp_list = {
         DEVICE_LIGHT: {
             "livingroom": {

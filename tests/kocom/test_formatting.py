@@ -20,6 +20,35 @@ def test_kocom_check_sum_format():
 def test_kocom_make_packet_thermostat_temp_format():
     """보일러 목표 온도가 2자리 16진수(02x)로 올바르게 포맷팅되는지 검증합니다."""
     kocom = Kocom.__new__(Kocom)
+    mock_config = MagicMock()
+    mock_config.kocom_room = {
+        "00": "livingroom",
+        "01": "bedroom",
+        "02": "room2",
+        "03": "room1",
+        "04": "kitchen",
+    }
+    mock_config.kocom_room_thermostat = {
+        "00": "livingroom",
+        "01": "bedroom",
+        "02": "room1",
+        "03": "room2",
+    }
+    mock_config.kocom_room_rev = {
+        "livingroom": "00",
+        "bedroom": "01",
+        "room2": "02",
+        "room1": "03",
+        "kitchen": "04",
+        "wallpad": "00",
+    }
+    mock_config.kocom_room_thermostat_rev = {
+        "livingroom": "00",
+        "bedroom": "01",
+        "room1": "02",
+        "room2": "03",
+    }
+    kocom.config = mock_config
     kocom.wp_list = {
         DEVICE_THERMOSTAT: {"room1": {"mode": {"set": "heat"}, "target_temp": {"set": 25.0}}}
     }
