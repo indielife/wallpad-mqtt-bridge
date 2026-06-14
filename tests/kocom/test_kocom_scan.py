@@ -130,3 +130,48 @@ def test_scan_list_sub_device_float_retry(kocom_instance, monkeypatch):
     kocom_instance.set_serial.assert_not_called()
     assert light1.last == "set"
     assert light1.count == 1
+
+
+def test_scan_list_elevator_trigger(kocom_instance, monkeypatch):
+    """엘리베이터가 활성화되었을 때, 주기적 조회를 생략하고 제어 요청(set) 시 재시도 대기 없이 즉시 'state'로 복구되는지 검증합니다."""
+    kocom_instance.wp_elevator = True
+    kocom_instance.wp_light = False
+    kocom_instance.wp_plug = False
+    kocom_instance.wp_thermostat = False
+    kocom_instance.wp_fan = False
+    kocom_instance.wp_gas = False
+
+    # scan_interval을 초과하는 상태로 설정해서 다른 기기라면 주기적 조회가 발동할 상태로 만듦
+    scan_state = kocom_instance.wp_list[DEVICE_ELEVATOR]["wallpad"].scan
+    scan_state.tick = 100.0
+    scan_state.last = 100.0
+    scan_state.count = 0
+
+    # 엘리베이터의 last를 "set"으로 변경하여 호출 명령이 대기 중인 상태로 설정
+    elevator = kocom_instance.wp_list[DEVICE_ELEVATOR]["wallpad"]["elevator"]
+    elevator.last = "set"
+    elevator.set = "on"
+    elevator.count = 0
+
+    kocom_instance.tick = 400.0
+    monkeypatch.setattr(time, "time", lambda: 500.0)
+
+    kocom_instance.set_serial = MagicMock()
+
+    def mock_sleep(secs):
+        if secs == 0.2:
+            raise StopIteration
+
+    monkeypatch.setattr(time, "sleep", mock_sleep)
+
+    with contextlib.suppress(StopIteration):
+        kocom_instance.scan_list()
+
+    # 엘리베이터는 주기적 "조회" 호출이 이루어지지 않고, 개별 서브 기기 "on" 호출만 발생해야 함
+    kocom_instance.set_serial.assert_called_once_with(DEVICE_ELEVATOR, "wallpad", "elevator", "on")
+
+    # 주기적 스캔 count가 증가하지 않았어야 함 (조회가 생략되었으므로)
+    assert scan_state.count == 0
+
+    # 엘리베이터 제어 전송 완료 후 last는 float 시간값이나 "set"이 아닌 즉시 "state"로 복구되어야 함 (재시도 방지)
+    assert elevator.last == "state"

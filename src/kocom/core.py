@@ -20,7 +20,7 @@ from kocom.devices import (
     Thermostat,
 )
 from kocom.rs485 import CONF_MQTT
-from kocom.state import DeviceState, KocomStateManager, RoomState, SubDeviceState
+from kocom.state import DeviceState, KocomStateManager, RoomState, ScanState, SubDeviceState
 
 logger = logging.getLogger(__name__)
 
@@ -650,54 +650,78 @@ class Kocom:
         except Exception as e:
             logger.info("[From %s]Error SetList %s/%s = %s (%r)", name, device, room, value, e)
 
+    def _is_device_enabled(self, device: str) -> bool:
+        if device == DEVICE_ELEVATOR:
+            return self.wp_elevator
+        if device == DEVICE_FAN:
+            return self.wp_fan
+        if device == DEVICE_GAS:
+            return self.wp_gas
+        if device == DEVICE_LIGHT:
+            return self.wp_light
+        if device == DEVICE_PLUG:
+            return self.wp_plug
+        if device == DEVICE_THERMOSTAT:
+            return self.wp_thermostat
+        return False
+
+    def _periodic_scan_room(self, device: str, room: str, scan: ScanState, now: float) -> None:
+        if now - scan.last > 2:
+            scan.count += 1
+            scan.last = now
+            self.set_serial(device, room, "", "", cmd="조회")
+            time.sleep(self.config.packey_delay)
+        if scan.count > 4:
+            scan.tick = now
+            scan.count = 0
+            scan.last = 0
+
+    def _scan_sub_device(
+        self, device: str, room: str, sub_d: str, sub_v: SubDeviceState, now: float
+    ) -> None:
+        if sub_v.count > 4:
+            sub_v.count = 0
+            sub_v.last = "state"
+        elif sub_v.last == "set":
+            sub_v.last = now
+            if device == DEVICE_GAS:
+                sub_v.last += 5
+            elif device == DEVICE_ELEVATOR:
+                sub_v.last = "state"
+            self.set_serial(device, room, sub_d, sub_v.set)
+        elif isinstance(sub_v.last, float) and now - sub_v.last > 1:
+            sub_v.last = "set"
+            sub_v.count += 1
+
+    def _scan_room(self, device: str, room: str, r_state: RoomState, now: float) -> None:
+        if device == DEVICE_ELEVATOR:
+            for sub_d, sub_v in r_state.sub_devices.items():
+                self._scan_sub_device(device, room, sub_d, sub_v, now)
+            return
+
+        scan = r_state.scan
+        # 엘리베이터가 아닌 기기들의 주기적 스캔/조회 처리
+        if now - scan.tick > self.config.scan_interval:
+            self._periodic_scan_room(device, room, scan, now)
+        else:
+            for sub_d, sub_v in r_state.sub_devices.items():
+                self._scan_sub_device(device, room, sub_d, sub_v, now)
+
+    def _perform_scan(self, now: float) -> None:
+        for device, d_state in self.wp_list.items():
+            if not self._is_device_enabled(device):
+                continue
+
+            for room, r_state in d_state.items():
+                self._scan_room(device, room, r_state, now)
+
     def scan_list(self):
         while True:
             if not self.kocom_scan:
                 now = time.time()
                 if now - self.tick > KOCOM_INTERVAL / 1000:
                     try:
-                        for device, d_state in self.wp_list.items():
-                            if not (
-                                (device == DEVICE_ELEVATOR and self.wp_elevator)
-                                or (device == DEVICE_FAN and self.wp_fan)
-                                or (device == DEVICE_GAS and self.wp_gas)
-                                or (device == DEVICE_LIGHT and self.wp_light)
-                                or (device == DEVICE_PLUG and self.wp_plug)
-                                or (device == DEVICE_THERMOSTAT and self.wp_thermostat)
-                            ):
-                                continue
-
-                            for room, r_state in d_state.items():
-                                scan = r_state.scan
-                                # 엘리베이터를 제외한 기기들의 주기적 스캔/조회 처리
-                                if (
-                                    now - scan.tick > self.config.scan_interval
-                                    and device != DEVICE_ELEVATOR
-                                ):
-                                    if now - scan.last > 2:
-                                        scan.count += 1
-                                        scan.last = now
-                                        self.set_serial(device, room, "", "", cmd="조회")
-                                        time.sleep(self.config.packey_delay)
-                                    if scan.count > 4:
-                                        scan.tick = now
-                                        scan.count = 0
-                                        scan.last = 0
-                                else:
-                                    for sub_d, sub_v in r_state.sub_devices.items():
-                                        if sub_v.count > 4:
-                                            sub_v.count = 0
-                                            sub_v.last = "state"
-                                        elif sub_v.last == "set":
-                                            sub_v.last = now
-                                            if device == DEVICE_GAS:
-                                                sub_v.last += 5
-                                            elif device == DEVICE_ELEVATOR:
-                                                sub_v.last = "state"
-                                            self.set_serial(device, room, sub_d, sub_v.set)
-                                        elif isinstance(sub_v.last, float) and now - sub_v.last > 1:
-                                            sub_v.last = "set"
-                                            sub_v.count += 1
+                        self._perform_scan(now)
                     except Exception as e:
                         logger.debug("[Scan]Error: %r", e)
             if not self.connected:
