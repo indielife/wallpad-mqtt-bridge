@@ -1,13 +1,24 @@
+from .packet_builder import PacketBuilder
+
+
 class BaseDevice:
     """
     모든 Kocom/Grex 디바이스의 기본이 되는 추상화 클래스입니다.
     """
 
-    def __init__(self, name_prefix: str, room: str, sub_device: str, sw_version: str):
+    def __init__(
+        self,
+        name_prefix: str,
+        room: str,
+        sub_device: str,
+        sw_version: str,
+        packet_builder: PacketBuilder | None = None,
+    ):
         self.name_prefix = name_prefix
         self.room = room
         self.sub_device = sub_device
         self.sw_version = sw_version
+        self.packet_builder = packet_builder
 
     @property
     def device_info(self) -> dict:
@@ -32,3 +43,12 @@ class BaseDevice:
         해당 기기를 제어하기 위해 subscribe 해야 하는 토픽 문자열 리스트를 반환합니다.
         """
         raise NotImplementedError
+
+    def build_packet(
+        self, cmd: str, target: str, value: str, room_state: dict, **kwargs
+    ) -> str | None:
+        """
+        명령 패킷(16진수 문자열) 전체를 생성하여 반환합니다.
+        오버라이딩하지 않은 경우 None을 반환하여 main.py의 레거시 로직을 따릅니다.
+        """
+        return None

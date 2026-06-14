@@ -15,7 +15,17 @@ import paho.mqtt.client as mqtt
 import serial
 
 from kocom.constants import SW_VERSION
-from kocom.devices import Elevator, Fan, Gas, GrexVentilator, Light, Plug, Thermostat
+from kocom.devices import (
+    Elevator,
+    Fan,
+    Gas,
+    GrexPacketBuilder,
+    GrexVentilator,
+    KocomPacketBuilder,
+    Light,
+    Plug,
+    Thermostat,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -295,6 +305,14 @@ class Kocom(rs485):
         self._name = name
         self.connected = True
 
+        self.default_speed = DEFAULT_SPEED
+        if self.default_speed not in ["low", "medium", "high"]:
+            logger.info(
+                "[Error] Kocom DEFAULT_SPEED 설정오류로 medium 으로 설정. %s -> medium",
+                self.default_speed,
+            )
+            self.default_speed = "medium"
+
         self.ha_registry = False
         self.kocom_scan = True
         self.scan_packet_buf = []
@@ -308,13 +326,33 @@ class Kocom(rs485):
         self.wp_elevator = self.client._wp_elevator
         self.wp_thermostat = self.client._wp_thermostat
 
+        self.packet_builder = KocomPacketBuilder()
+
         self.devices = []
         if self.wp_elevator:
-            self.devices.append(Elevator(name_prefix=self._name, sw_version=SW_VERSION))
+            self.devices.append(
+                Elevator(
+                    name_prefix=self._name,
+                    sw_version=SW_VERSION,
+                    packet_builder=self.packet_builder,
+                )
+            )
         if self.wp_gas:
-            self.devices.append(Gas(name_prefix=self._name, sw_version=SW_VERSION))
+            self.devices.append(
+                Gas(
+                    name_prefix=self._name,
+                    sw_version=SW_VERSION,
+                    packet_builder=self.packet_builder,
+                )
+            )
         if self.wp_fan:
-            self.devices.append(Fan(name_prefix=self._name, sw_version=SW_VERSION))
+            self.devices.append(
+                Fan(
+                    name_prefix=self._name,
+                    sw_version=SW_VERSION,
+                    packet_builder=self.packet_builder,
+                )
+            )
         for d_name in KOCOM_DEVICE.values():
             if d_name == DEVICE_ELEVATOR or d_name == DEVICE_GAS:
                 self.wp_list[d_name] = {}
@@ -394,6 +432,7 @@ class Kocom(rs485):
                                     room=room,
                                     sub_device=sub_device,
                                     sw_version=SW_VERSION,
+                                    packet_builder=self.packet_builder,
                                 )
                             )
 
@@ -408,13 +447,19 @@ class Kocom(rs485):
                                     room=room,
                                     sub_device=sub_device,
                                     sw_version=SW_VERSION,
+                                    packet_builder=self.packet_builder,
                                 )
                             )
 
         if self.wp_thermostat:
             for room in self.wp_list.get(DEVICE_THERMOSTAT, {}).keys():
                 self.devices.append(
-                    Thermostat(name_prefix=self._name, room=room, sw_version=SW_VERSION)
+                    Thermostat(
+                        name_prefix=self._name,
+                        room=room,
+                        sw_version=SW_VERSION,
+                        packet_builder=self.packet_builder,
+                    )
                 )
 
         self.d_type = client._type
@@ -451,7 +496,7 @@ class Kocom(rs485):
             logging.info("[Serial Read] Connection Error")
 
     def write(self, data):
-        if data == False:
+        if not data:
             return
         self.tick = time.time()
         if self.client._connect == False:
@@ -641,7 +686,7 @@ class Kocom(rs485):
                     self.wp_list[device][room]["mode"]["set"] = "on"
                 elif command == "mode":
                     self.wp_list[device][room]["speed"]["set"] = (
-                        DEFAULT_SPEED if payload == "on" else "off"
+                        self.default_speed if payload == "on" else "off"
                     )
                     self.wp_list[device][room]["mode"]["set"] = payload
                 self.wp_list[device][room]["speed"]["last"] = "set"
@@ -914,7 +959,7 @@ class Kocom(rs485):
                         if sub == "mode":
                             self.wp_list[device][room][sub]["state"] = v
                             self.wp_list[device][room]["speed"]["state"] = (
-                                "off" if v == "off" else DEFAULT_SPEED
+                                "off" if v == "off" else self.default_speed
                             )
                         else:
                             self.wp_list[device][room][sub]["state"] = v
@@ -1062,15 +1107,21 @@ class Kocom(rs485):
     def set_serial(self, device, room, target, value, cmd="상태"):
         if (time.time() - self.tick) < KOCOM_INTERVAL / 1000:
             return
+
         if cmd == "상태":
             logger.info("[To %s]%s/%s/%s -> %s", self._name, device, room, target, value)
         elif cmd == "조회":
             logger.info("[To %s]%s/%s -> 조회", self._name, device, room)
+
         packet = (
             self.make_packet(device, room, "상태", target, value)
             if cmd == "상태"
             else self.make_packet(device, room, "조회", "", "")
         )
+
+        if not packet:
+            return
+
         v = self.value_packet(self.parse_packet(packet))
 
         logger.debug("[To %s]%s", self._name, packet)
@@ -1102,84 +1153,51 @@ class Kocom(rs485):
         self.write(packet)
 
     def make_packet(self, device, room, cmd, target, value):
-        p_header = "aa5530bc00"
-        p_device = KOCOM_DEVICE_REV.get(device)
-        p_room = (
-            KOCOM_ROOM_REV.get(room)
-            if device != DEVICE_THERMOSTAT
-            else KOCOM_ROOM_THERMOSTAT_REV.get(room)
-        )
-        p_dst = KOCOM_DEVICE_REV.get(DEVICE_WALLPAD) + KOCOM_ROOM_REV.get(DEVICE_WALLPAD)
-        p_cmd = KOCOM_COMMAND_REV.get(cmd)
-        p_value = ""
-        if cmd == "조회":
-            p_value = "0000000000000000"
-        else:
-            if device == DEVICE_ELEVATOR:
-                p_device = KOCOM_DEVICE_REV.get(DEVICE_WALLPAD)
-                p_room = KOCOM_ROOM_REV.get(DEVICE_WALLPAD)
-                p_dst = KOCOM_DEVICE_REV.get(device) + KOCOM_ROOM_REV.get(DEVICE_WALLPAD)
-                p_cmd = KOCOM_COMMAND_REV.get("on")
-                p_value = "0000000000000000"
-            elif device == DEVICE_GAS:
-                p_cmd = KOCOM_COMMAND_REV.get("off")
-                p_value = "0000000000000000"
-            elif device == DEVICE_LIGHT or device == DEVICE_PLUG:
-                try:
-                    all_device = device + "0"
-                    for i in range(1, 9):
-                        sub_device = device + str(i)
-                        if target != sub_device:
-                            if target == all_device:
-                                if sub_device in self.wp_list[device][room]:
-                                    p_value += "ff" if value == "on" else "00"
-                                else:
-                                    p_value += "00"
-                            else:
-                                if (
-                                    sub_device in self.wp_list[device][room]
-                                    and self.wp_list[device][room][sub_device]["state"] == "on"
-                                ):
-                                    p_value += "ff"
-                                else:
-                                    p_value += "00"
-                        else:
-                            p_value += "ff" if value == "on" else "00"
-                except:
-                    logger.debug("[Make Packet] Error on DEVICE_LIGHT or DEVICE_PLUG")
+        # 1. 타겟 기기 객체 찾기
+        target_obj = None
+        for d in self.devices:
+            if device in [DEVICE_LIGHT, DEVICE_PLUG]:
+                if d.room == room and d.sub_device == target:
+                    target_obj = d
+                    break
             elif device == DEVICE_THERMOSTAT:
-                try:
-                    mode = self.wp_list[device][room]["mode"]["set"]
-                    target_temp = self.wp_list[device][room]["target_temp"]["set"]
-                    if mode == "heat":
-                        p_value += "1100"
-                    elif mode == "off":
-                        # p_value += '0001'
-                        p_value += "0100"
-                    else:
-                        p_value += "1101"
-                    p_value += f"{int(float(target_temp)):02x}"
-                    p_value += "0000000000"
-                except:
-                    logger.debug("[Make Packet] Error on DEVICE_THERMOSTAT")
-            elif device == DEVICE_FAN:
-                try:
-                    mode = self.wp_list[device][room]["mode"]["set"]
-                    speed = self.wp_list[device][room]["speed"]["set"]
-                    if mode == "on":
-                        p_value += "1100"
-                    elif mode == "off":
-                        p_value += "0001"
-                    p_value += KOCOM_FAN_SPEED_REV.get(speed)
-                    p_value += "00000000000"
-                except:
-                    logger.debug("[Make Packet] Error on DEVICE_THERMOSTAT")
-        if p_value != "":
-            packet = p_header + p_device + p_room + p_dst + p_cmd + p_value
-            chk_sum = self.check_sum(packet)[1]
-            packet += chk_sum + "0d0d"
-            return packet
-        return False
+                if d.room == room and d.sub_device == "thermostat":
+                    target_obj = d
+                    break
+            else:
+                if d.room == room and d.sub_device == device:
+                    target_obj = d
+                    break
+
+        # 2. 객체에게 패킷 생성 위임 (전략 패턴 + 빌더)
+        if target_obj and cmd != "조회":
+            room_state = self.wp_list.get(device, {}).get(room, {})
+            built_packet = target_obj.build_packet(
+                cmd=cmd,
+                target=target,
+                value=value,
+                room_state=room_state,
+                device_rev=KOCOM_DEVICE_REV,
+                room_rev=KOCOM_ROOM_REV,
+                cmd_rev=KOCOM_COMMAND_REV,
+                room_thermostat_rev=KOCOM_ROOM_THERMOSTAT_REV,
+                fan_speed_rev=KOCOM_FAN_SPEED_REV,
+            )
+            if built_packet:
+                return built_packet
+
+        # 3. 객체에서 처리되지 않은 공통 명령(예: 방 전체 '조회')은 빌더를 통해 직접 생성
+        if cmd == "조회":
+            return self.packet_builder.build_scan_packet(
+                device=device,
+                room=room,
+                device_rev=KOCOM_DEVICE_REV,
+                room_rev=KOCOM_ROOM_REV,
+                room_thermostat_rev=KOCOM_ROOM_THERMOSTAT_REV,
+                cmd_rev=KOCOM_COMMAND_REV,
+            )
+
+        return None
 
     def parse_fan(self, value="0000000000000000"):
         fan = {}
@@ -1228,8 +1246,21 @@ class Grex:
         self.vent_cont = {"mode": "off", "speed": "off"}
         self.mqtt_cont = {"mode": "off", "speed": "off"}
 
+        self.default_speed = DEFAULT_SPEED
+        if self.default_speed not in ["low", "medium", "high"]:
+            logger.info(
+                "[Error] Grex DEFAULT_SPEED 설정오류로 medium 으로 설정. %s -> medium",
+                self.default_speed,
+            )
+            self.default_speed = "medium"
+
         self.d_mqtt = self.connect_mqtt(client._mqtt, "GREX")
-        self.device = GrexVentilator(name_prefix=self._name, sw_version=SW_VERSION)
+        self.packet_builder = GrexPacketBuilder()
+        self.device = GrexVentilator(
+            name_prefix=self._name,
+            sw_version=SW_VERSION,
+            packet_builder=self.packet_builder,
+        )
 
         _t4 = threading.Thread(
             target=self.get_serial,
@@ -1303,7 +1334,7 @@ class Grex:
                     and _payload == "on"
                     and self.mqtt_cont["speed"] == "off"
                 ):
-                    self.mqtt_cont["speed"] = "low"
+                    self.mqtt_cont["speed"] = self.default_speed
                 self.mqtt_cont[_topic[3]] = _payload
 
                 if self.mqtt_cont["mode"] == "off" and self.mqtt_cont["speed"] == "off":
@@ -1392,7 +1423,7 @@ class Grex:
         p_prefix = packet[:4]
 
         if p_prefix == "d00a":
-            m_packet = self.make_response_packet(0)
+            m_packet = self.device.build_response_packet("off", "off")
             m_chksum = self.validate_checksum(m_packet, 11)
             if m_chksum[0]:
                 self.contoller["serial"].write(bytearray.fromhex(m_packet))
@@ -1446,25 +1477,22 @@ class Grex:
                 self.send_to_homeassistant(HA_SENSOR, send_to_ha_sensor)
 
             if self.grex_cont["mode"] == "off":
-                response_packet = self.make_response_packet(0)
+                response_packet = self.device.build_response_packet("off", "off")
                 if self.mqtt_cont["mode"] == "off" or (
                     self.mqtt_cont["mode"] == "on" and self.mqtt_cont["speed"] == "off"
                 ):
-                    control_packet = self.make_control_packet("off", "off")
+                    control_packet = self.device.build_control_packet("off", "off")
                 elif self.mqtt_cont["mode"] == "on" and self.mqtt_cont["speed"] != "off":
-                    control_packet = self.make_control_packet("manual", self.mqtt_cont["speed"])
+                    control_packet = self.device.build_control_packet(
+                        "manual", self.mqtt_cont["speed"]
+                    )
             else:
-                control_packet = self.make_control_packet(
+                control_packet = self.device.build_control_packet(
                     self.grex_cont["mode"], self.grex_cont["speed"]
                 )
-                if self.grex_cont["speed"] == "low":
-                    response_packet = self.make_response_packet(1)
-                elif self.grex_cont["speed"] == "medium":
-                    response_packet = self.make_response_packet(2)
-                elif self.grex_cont["speed"] == "high":
-                    response_packet = self.make_response_packet(3)
-                elif self.grex_cont["speed"] == "off":
-                    response_packet = self.make_response_packet(0)
+                response_packet = self.device.build_response_packet(
+                    self.grex_cont["mode"], self.grex_cont["speed"]
+                )
 
             if response_packet != "":
                 self.contoller["serial"].write(bytearray.fromhex(response_packet))
@@ -1509,60 +1537,6 @@ class Grex:
                         send_to_ha_sensor["fan_speed"] = "대기"
                 self.send_to_homeassistant(HA_SENSOR, send_to_ha_sensor)
 
-    def make_control_packet(self, mode, speed):
-        prefix = "d08ae022"
-        if mode == "off":
-            packet_mode = "0000"
-        elif mode == "auto":
-            packet_mode = "0100"
-        elif mode == "manual":
-            packet_mode = "0200"
-        elif mode == "sleep":
-            packet_mode = "0300"
-        else:
-            return ""
-        if speed == "off":
-            packet_speed = "0000"
-        elif speed == "low":
-            packet_speed = "0101"
-        elif speed == "medium":
-            packet_speed = "0202"
-        elif speed == "high":
-            packet_speed = "0303"
-        else:
-            return ""
-        if ((mode == "auto" or mode == "sleep") and (speed == "off")) or (
-            speed == "low" or speed == "medium" or speed == "high"
-        ):
-            postfix = "0001"
-        else:
-            postfix = "0000"
-
-        packet = prefix + packet_mode + packet_speed + postfix
-        packet_checksum = self.make_checksum(packet, 10)
-        packet = packet + packet_checksum
-        return packet
-
-    def make_response_packet(self, speed):
-        prefix = "d18be021"
-        if speed == 0:
-            packet_speed = "0000"
-        elif speed == 1:
-            packet_speed = "0101"
-        elif speed == 2:
-            packet_speed = "0202"
-        elif speed == 3:
-            packet_speed = "0303"
-        if speed == 0:
-            postfix = "0000000000"
-        elif speed > 0:
-            postfix = "0000000100"
-
-        packet = prefix + packet_speed + postfix
-        packet_checksum = self.make_checksum(packet, 11)
-        packet = packet + packet_checksum
-        return packet
-
     def hex_to_list(self, hex_string):
         slide_windows = 2
         start = 0
@@ -1586,18 +1560,6 @@ class Grex:
                     else:
                         return (False, hex_list[ix])
                 sum_buf += hex_int
-
-    def make_checksum(self, packet, length):
-        hex_list = self.hex_to_list(packet)
-        sum_buf = 0
-        chksum_hex = 0
-        for ix, x in enumerate(hex_list):
-            if ix > 0:
-                hex_int = int(x, 16)
-                sum_buf += hex_int
-                if ix == length - 1:
-                    chksum_hex = f"{(sum_buf % 256):02x}"
-        return str(chksum_hex)
 
 
 def setup_logging(log_path):
@@ -1644,12 +1606,6 @@ if __name__ == "__main__":
         logger.setLevel(logging.DEBUG)
     if CONF_LOGLEVEL == "warn":
         logger.setLevel(logging.WARN)
-
-    if DEFAULT_SPEED not in ["low", "medium", "high"]:
-        logger.info(
-            "[Error] DEFAULT_SPEED 설정오류로 medium 으로 설정. %s -> medium", DEFAULT_SPEED
-        )
-        DEFAULT_SPEED = "medium"
 
     _grex_ventilator = False
     _grex_controller = False
