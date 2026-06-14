@@ -13,6 +13,7 @@ from kocom.core import (
     DEVICE_THERMOSTAT,
     Kocom,
 )
+from kocom.state import KocomStateManager
 
 
 @pytest.fixture
@@ -61,8 +62,9 @@ def kocom_instance(mock_config):
     kocom.d_mqtt = MagicMock()
     kocom.write = MagicMock()
 
-    # wp_list 초기화 (기존 딕셔너리 구조)
-    kocom.wp_list = {
+    # wp_list 초기화 (KocomStateManager 구조)
+    kocom.wp_list = KocomStateManager()
+    initial_states = {
         DEVICE_LIGHT: {
             "livingroom": {
                 "scan": {"tick": 0.0, "count": 0, "last": 0.0},
@@ -106,6 +108,8 @@ def kocom_instance(mock_config):
             }
         },
     }
+    for device, rooms in initial_states.items():
+        kocom.wp_list[device] = rooms
 
     return kocom
 

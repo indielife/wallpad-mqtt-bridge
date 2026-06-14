@@ -366,19 +366,19 @@ class Kocom:
                         payload = "off"
                         logger.info("[From HA]Error GAS Cannot Set to ON")
                     else:
-                        self.wp_list[device][room][sub_device][command] = payload
-                        self.wp_list[device][room][sub_device]["last"] = command
+                        self.wp_list.update_from_ha(
+                            device, room, sub_device, command, payload, self.default_speed
+                        )
                 elif device == DEVICE_ELEVATOR:
+                    self.wp_list.update_from_ha(
+                        device, room, sub_device, command, payload, self.default_speed
+                    )
                     if payload == "off":
-                        self.wp_list[device][room][sub_device][command] = payload
-                        self.wp_list[device][room][sub_device]["last"] = "state"
                         self.send_to_homeassistant(device, DEVICE_WALLPAD, payload)
-                    else:
-                        self.wp_list[device][room][sub_device][command] = payload
-                        self.wp_list[device][room][sub_device]["last"] = command
                 else:
-                    self.wp_list[device][room][sub_device][command] = payload
-                    self.wp_list[device][room][sub_device]["last"] = command
+                    self.wp_list.update_from_ha(
+                        device, room, sub_device, command, payload, self.default_speed
+                    )
                 logger.info("[From HA]%s/%s/%s/%s = %s", device, room, sub_device, command, payload)
             except Exception as e:
                 logger.error("[From HA] %s = %s, %r", topic, payload, e)
@@ -386,25 +386,19 @@ class Kocom:
             device = DEVICE_THERMOSTAT
             room = topic[2]
             try:
-                if command != "mode":
-                    self.wp_list[device][room]["target_temp"]["set"] = int(float(payload))
-                    self.wp_list[device][room]["mode"]["set"] = "heat"
-                    self.wp_list[device][room]["target_temp"]["last"] = "set"
-                    self.wp_list[device][room]["mode"]["last"] = "set"
-                elif command == "mode":
-                    self.wp_list[device][room]["mode"]["set"] = payload
-                    self.wp_list[device][room]["mode"]["last"] = "set"
+                self.wp_list.update_from_ha(device, room, "", command, payload, self.default_speed)
+                room_state = self.wp_list[device][room]
                 ha_payload = {
-                    "mode": self.wp_list[device][room]["mode"]["set"],
-                    "target_temp": self.wp_list[device][room]["target_temp"]["set"],
-                    "current_temp": self.wp_list[device][room]["current_temp"]["state"],
+                    "mode": room_state["mode"]["set"],
+                    "target_temp": room_state["target_temp"]["set"],
+                    "current_temp": room_state["current_temp"]["state"],
                 }
                 logger.info(
                     "[From HA]%s/%s/set = [mode=%s, target_temp=%s]",
                     device,
                     room,
-                    self.wp_list[device][room]["mode"]["set"],
-                    self.wp_list[device][room]["target_temp"]["set"],
+                    room_state["mode"]["set"],
+                    room_state["target_temp"]["set"],
                 )
                 self.send_to_homeassistant(device, room, ha_payload)
             except Exception as e:
@@ -413,26 +407,18 @@ class Kocom:
             device = DEVICE_FAN
             room = topic[2]
             try:
-                if command != "mode":
-                    self.wp_list[device][room]["speed"]["set"] = payload
-                    self.wp_list[device][room]["mode"]["set"] = "on"
-                elif command == "mode":
-                    self.wp_list[device][room]["speed"]["set"] = (
-                        self.default_speed if payload == "on" else "off"
-                    )
-                    self.wp_list[device][room]["mode"]["set"] = payload
-                self.wp_list[device][room]["speed"]["last"] = "set"
-                self.wp_list[device][room]["mode"]["last"] = "set"
+                self.wp_list.update_from_ha(device, room, "", command, payload, self.default_speed)
+                room_state = self.wp_list[device][room]
                 ha_payload = {
-                    "mode": self.wp_list[device][room]["mode"]["set"],
-                    "speed": self.wp_list[device][room]["speed"]["set"],
+                    "mode": room_state["mode"]["set"],
+                    "speed": room_state["speed"]["set"],
                 }
                 logger.info(
                     "[From HA]%s/%s/set = [mode=%s, speed=%s]",
                     device,
                     room,
-                    self.wp_list[device][room]["mode"]["set"],
-                    self.wp_list[device][room]["speed"]["set"],
+                    room_state["mode"]["set"],
+                    room_state["speed"]["set"],
                 )
                 self.send_to_homeassistant(device, room, ha_payload)
             except Exception as e:
