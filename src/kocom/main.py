@@ -305,6 +305,14 @@ class Kocom(rs485):
         self._name = name
         self.connected = True
 
+        self.default_speed = DEFAULT_SPEED
+        if self.default_speed not in ["low", "medium", "high"]:
+            logger.info(
+                "[Error] Kocom DEFAULT_SPEED 설정오류로 medium 으로 설정. %s -> medium",
+                self.default_speed,
+            )
+            self.default_speed = "medium"
+
         self.ha_registry = False
         self.kocom_scan = True
         self.scan_packet_buf = []
@@ -678,7 +686,7 @@ class Kocom(rs485):
                     self.wp_list[device][room]["mode"]["set"] = "on"
                 elif command == "mode":
                     self.wp_list[device][room]["speed"]["set"] = (
-                        DEFAULT_SPEED if payload == "on" else "off"
+                        self.default_speed if payload == "on" else "off"
                     )
                     self.wp_list[device][room]["mode"]["set"] = payload
                 self.wp_list[device][room]["speed"]["last"] = "set"
@@ -951,7 +959,7 @@ class Kocom(rs485):
                         if sub == "mode":
                             self.wp_list[device][room][sub]["state"] = v
                             self.wp_list[device][room]["speed"]["state"] = (
-                                "off" if v == "off" else DEFAULT_SPEED
+                                "off" if v == "off" else self.default_speed
                             )
                         else:
                             self.wp_list[device][room][sub]["state"] = v
@@ -1238,6 +1246,14 @@ class Grex:
         self.vent_cont = {"mode": "off", "speed": "off"}
         self.mqtt_cont = {"mode": "off", "speed": "off"}
 
+        self.default_speed = DEFAULT_SPEED
+        if self.default_speed not in ["low", "medium", "high"]:
+            logger.info(
+                "[Error] Grex DEFAULT_SPEED 설정오류로 medium 으로 설정. %s -> medium",
+                self.default_speed,
+            )
+            self.default_speed = "medium"
+
         self.d_mqtt = self.connect_mqtt(client._mqtt, "GREX")
         self.packet_builder = GrexPacketBuilder()
         self.device = GrexVentilator(
@@ -1318,7 +1334,7 @@ class Grex:
                     and _payload == "on"
                     and self.mqtt_cont["speed"] == "off"
                 ):
-                    self.mqtt_cont["speed"] = "low"
+                    self.mqtt_cont["speed"] = self.default_speed
                 self.mqtt_cont[_topic[3]] = _payload
 
                 if self.mqtt_cont["mode"] == "off" and self.mqtt_cont["speed"] == "off":
@@ -1590,12 +1606,6 @@ if __name__ == "__main__":
         logger.setLevel(logging.DEBUG)
     if CONF_LOGLEVEL == "warn":
         logger.setLevel(logging.WARN)
-
-    if DEFAULT_SPEED not in ["low", "medium", "high"]:
-        logger.info(
-            "[Error] DEFAULT_SPEED 설정오류로 medium 으로 설정. %s -> medium", DEFAULT_SPEED
-        )
-        DEFAULT_SPEED = "medium"
 
     _grex_ventilator = False
     _grex_controller = False
