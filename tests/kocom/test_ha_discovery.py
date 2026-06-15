@@ -124,14 +124,14 @@ def kocom_factory(mock_config):
         (True, False),  # 초기 구동 검증 (Subscribe 추가)
     ],
 )
-def test_homeassistant_device_discovery(
+def test_publish_ha_discovery(
     snapshot, active_device, expected_topics, initial, remove, kocom_factory
 ):
     # 1. 의존성 팩토리로 Kocom 인스턴스 생성
     wallpad, mock_mqtt_instance = kocom_factory(active_device)
 
     # 2. 테스트할 메서드 실행
-    wallpad.homeassistant_device_discovery(initial=initial, remove=remove)
+    wallpad.publish_ha_discovery(initial=initial, remove=remove)
 
     # 3. Publish 검증
     publish_calls = mock_mqtt_instance.publish.call_args_list
