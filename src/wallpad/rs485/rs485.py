@@ -16,8 +16,6 @@ class RS485:
     def __init__(self, config: AppConfig):
         self.config = config
         self._port_url = config.port_url
-        self._device_list = config.device_list
-        self._socket_device = config.socket_device
         self.type = config.comm_type
         self.adapters = {}
 
@@ -29,21 +27,6 @@ class RS485:
             logger.error("Invalid communication type: %s (must be serial or socket)", self.type)
             logger.error("Exiting RS485 initialization")
             exit(1)
-
-    @property
-    def _device(self):
-        if self.type == "serial":
-            return self._device_list
-        elif self.type == "socket":
-            return self._socket_device
-
-    @property
-    def _type(self):
-        return self.type
-
-    @property
-    def _connect(self):
-        return self.adapters
 
     def _init_serial(self):
         opened = 0
@@ -78,6 +61,6 @@ class RS485:
         try:
             soc.connect((server, int(port)))
             soc.settimeout(None)
-            self.adapters[self._socket_device] = SocketAdapter(soc)
+            self.adapters[self.config.socket_device] = SocketAdapter(soc)
         except Exception as e:
             logger.info("Failed to connect to socket (target: %s:%s, error: %r)", server, port, e)
