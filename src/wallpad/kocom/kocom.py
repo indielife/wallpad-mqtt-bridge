@@ -202,7 +202,7 @@ class Kocom:
         self._t1.join()
         self._t2.join()
         if not self.connected:
-            logger.debug("[ERROR] 서버 연결이 끊어져 kocom 클래스를 종료합니다.")
+            logger.info("Terminating Kocom instance")
             return False
 
     def read(self):
@@ -216,8 +216,8 @@ class Kocom:
                     return ""
             elif self.d_type == "socket":
                 return self.d_serial.recv(1)
-        except Exception:
-            logger.info("[Serial Read] Connection Error")
+        except Exception as e:
+            logger.error("Connection error during read: %r", e)
 
     def write(self, data):
         if not data:
@@ -230,8 +230,8 @@ class Kocom:
                 return self.d_serial.write(bytearray.fromhex(data))
             elif self.d_type == "socket":
                 return self.d_serial.send(bytearray.fromhex(data))
-        except Exception:
-            logger.info("[Serial Write] Connection Error")
+        except Exception as e:
+            logger.error("Connection error during write: %r", e)
 
     def connect_mqtt(self, server, name):
         mqtt_client = mqtt.Client()
@@ -340,7 +340,7 @@ class Kocom:
                 if device == DEVICE_GAS:
                     if payload == "on":
                         payload = "off"
-                        logger.info("[From HA]Error GAS Cannot Set to ON")
+                        logger.warning("Cannot set GAS to ON from HA")
                     else:
                         self.wp_list.update_from_ha(
                             device, room, sub_device, command, payload, self.default_speed
@@ -489,6 +489,7 @@ class Kocom:
         while True:
             row_data = self.read()
             hex_d = row_data.hex()
+
             start_hex = ""
             if packet_name == "kocom":
                 start_hex = "aa"
@@ -496,8 +497,10 @@ class Kocom:
                 start_hex = "d1"
             elif packet_name == "grex_controller":
                 start_hex = "d0"
+
             if hex_d == start_hex:
                 start_flag = True
+
             if start_flag:
                 packet += hex_d
 
@@ -509,8 +512,9 @@ class Kocom:
                     self.packet_parsing(packet)
                 packet = ""
                 start_flag = False
+
             if not self.connected:
-                logger.debug("[ERROR] 서버 연결이 끊어져 get_serial Thread를 종료합니다.")
+                logger.info("Terminating get_serial thread")
                 break
 
     def check_sum(self, packet):
@@ -541,7 +545,8 @@ class Kocom:
             p["checksum"] = packet[36:38]
             p["tail"] = packet[38:42]
             return p
-        except Exception:
+        except Exception as e:
+            logger.error("Failed to parse packet %s: %r", packet, e)
             return False
 
     def value_packet(self, p):
@@ -578,7 +583,8 @@ class Kocom:
             elif v["src_device"] == DEVICE_GAS:
                 v["value"] = v["command"]
             return v
-        except Exception:
+        except Exception as e:
+            logger.error("Failed to parse value from packet %r: %r", p, e)
             return False
 
     def packet_parsing(self, packet, name="kocom", from_to="From"):
@@ -630,15 +636,28 @@ class Kocom:
                 ):
                     self.set_list(v["src_device"], v["src_room"], v["value"])
                     self.publish_state_to_ha(v["src_device"], v["src_room"], v["value"])
-        except Exception:
-            logger.info("[%s %s]Error %s", from_to, name, packet)
+        except Exception as e:
+            logger.error(
+                "Error parsing packet %s (%s %s): %r",
+                packet,
+                from_to,
+                name,
+                e,
+            )
 
     def set_list(self, device, room, value, name="kocom"):
         try:
             logger.info("[From %s]%s/%s/state = %s", name, device, room, value)
             self.wp_list.update_from_rs485(device, room, value, self.default_speed)
         except Exception as e:
-            logger.info("[From %s]Error SetList %s/%s = %s (%r)", name, device, room, value, e)
+            logger.error(
+                "Failed to update state from %s: %s/%s = %s (error: %r)",
+                name,
+                device,
+                room,
+                value,
+                e,
+            )
 
     def _is_device_enabled(self, device: str) -> bool:
         if device == DEVICE_ELEVATOR:
@@ -713,9 +732,9 @@ class Kocom:
                     try:
                         self._perform_scan(now)
                     except Exception as e:
-                        logger.debug("[Scan]Error: %r", e)
+                        logger.debug("Scan failed: %r", e)
             if not self.connected:
-                logger.debug("[ERROR] 서버 연결이 끊어져 scan_list Thread를 종료합니다.")
+                logger.info("Terminating scan_list thread")
                 break
             time.sleep(0.2)
 
