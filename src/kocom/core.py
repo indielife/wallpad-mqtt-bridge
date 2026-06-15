@@ -19,13 +19,9 @@ from kocom.devices import (
     Plug,
     Thermostat,
 )
-from kocom.rs485 import CONF_MQTT
 from kocom.state import DeviceState, KocomStateManager, RoomState, ScanState, SubDeviceState
 
-logger = logging.getLogger(__name__)
-
-
-# HA MQTT Discovery
+logger = logging.getLogger(__name__)  # HA MQTT Discovery
 HA_PREFIX = "homeassistant"
 HA_SWITCH = "switch"
 HA_LIGHT = "light"
@@ -251,8 +247,7 @@ class Kocom:
         if server["anonymous"] != "True":
             if server["server"] == "" or server["username"] == "" or server["password"] == "":
                 logger.info(
-                    "%s 설정을 확인하세요. Server[%s] ID[%s] PW[%s] Device[%s]",
-                    CONF_MQTT,
+                    "MQTT 설정을 확인하세요. Server[%s] ID[%s] PW[%s] Device[%s]",
                     server["server"],
                     server["username"],
                     server["password"],
@@ -261,15 +256,14 @@ class Kocom:
                 return False
             mqtt_client.username_pw_set(username=server["username"], password=server["password"])
             logger.debug(
-                "%s STATUS. Server[%s] ID[%s] PW[%s] Device[%s]",
-                CONF_MQTT,
+                "MQTT STATUS. Server[%s] ID[%s] PW[%s] Device[%s]",
                 server["server"],
                 server["username"],
                 server["password"],
                 name,
             )
         else:
-            logger.debug("%s STATUS. Server[%s] Device[%s]", CONF_MQTT, server["server"], name)
+            logger.debug("MQTT STATUS. Server[%s] Device[%s]", server["server"], name)
 
         mqtt_client.connect(server["server"], 1883, 60)
         mqtt_client.loop_start()
@@ -926,8 +920,7 @@ class Grex:
         if server["anonymous"] != "True":
             if server["server"] == "" or server["username"] == "" or server["password"] == "":
                 logger.info(
-                    "%s 설정을 확인하세요. Server[%s] ID[%s] PW[%s] Device[%s]",
-                    CONF_MQTT,
+                    "MQTT 설정을 확인하세요. Server[%s] ID[%s] PW[%s] Device[%s]",
                     server["server"],
                     server["username"],
                     server["password"],
@@ -936,15 +929,14 @@ class Grex:
                 return False
             mqtt_client.username_pw_set(username=server["username"], password=server["password"])
             logger.debug(
-                "%s STATUS. Server[%s] ID[%s] PW[%s] Device[%s]",
-                CONF_MQTT,
+                "MQTT STATUS. Server[%s] ID[%s] PW[%s] Device[%s]",
                 server["server"],
                 server["username"],
                 server["password"],
                 name,
             )
         else:
-            logger.debug("%s STATUS. Server[%s] Device[%s]", CONF_MQTT, server["server"], name)
+            logger.debug("MQTT STATUS. Server[%s] Device[%s]", server["server"], name)
 
         mqtt_client.connect(server["server"], 1883, 60)
         mqtt_client.loop_start()

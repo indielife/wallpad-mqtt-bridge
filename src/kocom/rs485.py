@@ -7,8 +7,6 @@ from kocom.config import AppConfig
 
 logger = logging.getLogger(__name__)
 
-CONF_MQTT = "MQTT"
-
 
 class RS485:
     def __init__(self, config: AppConfig):
@@ -33,30 +31,6 @@ class RS485:
             exit(1)
 
     @property
-    def _wp_light(self):
-        return self.config.wp_light
-
-    @property
-    def _wp_fan(self):
-        return self.config.wp_fan
-
-    @property
-    def _wp_thermostat(self):
-        return self.config.wp_thermostat
-
-    @property
-    def _wp_plug(self):
-        return self.config.wp_plug
-
-    @property
-    def _wp_gas(self):
-        return self.config.wp_gas
-
-    @property
-    def _wp_elevator(self):
-        return self.config.wp_elevator
-
-    @property
     def _device(self):
         if self.type == "serial":
             return self._device_list
@@ -70,10 +44,6 @@ class RS485:
     @property
     def _connect(self):
         return self._con
-
-    @property
-    def _mqtt(self):
-        return self._mqtt_config
 
     def connect_serial(self, port):
         ser = {}

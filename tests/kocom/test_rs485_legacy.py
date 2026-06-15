@@ -72,21 +72,7 @@ def test_legacy_rs485_serial(tmp_path, mock_serial):
 
     rs485 = RS485(config)
 
-    # 1. Wallpad 기기 상태 파싱 검증 (위임 프로퍼티)
-    assert rs485._wp_light is True
-    assert rs485._wp_fan is False
-    assert rs485._wp_thermostat is True
-    assert rs485._wp_plug is False
-    assert rs485._wp_gas is True
-    assert rs485._wp_elevator is False
-
-    # 2. MQTT 설정 파싱 검증
-    assert rs485._mqtt["server"] == "192.168.1.50"
-    assert rs485._mqtt["anonymous"] is False
-    assert rs485._mqtt["username"] == "my_user"
-    assert rs485._mqtt["password"] == "my_pass"
-
-    # 3. Serial 포트 및 디바이스 파싱 검증
+    # 1. Serial 포트 및 디바이스 파싱 검증
     assert rs485._type == "serial"
     assert rs485._device == {1: "kocom", 2: "grex_ventilator"}
     assert len(rs485._port_url) == 2
@@ -104,18 +90,6 @@ def test_legacy_rs485_socket(tmp_path, mock_socket):
 
     rs485 = RS485(config)
 
-    # 1. Wallpad 기기 상태 파싱 검증 (위임 프로퍼티)
-    assert rs485._wp_light is False
-    assert rs485._wp_fan is True
-    assert rs485._wp_thermostat is False
-    assert rs485._wp_plug is True
-    assert rs485._wp_gas is False
-    assert rs485._wp_elevator is True
-
-    # 2. MQTT 설정 파싱 검증
-    assert rs485._mqtt["server"] == "192.168.1.100"
-    assert rs485._mqtt["anonymous"] is True
-
-    # 3. Socket 설정 파싱 검증
+    # 1. Socket 설정 파싱 검증
     assert rs485._type == "socket"
     assert rs485._device == "kocom"
