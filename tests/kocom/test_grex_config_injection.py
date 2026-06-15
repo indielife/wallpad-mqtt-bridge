@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from kocom.core import Grex
+from kocom.grex import Grex
 
 
 @pytest.fixture
@@ -28,8 +28,8 @@ def test_grex_initial_state(mock_config, mock_rs485):
     mock_vent = {"serial": MagicMock(), "name": "grex_ventilator", "length": 12}
 
     with (
-        patch("kocom.core.Grex.connect_mqtt"),
-        patch("kocom.core.threading.Thread"),
+        patch("kocom.grex.Grex.connect_mqtt"),
+        patch("kocom.grex.threading.Thread"),
     ):
         grex = Grex(mock_config, mock_rs485, mock_cont, mock_vent)
 
@@ -55,8 +55,8 @@ def test_grex_default_speed_fallback(mock_config, mock_rs485):
     mock_config.default_speed = "invalid_speed"
 
     with (
-        patch("kocom.core.Grex.connect_mqtt"),
-        patch("kocom.core.threading.Thread"),
+        patch("kocom.grex.Grex.connect_mqtt"),
+        patch("kocom.grex.threading.Thread"),
     ):
         grex = Grex(mock_config, mock_rs485, mock_cont, mock_vent)
 

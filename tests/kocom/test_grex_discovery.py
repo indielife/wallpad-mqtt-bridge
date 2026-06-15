@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from kocom.core import (
+from kocom.grex import (
     DEVICE_FAN,
     HA_FAN,
     HA_PREFIX,
@@ -18,8 +18,8 @@ def grex_factory():
     Grex 인스턴스와 mock_mqtt_instance를 생성해주는 팩토리 픽스처.
     """
     with (
-        patch("kocom.core.Grex.connect_mqtt") as mock_connect_mqtt,
-        patch("kocom.core.threading.Thread"),
+        patch("kocom.grex.Grex.connect_mqtt") as mock_connect_mqtt,
+        patch("kocom.grex.threading.Thread"),
     ):
         mock_mqtt_instance = MagicMock()
         mock_connect_mqtt.return_value = mock_mqtt_instance
