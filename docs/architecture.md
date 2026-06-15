@@ -15,6 +15,9 @@ graph LR
     EW11 <-->|RS485 Hex Packet| Wallpad[Kocom Wallpad & Devices]
 ```
 
+> [!NOTE]
+> 하드웨어 물리 결선 방식(소켓/시리얼, 버스/프록시 토폴로지)에 대한 상세한 가이드는 [하드웨어 연결 가이드](hardware_connection.md) 문서에서 다룹니다.
+
 ---
 
 ## 2. 주요 구성 요소 (Key Components)
