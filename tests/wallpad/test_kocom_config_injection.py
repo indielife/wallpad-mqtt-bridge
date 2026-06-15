@@ -61,28 +61,18 @@ def mock_config():
 
 
 @pytest.fixture
-def mock_rs485():
-    """기존 RS485 객체의 역할을 흉내내는 모킹 객체입니다."""
-    mock = MagicMock()
-    mock._wp_light = True
-    mock._wp_fan = True
-    mock._wp_plug = True
-    mock._wp_gas = True
-    mock._wp_elevator = True
-    mock._wp_thermostat = True
-    mock._type = "serial"
-    mock._connect = {"test_port": MagicMock()}
-    mock._mqtt = {"server": "test", "anonymous": "True"}
-    return mock
+def mock_adapter():
+    """ConnectionAdapter 모킹 객체입니다."""
+    return MagicMock()
 
 
-def test_kocom_initial_state(mock_config, mock_rs485):
+def test_kocom_initial_state(mock_config, mock_adapter):
     """Kocom 객체 생성 시 내부 상태와 설정값들이 정상적으로 초기화되는지 검증합니다."""
     with (
         patch("wallpad.kocom.kocom.Kocom.connect_mqtt"),
         patch("wallpad.kocom.kocom.threading.Thread"),
     ):
-        kocom = Kocom(mock_config, mock_rs485, "kocom", "test_port", 42)
+        kocom = Kocom(mock_config, mock_adapter, "kocom", 42)
 
         # 1. 글로벌 변수 의존성 세팅 검증
         assert kocom.default_speed == "medium"

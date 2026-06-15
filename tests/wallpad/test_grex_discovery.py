@@ -35,10 +35,10 @@ def grex_factory():
                 "anonymous": "True",
             }
 
-            mock_cont = {"serial": MagicMock(), "name": "grex_controller", "length": 11}
-            mock_vent = {"serial": MagicMock(), "name": "grex_ventilator", "length": 12}
+            mock_cont_adapter = MagicMock()
+            mock_vent_adapter = MagicMock()
 
-            grex = Grex(mock_config, mock_client, mock_cont, mock_vent)
+            grex = Grex(mock_config, mock_cont_adapter, mock_vent_adapter)
             return grex, mock_mqtt_instance
 
         yield _create

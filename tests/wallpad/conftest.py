@@ -11,7 +11,7 @@ from wallpad.kocom.kocom import (
     DEVICE_THERMOSTAT,
     Kocom,
 )
-from wallpad.state import KocomStateManager
+from wallpad.kocom.state import KocomStateManager
 
 
 @pytest.fixture

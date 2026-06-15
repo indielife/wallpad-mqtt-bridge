@@ -47,7 +47,7 @@ SOCKET_OPTIONS_JSON = {
 
 @pytest.fixture
 def mock_serial():
-    with patch("wallpad.rs485.serial.Serial") as mock:
+    with patch("wallpad.rs485.rs485.serial.Serial") as mock:
         mock_instance = MagicMock()
         mock_instance.isOpen.return_value = True
         mock.return_value = mock_instance
@@ -56,7 +56,7 @@ def mock_serial():
 
 @pytest.fixture
 def mock_socket():
-    with patch("wallpad.rs485.socket.socket") as mock:
+    with patch("wallpad.rs485.rs485.socket.socket") as mock:
         mock_instance = MagicMock()
         mock.return_value = mock_instance
         yield mock

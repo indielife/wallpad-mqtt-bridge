@@ -2,6 +2,7 @@ import json
 from typing import ClassVar
 
 from wallpad.devices.base import BaseDevice
+
 from .grex_packet_builder import GrexPacketBuilder
 
 HA_PREFIX = "homeassistant"
