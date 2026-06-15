@@ -50,6 +50,13 @@ def mock_config():
         "room1": "02",
         "room2": "03",
     }
+    config.wp_light = True
+    config.wp_fan = True
+    config.wp_plug = True
+    config.wp_gas = True
+    config.wp_elevator = True
+    config.wp_thermostat = True
+    config.mqtt_config = {"server": "test", "anonymous": "True"}
     return config
 
 

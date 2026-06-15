@@ -10,6 +10,7 @@ def mock_config():
     config = MagicMock()
     config.default_speed = "medium"
     config.sw_version = "1.0.0"
+    config.mqtt_config = {"server": "test", "anonymous": "True"}
     return config
 
 

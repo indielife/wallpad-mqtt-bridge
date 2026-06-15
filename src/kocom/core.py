@@ -86,12 +86,12 @@ class Kocom:
 
         self.tick = time.time()
         self.wp_list = KocomStateManager()
-        self.wp_light = self.client._wp_light
-        self.wp_fan = self.client._wp_fan
-        self.wp_plug = self.client._wp_plug
-        self.wp_gas = self.client._wp_gas
-        self.wp_elevator = self.client._wp_elevator
-        self.wp_thermostat = self.client._wp_thermostat
+        self.wp_light = self.config.wp_light
+        self.wp_fan = self.config.wp_fan
+        self.wp_plug = self.config.wp_plug
+        self.wp_gas = self.config.wp_gas
+        self.wp_elevator = self.config.wp_elevator
+        self.wp_thermostat = self.config.wp_thermostat
 
         self.packet_builder = KocomPacketBuilder()
 
@@ -199,7 +199,7 @@ class Kocom:
             self.d_serial = client._connect[device]
         elif self.d_type == "socket":
             self.d_serial = client._connect
-        self.d_mqtt = self.connect_mqtt(self.client._mqtt, name)
+        self.d_mqtt = self.connect_mqtt(self.config.mqtt_config, name)
 
         self._t1 = threading.Thread(target=self.get_serial, args=(name, packet_len))
         self._t1.start()
@@ -887,7 +887,7 @@ class Grex:
             )
             self.default_speed = "medium"
 
-        self.d_mqtt = self.connect_mqtt(client._mqtt, "GREX")
+        self.d_mqtt = self.connect_mqtt(self.config.mqtt_config, "GREX")
         self.packet_builder = GrexPacketBuilder()
         self.device = GrexVentilator(
             name_prefix=self._name,
