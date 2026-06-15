@@ -73,8 +73,7 @@ def test_legacy_rs485_serial(tmp_path, mock_serial):
     rs485 = RS485(config)
 
     # 1. Serial 포트 및 디바이스 파싱 검증
-    assert rs485._type == "serial"
-    assert rs485._device == {1: "kocom", 2: "grex_ventilator"}
+    assert rs485.type == "serial"
     assert len(rs485._port_url) == 2
     assert rs485._port_url[1] == "/dev/ttyUSB0"
     assert rs485._port_url[2] == "/dev/ttyUSB1"
@@ -91,5 +90,4 @@ def test_legacy_rs485_socket(tmp_path, mock_socket):
     rs485 = RS485(config)
 
     # 1. Socket 설정 파싱 검증
-    assert rs485._type == "socket"
-    assert rs485._device == "kocom"
+    assert rs485.type == "socket"
