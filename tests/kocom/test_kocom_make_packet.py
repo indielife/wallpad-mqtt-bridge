@@ -2,7 +2,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from kocom.core import (
+from kocom.devices import Elevator, Fan, Gas, KocomPacketBuilder, Light, Thermostat
+from kocom.kocom import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
     DEVICE_GAS,
@@ -10,7 +11,6 @@ from kocom.core import (
     DEVICE_THERMOSTAT,
     Kocom,
 )
-from kocom.devices import Elevator, Fan, Gas, KocomPacketBuilder, Light, Thermostat
 
 
 @pytest.fixture

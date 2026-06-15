@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from kocom.core import (
+from kocom.kocom import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
     DEVICE_GAS,

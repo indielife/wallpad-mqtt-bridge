@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from kocom.core import (
+from kocom.kocom import (
     DEVICE_ELEVATOR,
     DEVICE_GAS,
     HA_PREFIX,
@@ -38,10 +38,10 @@ def kocom_factory(mock_config):
     활성화할 디바이스 이름을 전달받아 해당 디바이스만 True로 설정합니다.
     """
     with (
-        patch("kocom.core.Kocom.connect_mqtt") as mock_connect_mqtt,
-        patch("kocom.core.threading.Thread"),
-        patch("kocom.core.Kocom.get_serial"),
-        patch("kocom.core.Kocom.scan_list"),
+        patch("kocom.kocom.Kocom.connect_mqtt") as mock_connect_mqtt,
+        patch("kocom.kocom.threading.Thread"),
+        patch("kocom.kocom.Kocom.get_serial"),
+        patch("kocom.kocom.Kocom.scan_list"),
     ):
         mock_mqtt_instance = MagicMock()
         mock_connect_mqtt.return_value = mock_mqtt_instance

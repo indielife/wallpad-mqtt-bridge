@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from kocom.core import (
+from kocom.kocom import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
     DEVICE_GAS,
@@ -79,8 +79,8 @@ def mock_rs485():
 def test_kocom_initial_state(mock_config, mock_rs485):
     """Kocom 객체 생성 시 내부 상태와 설정값들이 정상적으로 초기화되는지 검증합니다."""
     with (
-        patch("kocom.core.Kocom.connect_mqtt"),
-        patch("kocom.core.threading.Thread"),
+        patch("kocom.kocom.Kocom.connect_mqtt"),
+        patch("kocom.kocom.threading.Thread"),
     ):
         kocom = Kocom(mock_config, mock_rs485, "kocom", "test_port", 42)
 

@@ -1,7 +1,8 @@
 from unittest.mock import MagicMock
 
-from kocom.core import DEVICE_THERMOSTAT, Grex, Kocom
 from kocom.devices import KocomPacketBuilder, Thermostat
+from kocom.grex import Grex
+from kocom.kocom import DEVICE_THERMOSTAT, Kocom
 
 
 def test_kocom_check_sum_format():
