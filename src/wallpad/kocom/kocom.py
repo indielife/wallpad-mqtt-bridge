@@ -15,8 +15,8 @@ from wallpad.kocom.devices import (
     Plug,
     Thermostat,
 )
+from wallpad.kocom.state import DeviceState, KocomStateManager, RoomState, ScanState, SubDeviceState
 from wallpad.rs485 import ConnectionAdapter
-from wallpad.state import DeviceState, KocomStateManager, RoomState, ScanState, SubDeviceState
 
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
 
