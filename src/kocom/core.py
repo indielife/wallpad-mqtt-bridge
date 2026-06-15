@@ -295,11 +295,11 @@ class Kocom:
                 logger.info("[From HA]Set Loglevel to %s", _payload)
                 return
             elif _topic[3] == "restart":
-                self.homeassistant_device_discovery()
+                self.publish_ha_discovery()
                 logger.info("[From HA]HomeAssistant Restart")
                 return
             elif _topic[3] == "remove":
-                self.homeassistant_device_discovery(remove=True)
+                self.publish_ha_discovery(remove=True)
                 logger.info("[From HA]HomeAssistant Remove")
                 return
             elif _topic[3] == "scan":
@@ -360,7 +360,7 @@ class Kocom:
                         device, room, sub_device, command, payload, self.default_speed
                     )
                     if payload == "off":
-                        self.send_to_homeassistant(device, DEVICE_WALLPAD, payload)
+                        self.publish_state_to_ha(device, DEVICE_WALLPAD, payload)
                 else:
                     self.wp_list.update_from_ha(
                         device, room, sub_device, command, payload, self.default_speed
@@ -386,7 +386,7 @@ class Kocom:
                     room_state["mode"]["set"],
                     room_state["target_temp"]["set"],
                 )
-                self.send_to_homeassistant(device, room, ha_payload)
+                self.publish_state_to_ha(device, room, ha_payload)
             except Exception as e:
                 logger.error("[From HA] %s = %s, %r", topic, payload, e)
         elif device == HA_FAN:
@@ -406,7 +406,7 @@ class Kocom:
                     room_state["mode"]["set"],
                     room_state["speed"]["set"],
                 )
-                self.send_to_homeassistant(device, room, ha_payload)
+                self.publish_state_to_ha(device, room, ha_payload)
             except Exception as e:
                 logger.error("[From HA] %s = %s, %r", topic, payload, e)
 
@@ -420,7 +420,7 @@ class Kocom:
         if int(rc) == 0:
             logger.info("[MQTT] connected OK")
             client.subscribe("homeassistant/status")
-            self.homeassistant_device_discovery(initial=True)
+            self.publish_ha_discovery(initial=True)
         elif int(rc) == 1:
             logger.info("[MQTT] 1: Connection refused – incorrect protocol version")
         elif int(rc) == 2:
@@ -434,7 +434,7 @@ class Kocom:
         else:
             logger.info("[MQTT] %s : Connection refused", rc)
 
-    def homeassistant_device_discovery(self, initial=False, remove=False):
+    def publish_ha_discovery(self, initial=False, remove=False):
         subscribe_list = []
         subscribe_list.append(("rs485/bridge/#", 0))
         publish_list = []
@@ -460,7 +460,7 @@ class Kocom:
 
         self.ha_registry = ha_topic
 
-    def send_to_homeassistant(self, device, room, value):
+    def publish_state_to_ha(self, device, room, value):
         payload = json.dumps(value)
         if device == DEVICE_LIGHT:
             topic = f"{HA_PREFIX}/{HA_LIGHT}/{room}/state"
@@ -629,17 +629,17 @@ class Kocom:
             ):
                 if v["type"] == "send" and v["dst_device"] == DEVICE_ELEVATOR:
                     self.set_list(v["dst_device"], DEVICE_WALLPAD, v["value"])
-                    self.send_to_homeassistant(v["dst_device"], DEVICE_WALLPAD, v["value"])
+                    self.publish_state_to_ha(v["dst_device"], DEVICE_WALLPAD, v["value"])
                 elif v["src_device"] == DEVICE_FAN or v["src_device"] == DEVICE_GAS:
                     self.set_list(v["src_device"], DEVICE_WALLPAD, v["value"])
-                    self.send_to_homeassistant(v["src_device"], DEVICE_WALLPAD, v["value"])
+                    self.publish_state_to_ha(v["src_device"], DEVICE_WALLPAD, v["value"])
                 elif (
                     v["src_device"] == DEVICE_THERMOSTAT
                     or v["src_device"] == DEVICE_LIGHT
                     or v["src_device"] == DEVICE_PLUG
                 ):
                     self.set_list(v["src_device"], v["src_room"], v["value"])
-                    self.send_to_homeassistant(v["src_device"], v["src_room"], v["value"])
+                    self.publish_state_to_ha(v["src_device"], v["src_room"], v["value"])
         except:
             logger.info("[%s %s]Error %s", from_to, name, packet)
 
@@ -774,7 +774,7 @@ class Kocom:
                 v["value"],
             )
         if device == DEVICE_ELEVATOR:
-            self.send_to_homeassistant(DEVICE_ELEVATOR, DEVICE_WALLPAD, "on")
+            self.publish_state_to_ha(DEVICE_ELEVATOR, DEVICE_WALLPAD, "on")
         self.write(packet)
 
     def make_packet(self, device, room, cmd, target, value):
@@ -956,7 +956,7 @@ class Grex:
 
         if "config" in _topic:
             if _topic[0] == "rs485" and _topic[3] == "restart":
-                self.homeassistant_device_discovery()
+                self.publish_ha_discovery()
                 return
         elif _topic[0] == HA_PREFIX and _topic[1] == HA_FAN and _topic[2] == "grex":
             logger.info("Message Fan: %s = %s", msg.topic, _payload)
@@ -971,7 +971,7 @@ class Grex:
                 self.mqtt_cont[_topic[3]] = _payload
 
                 if self.mqtt_cont["mode"] == "off" and self.mqtt_cont["speed"] == "off":
-                    self.send_to_homeassistant(HA_FAN, self.mqtt_cont)
+                    self.publish_state_to_ha(HA_FAN, self.mqtt_cont)
 
     def on_publish(self, client, obj, mid):
         logger.info("Publish: %s", str(mid))
@@ -982,7 +982,7 @@ class Grex:
     def on_connect(self, client, userdata, flags, rc):
         if int(rc) == 0:
             logger.info("MQTT connected OK")
-            self.homeassistant_device_discovery(initial=True)
+            self.publish_ha_discovery(initial=True)
         elif int(rc) == 1:
             logger.info("1: Connection refused – incorrect protocol version")
         elif int(rc) == 2:
@@ -996,7 +996,7 @@ class Grex:
         else:
             logger.info(rc, ": Connection refused")
 
-    def homeassistant_device_discovery(self, initial=False, remove=False):
+    def publish_ha_discovery(self, initial=False, remove=False):
         subscribe_list = []
         publish_list = []
         subscribe_list.append(("rs485/bridge/#", 0))
@@ -1012,7 +1012,7 @@ class Grex:
             for topic, payload in ha.items():
                 self.d_mqtt.publish(topic, payload, retain=True)
 
-    def send_to_homeassistant(self, target, value):
+    def publish_state_to_ha(self, target, value):
         if target == HA_FAN:
             payload = json.dumps(value)
             topic = f"{HA_PREFIX}/{HA_FAN}/grex/state"
@@ -1085,7 +1085,7 @@ class Grex:
                 ):
                     send_to_ha_fan["mode"] = "on"
                     send_to_ha_fan["speed"] = self.grex_cont["speed"]
-                self.send_to_homeassistant(HA_FAN, send_to_ha_fan)
+                self.publish_state_to_ha(HA_FAN, send_to_ha_fan)
 
                 send_to_ha_sensor = {"fan_mode": "off", "fan_speed": "off"}
                 if self.grex_cont["mode"] != "off" or (
@@ -1107,7 +1107,7 @@ class Grex:
                         send_to_ha_sensor["fan_speed"] = "3단"
                     elif self.grex_cont["speed"] == "off":
                         send_to_ha_sensor["fan_speed"] = "대기"
-                self.send_to_homeassistant(HA_SENSOR, send_to_ha_sensor)
+                self.publish_state_to_ha(HA_SENSOR, send_to_ha_sensor)
 
             if self.grex_cont["mode"] == "off":
                 response_packet = self.device.build_response_packet("off", "off")
@@ -1146,7 +1146,7 @@ class Grex:
                 ):
                     send_to_ha_fan["mode"] = "on"
                     send_to_ha_fan["speed"] = self.vent_cont["speed"]
-                self.send_to_homeassistant(HA_FAN, send_to_ha_fan)
+                self.publish_state_to_ha(HA_FAN, send_to_ha_fan)
 
                 send_to_ha_sensor = {"fan_mode": "off", "fan_speed": "off"}
                 if self.grex_cont["mode"] != "off" or (
@@ -1168,7 +1168,7 @@ class Grex:
                         send_to_ha_sensor["fan_speed"] = "3단"
                     elif self.vent_cont["speed"] == "off":
                         send_to_ha_sensor["fan_speed"] = "대기"
-                self.send_to_homeassistant(HA_SENSOR, send_to_ha_sensor)
+                self.publish_state_to_ha(HA_SENSOR, send_to_ha_sensor)
 
     def hex_to_list(self, hex_string):
         slide_windows = 2

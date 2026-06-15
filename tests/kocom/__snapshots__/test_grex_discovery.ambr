@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: test_grex_homeassistant_device_discovery[False][grex_publish_payload_grex_fan]
+# name: test_grex_publish_ha_discovery[False][grex_publish_payload_grex_fan]
   dict({
     'cmd_t': 'homeassistant/fan/grex/mode',
     'device': dict({
@@ -26,7 +26,7 @@
     'uniq_id': 'grex_grex_fan',
   })
 # ---
-# name: test_grex_homeassistant_device_discovery[False][grex_publish_payload_grex_fan_mode]
+# name: test_grex_publish_ha_discovery[False][grex_publish_payload_grex_fan_mode]
   dict({
     'device': dict({
       'ids': 'grex_ventilator',
@@ -42,7 +42,7 @@
     'val_tpl': '{{ value_json.fan_mode }}',
   })
 # ---
-# name: test_grex_homeassistant_device_discovery[False][grex_publish_payload_grex_fan_speed]
+# name: test_grex_publish_ha_discovery[False][grex_publish_payload_grex_fan_speed]
   dict({
     'device': dict({
       'ids': 'grex_ventilator',
@@ -58,7 +58,7 @@
     'val_tpl': '{{ value_json.fan_speed }}',
   })
 # ---
-# name: test_grex_homeassistant_device_discovery[True][grex_publish_payload_grex_fan]
+# name: test_grex_publish_ha_discovery[True][grex_publish_payload_grex_fan]
   dict({
     'cmd_t': 'homeassistant/fan/grex/mode',
     'device': dict({
@@ -85,7 +85,7 @@
     'uniq_id': 'grex_grex_fan',
   })
 # ---
-# name: test_grex_homeassistant_device_discovery[True][grex_publish_payload_grex_fan_mode]
+# name: test_grex_publish_ha_discovery[True][grex_publish_payload_grex_fan_mode]
   dict({
     'device': dict({
       'ids': 'grex_ventilator',
@@ -101,7 +101,7 @@
     'val_tpl': '{{ value_json.fan_mode }}',
   })
 # ---
-# name: test_grex_homeassistant_device_discovery[True][grex_publish_payload_grex_fan_speed]
+# name: test_grex_publish_ha_discovery[True][grex_publish_payload_grex_fan_speed]
   dict({
     'device': dict({
       'ids': 'grex_ventilator',
@@ -117,7 +117,7 @@
     'val_tpl': '{{ value_json.fan_speed }}',
   })
 # ---
-# name: test_grex_homeassistant_device_discovery[True][grex_subscribe_topics]
+# name: test_grex_publish_ha_discovery[True][grex_subscribe_topics]
   list([
     tuple(
       'rs485/bridge/#',

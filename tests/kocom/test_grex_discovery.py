@@ -51,12 +51,12 @@ def grex_factory():
         True,  # 초기 구동 검증 (Subscribe 추가)
     ],
 )
-def test_grex_homeassistant_device_discovery(snapshot, initial, grex_factory):
+def test_grex_publish_ha_discovery(snapshot, initial, grex_factory):
     # 1. 의존성 팩토리로 Grex 인스턴스 생성
     grex, mock_mqtt_instance = grex_factory()
 
     # 2. 테스트할 메서드 실행
-    grex.homeassistant_device_discovery(initial=initial)
+    grex.publish_ha_discovery(initial=initial)
 
     # 3. Publish 검증
     publish_calls = mock_mqtt_instance.publish.call_args_list
