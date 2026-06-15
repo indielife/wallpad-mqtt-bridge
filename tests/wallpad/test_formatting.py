@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
-from wallpad.kocom.devices import KocomPacketBuilder, Thermostat
 from wallpad.grex.grex import Grex
+from wallpad.kocom.devices import KocomPacketBuilder, Thermostat
 from wallpad.kocom.kocom import DEVICE_THERMOSTAT, Kocom
 
 

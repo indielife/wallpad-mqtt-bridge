@@ -60,13 +60,9 @@ def kocom_factory(mock_config):
                 "anonymous": "True",
             }
 
-            mock_client = MagicMock()
-            mock_client._type = "serial"
-            mock_client._connect = {"test_device": MagicMock()}
+            mock_adapter = MagicMock()
 
-            wallpad = Kocom(
-                mock_config, mock_client, name="test_name", device="test_device", packet_len=10
-            )
+            wallpad = Kocom(mock_config, mock_adapter, name="test_name", packet_len=10)
 
             return wallpad, mock_mqtt_instance
 

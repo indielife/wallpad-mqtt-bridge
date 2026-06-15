@@ -15,30 +15,31 @@ def mock_config():
 
 
 @pytest.fixture
-def mock_rs485():
-    """기존 RS485 객체의 역할을 흉내내는 모킹 객체입니다."""
-    mock = MagicMock()
-    mock._mqtt = {"server": "test", "anonymous": "True"}
-    return mock
+def mock_controller_adapter():
+    """Mock ConnectionAdapter for Grex Controller."""
+    return MagicMock()
 
 
-def test_grex_initial_state(mock_config, mock_rs485):
+@pytest.fixture
+def mock_ventilator_adapter():
+    """Mock ConnectionAdapter for Grex Ventilator."""
+    return MagicMock()
+
+
+def test_grex_initial_state(mock_config, mock_controller_adapter, mock_ventilator_adapter):
     """Grex 객체 생성 시 내부 상태와 통신 의존성들이 정상적으로 초기화되는지 검증합니다."""
-    mock_cont = {"serial": MagicMock(), "name": "grex_controller", "length": 11}
-    mock_vent = {"serial": MagicMock(), "name": "grex_ventilator", "length": 12}
-
     with (
         patch("wallpad.grex.grex.Grex.connect_mqtt"),
         patch("wallpad.grex.grex.threading.Thread"),
     ):
-        grex = Grex(mock_config, mock_rs485, mock_cont, mock_vent)
+        grex = Grex(mock_config, mock_controller_adapter, mock_ventilator_adapter)
 
         # 1. 글로벌 변수 의존성 세팅 검증
         assert grex.default_speed == "medium"
 
         # 2. 통신 연결 정보 및 디바이스 상태 객체 검증
-        assert grex.contoller == mock_cont
-        assert grex.ventilator == mock_vent
+        assert grex.controller_adapter == mock_controller_adapter
+        assert grex.ventilator_adapter == mock_ventilator_adapter
         assert grex.grex_cont == {"mode": "off", "speed": "off"}
         assert grex.vent_cont == {"mode": "off", "speed": "off"}
         assert grex.mqtt_cont == {"mode": "off", "speed": "off"}
@@ -46,11 +47,8 @@ def test_grex_initial_state(mock_config, mock_rs485):
         assert grex.device.name_prefix == "grex"
 
 
-def test_grex_default_speed_fallback(mock_config, mock_rs485):
+def test_grex_default_speed_fallback(mock_config, mock_controller_adapter, mock_ventilator_adapter):
     """Grex 객체 생성 시 잘못된 default_speed가 주어지면 medium으로 강제 설정되는지 검증합니다."""
-    mock_cont = {"serial": MagicMock(), "name": "grex_controller", "length": 11}
-    mock_vent = {"serial": MagicMock(), "name": "grex_ventilator", "length": 12}
-
     # 잘못된 설정값 모킹
     mock_config.default_speed = "invalid_speed"
 
@@ -58,7 +56,7 @@ def test_grex_default_speed_fallback(mock_config, mock_rs485):
         patch("wallpad.grex.grex.Grex.connect_mqtt"),
         patch("wallpad.grex.grex.threading.Thread"),
     ):
-        grex = Grex(mock_config, mock_rs485, mock_cont, mock_vent)
+        grex = Grex(mock_config, mock_controller_adapter, mock_ventilator_adapter)
 
         # 이상한 값이 들어와도 medium으로 방어되는지 검증
         assert grex.default_speed == "medium"

@@ -15,6 +15,7 @@ from wallpad.kocom.devices import (
     Plug,
     Thermostat,
 )
+from wallpad.rs485 import ConnectionAdapter
 from wallpad.state import DeviceState, KocomStateManager, RoomState, ScanState, SubDeviceState
 
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
@@ -58,9 +59,9 @@ KOCOM_INTERVAL = 100
 
 
 class Kocom:
-    def __init__(self, config: AppConfig, client, name, device, packet_len):  # noqa: C901
+    def __init__(self, config: AppConfig, adapter: ConnectionAdapter, name, packet_len):  # noqa: C901
         self.config = config
-        self.client = client
+        self.adapter = adapter
         self._name = name
         self.connected = True
 
@@ -186,11 +187,6 @@ class Kocom:
                     )
                 )
 
-        self.d_type = client._type
-        if self.d_type == "serial":
-            self.d_serial = client._connect[device]
-        elif self.d_type == "socket":
-            self.d_serial = client._connect
         self.d_mqtt = self.connect_mqtt(self.config.mqtt_config, name)
 
         self._t1 = threading.Thread(target=self.get_serial, args=(name, packet_len))
@@ -206,32 +202,22 @@ class Kocom:
             return False
 
     def read(self):
-        if self.client._connect is False:
+        if not self.adapter or not self.adapter.readable():
             return ""
         try:
-            if self.d_type == "serial":
-                if self.d_serial.readable():
-                    return self.d_serial.read()
-                else:
-                    return ""
-            elif self.d_type == "socket":
-                return self.d_serial.recv(1)
-        except Exception:
-            logger.info("[Serial Read] Connection Error")
+            return self.adapter.read()
+        except Exception as e:
+            logger.error("Connection error during read: %r", e)
 
     def write(self, data):
-        if not data:
-            return
-        self.tick = time.time()
-        if self.client._connect is False:
+        if not data or not self.adapter:
             return
         try:
-            if self.d_type == "serial":
-                return self.d_serial.write(bytearray.fromhex(data))
-            elif self.d_type == "socket":
-                return self.d_serial.send(bytearray.fromhex(data))
-        except Exception:
-            logger.info("[Serial Write] Connection Error")
+            res = self.adapter.write(bytearray.fromhex(data))
+            self.tick = time.time()
+            return res
+        except Exception as e:
+            logger.error("Connection error during write: %r", e)
 
     def connect_mqtt(self, server, name):
         mqtt_client = mqtt.Client()

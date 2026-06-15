@@ -7,6 +7,7 @@ import paho.mqtt.client as mqtt
 
 from wallpad.config import AppConfig
 from wallpad.grex.devices import GrexPacketBuilder, GrexVentilator
+from wallpad.rs485 import ConnectionAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +33,16 @@ class Grex:
         "0000": "off",
     }
 
-    def __init__(self, config: AppConfig, client, cont, vent):
+    def __init__(
+        self,
+        config: AppConfig,
+        controller_adapter: ConnectionAdapter,
+        ventilator_adapter: ConnectionAdapter,
+    ):
         self.config = config
         self._name = "grex"
-        self.contoller = cont
-        self.ventilator = vent
+        self.controller_adapter = controller_adapter
+        self.ventilator_adapter = ventilator_adapter
         self.grex_cont = {"mode": "off", "speed": "off"}
         self.vent_cont = {"mode": "off", "speed": "off"}
         self.mqtt_cont = {"mode": "off", "speed": "off"}
@@ -60,9 +66,9 @@ class Grex:
         _t4 = threading.Thread(
             target=self.get_serial,
             args=(
-                self.contoller["serial"],
-                self.contoller["name"],
-                self.contoller["length"],
+                self.controller_adapter,
+                "grex_controller",
+                11,
             ),
         )
         _t4.daemon = True
@@ -70,9 +76,9 @@ class Grex:
         _t5 = threading.Thread(
             target=self.get_serial,
             args=(
-                self.ventilator["serial"],
-                self.ventilator["name"],
-                self.ventilator["length"],
+                self.ventilator_adapter,
+                "grex_ventilator",
+                12,
             ),
         )
         _t5.daemon = True
@@ -184,38 +190,37 @@ class Grex:
             self.d_mqtt.publish(topic, payload, retain=True)
             logger.info("[To HA] %s = %s", topic, payload)
 
-    def get_serial(self, ser, packet_name, packet_len):
+    def get_serial(self, adapter, packet_name, packet_len):
         buf = []
         start_flag = False
         while True:
-            if ser.readable():
-                row_data = ser.read()
-                hex_d = row_data.hex()
-                start_hex = ""
-                if packet_name == "kocom":
-                    start_hex = "aa"
-                elif packet_name == "grex_ventilator":
-                    start_hex = "d1"
-                elif packet_name == "grex_controller":
-                    start_hex = "d0"
-                if hex_d == start_hex:
-                    start_flag = True
-                if start_flag:
-                    buf.append(hex_d)
+            row_data = adapter.read()
+            hex_d = row_data.hex()
+            start_hex = ""
+            if packet_name == "kocom":
+                start_hex = "aa"
+            elif packet_name == "grex_ventilator":
+                start_hex = "d1"
+            elif packet_name == "grex_controller":
+                start_hex = "d0"
+            if hex_d == start_hex:
+                start_flag = True
+            if start_flag:
+                buf.append(hex_d)
 
-                if len(buf) >= packet_len:
-                    joindata = "".join(buf)
-                    chksum = self.validate_checksum(joindata, packet_len - 1)
-                    if chksum[0]:
-                        self.packet_parsing(joindata, packet_name)
-                    buf = []
-                    start_flag = False
+            if len(buf) >= packet_len:
+                joindata = "".join(buf)
+                chksum = self.validate_checksum(joindata, packet_len - 1)
+                if chksum[0]:
+                    self.packet_parsing(joindata, packet_name)
+                buf = []
+                start_flag = False
 
     def _handle_d00a(self):
         m_packet = self.device.build_response_packet("off", "off")
         m_chksum = self.validate_checksum(m_packet, 11)
         if m_chksum[0]:
-            self.contoller["serial"].write(bytearray.fromhex(m_packet))
+            self.controller_adapter.write(bytearray.fromhex(m_packet))
         logger.debug("[From Grex]error code : E1")
 
     def _handle_d08a(self, packet, packet_name):  # noqa: C901
@@ -283,9 +288,9 @@ class Grex:
             )
 
         if response_packet != "":
-            self.contoller["serial"].write(bytearray.fromhex(response_packet))
+            self.controller_adapter.write(bytearray.fromhex(response_packet))
         if control_packet != "":
-            self.ventilator["serial"].write(bytearray.fromhex(control_packet))
+            self.ventilator_adapter.write(bytearray.fromhex(control_packet))
 
     def _handle_d18b(self, packet, packet_name):  # noqa: C901
         p_speed = packet[8:12]
