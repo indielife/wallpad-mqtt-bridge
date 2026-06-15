@@ -134,6 +134,30 @@ class AppConfig:
         self.wp_list = json_data.get("Wallpad", {})
 
     @property
+    def wp_light(self) -> bool:
+        return self.wp_list.get("light") is True
+
+    @property
+    def wp_fan(self) -> bool:
+        return self.wp_list.get("fan") is True
+
+    @property
+    def wp_thermostat(self) -> bool:
+        return self.wp_list.get("thermostat") is True
+
+    @property
+    def wp_plug(self) -> bool:
+        return self.wp_list.get("plug") is True
+
+    @property
+    def wp_gas(self) -> bool:
+        return self.wp_list.get("gas") is True
+
+    @property
+    def wp_elevator(self) -> bool:
+        return self.wp_list.get("elevator") is True
+
+    @property
     def kocom_room_rev(self):
         """방 이름에서 패킷 식별용 16진수 문자열로의 역방향 매핑입니다."""
         rev = {v: k for k, v in self.kocom_room.items()}

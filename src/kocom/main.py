@@ -62,7 +62,7 @@ if __name__ == "__main__":
     grex_controller = False
     connection_flag = False
     while not connection_flag:
-        rs485 = RS485()
+        rs485 = RS485(config)
         connection_flag = True
         if rs485._type == "serial":
             for device in rs485._device:

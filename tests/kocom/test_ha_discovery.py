@@ -47,19 +47,20 @@ def kocom_factory(mock_config):
         mock_connect_mqtt.return_value = mock_mqtt_instance
 
         def _create(active_device: str):
-            mock_client = MagicMock()
-            mock_client._wp_light = active_device == "light"
-            mock_client._wp_fan = active_device == "fan"
-            mock_client._wp_plug = active_device == "plug"
-            mock_client._wp_gas = active_device == "gas"
-            mock_client._wp_elevator = active_device == "elevator"
-            mock_client._wp_thermostat = active_device == "thermostat"
-            mock_client._mqtt = {
+            mock_config.wp_light = active_device == "light"
+            mock_config.wp_fan = active_device == "fan"
+            mock_config.wp_plug = active_device == "plug"
+            mock_config.wp_gas = active_device == "gas"
+            mock_config.wp_elevator = active_device == "elevator"
+            mock_config.wp_thermostat = active_device == "thermostat"
+            mock_config.mqtt_config = {
                 "server": "test",
                 "username": "",
                 "password": "",
                 "anonymous": "True",
             }
+
+            mock_client = MagicMock()
             mock_client._type = "serial"
             mock_client._connect = {"test_device": MagicMock()}
 
