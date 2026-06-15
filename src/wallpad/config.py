@@ -61,7 +61,12 @@ class AppConfig:
         self.kocom_plug_size = dict(KOCOM_PLUG_SIZE_DEFAULT)
         self.kocom_room = dict(KOCOM_ROOM_DEFAULT)
         self.kocom_room_thermostat = dict(KOCOM_ROOM_THERMOSTAT_DEFAULT)
-        self.ventilator = "None"
+        self.ventilator_manufacturer = "None"
+        self.ventilator_connection_type = "serial"
+        self.grex_ventilator_port = ""
+        self.grex_controller_port = ""
+        self.ventilator_socket_server = ""
+        self.ventilator_socket_port = 8899
 
         # 통신 및 장치 설정 변수 (기존 rs485.conf 대체)
         self.wp_list = {}
@@ -133,7 +138,22 @@ class AppConfig:
 
         self.mqtt_config = json_data.get("MQTT", {})
         self.wp_list = json_data.get("Wallpad", {})
-        self.ventilator = json_data.get("Ventilator", "None")
+
+        vent = json_data.get("Ventilator", {})
+        self.ventilator_manufacturer = vent.get("manufacturer", "None")
+        self.ventilator_connection_type = vent.get("connection_type", "Serial").lower()
+
+        vent_socket = vent.get("Socket", {})
+        self.ventilator_socket_server = vent_socket.get("server", "")
+        self.ventilator_socket_port = vent_socket.get("port", 8899)
+
+        vent_serial = vent.get("Serial", {})
+        self.grex_controller_port = vent_serial.get("controller_port", "")
+        self.grex_ventilator_port = vent_serial.get("ventilator_port", "")
+
+    @property
+    def ventilator(self) -> str:
+        return self.ventilator_manufacturer
 
     @property
     def wp_light(self) -> bool:

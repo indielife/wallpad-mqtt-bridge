@@ -7,8 +7,8 @@ SAMPLE_OPTIONS_JSON = {
     "RS485": {"type": "Serial"},
     "Socket": {"server": "192.168.1.100", "port": 8899},
     "SocketDevice": {"device": "kocom"},
-    "Serial": {"port1": "/dev/ttyUSB0", "port2": "/dev/ttyUSB1", "port3": ""},
-    "SerialDevice": {"port1": "kocom", "port2": "grex_ventilator", "port3": ""},
+    "Serial": {"port1": "/dev/ttyUSB0"},
+    "SerialDevice": {"port1": "kocom"},
     "MQTT": {
         "anonymous": False,
         "server": "192.168.1.200",
@@ -34,7 +34,12 @@ SAMPLE_OPTIONS_JSON = {
     "KOCOM_PLUG_SIZE": [{"name": "livingroom", "number": 2}],
     "KOCOM_ROOM": ["livingroom", "bedroom"],
     "KOCOM_ROOM_THERMOSTAT": ["livingroom"],
-    "Ventilator": "Grex",
+    "Ventilator": {
+        "manufacturer": "Grex",
+        "connection_type": "Serial",
+        "Socket": {"server": "192.168.1.101", "port": 8899},
+        "Serial": {"ventilator_port": "/dev/ttyUSB1", "controller_port": "/dev/ttyUSB2"},
+    },
 }
 
 
@@ -66,8 +71,8 @@ def test_app_config_load(mock_isfile):
         assert config.socket_device == "kocom"
 
         # 4. 시리얼 포트 설정 검증 (빈 문자열 무시, 포트 번호 키 추출)
-        assert config.port_url == {1: "/dev/ttyUSB0", 2: "/dev/ttyUSB1"}
-        assert config.device_list == {1: "kocom", 2: "grex_ventilator"}
+        assert config.port_url == {1: "/dev/ttyUSB0"}
+        assert config.device_list == {1: "kocom"}
 
         # 5. MQTT 및 Wallpad 설정 (Boolean 타입 정상 파싱) 검증
         assert config.mqtt_config["server"] == "192.168.1.200"
@@ -87,6 +92,12 @@ def test_app_config_load(mock_isfile):
 
         # 7. 신규 전열교환기(Ventilator) 설정 파싱 검증
         assert config.ventilator == "Grex"
+        assert config.ventilator_manufacturer == "Grex"
+        assert config.ventilator_connection_type == "serial"
+        assert config.grex_ventilator_port == "/dev/ttyUSB1"
+        assert config.grex_controller_port == "/dev/ttyUSB2"
+        assert config.ventilator_socket_server == "192.168.1.101"
+        assert config.ventilator_socket_port == 8899
 
 
 @patch("wallpad.config.os.path.isfile", return_value=False)

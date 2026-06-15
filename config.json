@@ -112,7 +112,18 @@
       "room1",
       "room2"
     ],
-    "Ventilator": "None"
+    "Ventilator": {
+      "manufacturer": "None",
+      "connection_type": "Serial",
+      "Socket": {
+        "server": "",
+        "port": 8899
+      },
+      "Serial": {
+        "controller_port": "",
+        "ventilator_port": ""
+      }
+    }
   },
   "schema": {
     "RS485": {
@@ -126,14 +137,10 @@
       "device": "str?"
     },
     "Serial": {
-      "port1": "str?",
-      "port2": "str?",
-      "port3": "str?"
+      "port1": "str?"
     },
     "SerialDevice": {
-      "port1": "str?",
-      "port2": "str?",
-      "port3": "str?"
+      "port1": "str?"
     },
     "MQTT": {
       "anonymous": "bool",
@@ -174,6 +181,17 @@
     "KOCOM_ROOM_THERMOSTAT": [
       "str?"
     ],
-    "Ventilator": "list(None|Grex)?"
+    "Ventilator": {
+      "manufacturer": "list(None|Grex)",
+      "connection_type": "list(Serial|Socket)",
+      "Socket": {
+        "server": "str?",
+        "port": "int?"
+      },
+      "Serial": {
+        "controller_port": "str?",
+        "ventilator_port": "str?"
+      }
+    }
   }
 }

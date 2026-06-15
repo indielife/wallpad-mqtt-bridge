@@ -8,8 +8,13 @@ from wallpad.rs485 import RS485
 
 SERIAL_OPTIONS_JSON = {
     "RS485": {"type": "Serial"},
-    "Serial": {"port1": "/dev/ttyUSB0", "port2": "/dev/ttyUSB1"},
-    "SerialDevice": {"port1": "kocom", "port2": "grex_ventilator"},
+    "Serial": {"port1": "/dev/ttyUSB0"},
+    "SerialDevice": {"port1": "kocom"},
+    "Ventilator": {
+        "manufacturer": "Grex",
+        "connection_type": "Serial",
+        "Serial": {"ventilator_port": "/dev/ttyUSB1", "controller_port": "/dev/ttyUSB2"},
+    },
     "MQTT": {
         "anonymous": False,
         "server": "192.168.1.50",
@@ -74,9 +79,13 @@ def test_legacy_rs485_serial(tmp_path, mock_serial):
 
     # 1. Serial 포트 및 디바이스 파싱 검증
     assert rs485.type == "serial"
-    assert len(rs485._port_url) == 2
+    assert len(rs485._port_url) == 1
     assert rs485._port_url[1] == "/dev/ttyUSB0"
-    assert rs485._port_url[2] == "/dev/ttyUSB1"
+    assert config.grex_ventilator_port == "/dev/ttyUSB1"
+    assert config.grex_controller_port == "/dev/ttyUSB2"
+    assert 1 in rs485.adapters
+    assert "grex_ventilator" in rs485.adapters
+    assert "grex_controller" in rs485.adapters
 
 
 def test_legacy_rs485_socket(tmp_path, mock_socket):
