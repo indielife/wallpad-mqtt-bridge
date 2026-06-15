@@ -9,6 +9,10 @@ labels: ["type:feat"]
 
 <!-- Why is this work needed? -->
 
+## Branch Name
+
+- `<type>/<issue-number>-<description>` (e.g., `feat/123-add-boiler-entity`)
+
 ## Approach
 
 <!-- Brief outline of the implementation approach. -->
