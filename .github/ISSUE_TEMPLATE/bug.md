@@ -9,6 +9,10 @@ labels: ["type:fix"]
 
 <!-- One or two sentences: what is broken and why does it matter? -->
 
+## Branch Name
+
+- `<type>/<issue-number>-<description>` (e.g., `fix/123-checksum-error`)
+
 ## Steps to reproduce
 
 1.

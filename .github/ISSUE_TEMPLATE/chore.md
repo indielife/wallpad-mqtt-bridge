@@ -9,6 +9,10 @@ labels: ["type:chore"]
 
 <!-- Why is this work needed? -->
 
+## Branch Name
+
+- `<type>/<issue-number>-<description>` (e.g., `chore/123-update-dependencies`, `refactor/123-split-modules`)
+
 ## Approach
 
 <!-- Brief outline of the approach. Often short or omitted for trivial
