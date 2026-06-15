@@ -76,12 +76,28 @@ def test_app_config_load(mock_isfile):
         assert config.wp_list["gas"] is True
         assert config.wp_list["fan"] is False
 
+        # 6. 개별 디바이스 헬퍼 프로퍼티 검증
+        assert config.wp_light is True
+        assert config.wp_plug is False
+        assert config.wp_gas is True
+        assert config.wp_fan is False
+        assert config.wp_thermostat is True
+        assert config.wp_elevator is False
+
 
 @patch("kocom.config.os.path.isfile", return_value=False)
 def test_app_config_defaults(mock_isfile):
     """options.json 파일이 없을 때 기본 방 설정 및 역방향 맵핑 프로퍼티가 올바르게 로드되는지 검증합니다."""
     config = AppConfig(options_path="/fake/nonexistent.json")
     config.load()
+
+    # 기본 디바이스 활성화 상태는 False인지 검증
+    assert config.wp_light is False
+    assert config.wp_fan is False
+    assert config.wp_thermostat is False
+    assert config.wp_plug is False
+    assert config.wp_gas is False
+    assert config.wp_elevator is False
 
     # 1. 기본 방 정보 검증
     assert config.kocom_room == {
