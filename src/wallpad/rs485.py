@@ -26,8 +26,8 @@ class RS485:
             self._socket_device = config.socket_device
             self._con = self.connect_socket(config.socket_server, config.socket_port)
         else:
-            logger.info("[CONFIG] SERIAL / SOCKET IS NOT VALID")
-            logger.info("[CONFIG] EXIT RS485")
+            logger.error("Invalid communication type: %s (must be serial or socket)", d_type)
+            logger.error("Exiting RS485 initialization")
             exit(1)
 
     @property
@@ -58,9 +58,14 @@ class RS485:
                     logger.info("Port %s : %s", p, port[p])
                     opened += 1
                 else:
-                    logger.info("시리얼포트가 열려있지 않습니다.[%s]", port[p])
-            except serial.serialutil.SerialException:
-                logger.info("시리얼포트에 연결할 수 없습니다.[%s]", port[p])
+                    logger.info("Serial port is not open (device: %s, port: %s)", p, port[p])
+            except Exception as e:
+                logger.info(
+                    "Failed to connect to serial port (device: %s, port: %s, error: %r)",
+                    p,
+                    port[p],
+                    e,
+                )
         if opened == 0:
             return False
         return ser
@@ -71,7 +76,7 @@ class RS485:
         try:
             soc.connect((server, int(port)))
         except Exception as e:
-            logger.info("소켓에 연결할 수 없습니다.[%s][%s:%s]", e, server, port)
+            logger.info("Failed to connect to socket (target: %s:%s, error: %r)", server, port, e)
             return False
         soc.settimeout(None)
         return soc
