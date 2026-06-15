@@ -61,6 +61,7 @@ class AppConfig:
         self.kocom_plug_size = dict(KOCOM_PLUG_SIZE_DEFAULT)
         self.kocom_room = dict(KOCOM_ROOM_DEFAULT)
         self.kocom_room_thermostat = dict(KOCOM_ROOM_THERMOSTAT_DEFAULT)
+        self.ventilator = "None"
 
         # 통신 및 장치 설정 변수 (기존 rs485.conf 대체)
         self.wp_list = {}
@@ -132,6 +133,7 @@ class AppConfig:
 
         self.mqtt_config = json_data.get("MQTT", {})
         self.wp_list = json_data.get("Wallpad", {})
+        self.ventilator = json_data.get("Ventilator", "None")
 
     @property
     def wp_light(self) -> bool:

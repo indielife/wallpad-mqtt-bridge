@@ -34,6 +34,7 @@ SAMPLE_OPTIONS_JSON = {
     "KOCOM_PLUG_SIZE": [{"name": "livingroom", "number": 2}],
     "KOCOM_ROOM": ["livingroom", "bedroom"],
     "KOCOM_ROOM_THERMOSTAT": ["livingroom"],
+    "Ventilator": "Grex",
 }
 
 
@@ -84,6 +85,9 @@ def test_app_config_load(mock_isfile):
         assert config.wp_thermostat is True
         assert config.wp_elevator is False
 
+        # 7. 신규 전열교환기(Ventilator) 설정 파싱 검증
+        assert config.ventilator == "Grex"
+
 
 @patch("wallpad.config.os.path.isfile", return_value=False)
 def test_app_config_defaults(mock_isfile):
@@ -98,6 +102,7 @@ def test_app_config_defaults(mock_isfile):
     assert config.wp_plug is False
     assert config.wp_gas is False
     assert config.wp_elevator is False
+    assert config.ventilator == "None"
 
     # 1. 기본 방 정보 검증
     assert config.kocom_room == {

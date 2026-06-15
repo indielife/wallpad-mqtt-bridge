@@ -111,7 +111,8 @@
       "bedroom",
       "room1",
       "room2"
-    ]
+    ],
+    "Ventilator": "None"
   },
   "schema": {
     "RS485": {
@@ -172,6 +173,7 @@
     ],
     "KOCOM_ROOM_THERMOSTAT": [
       "str?"
-    ]
+    ],
+    "Ventilator": "list(None|Grex)?"
   }
 }
