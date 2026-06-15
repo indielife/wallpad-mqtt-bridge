@@ -21,7 +21,7 @@ def _get_version_from_config() -> str:
                     version_str = config_data.get("version", version_str)
                 break
             except Exception as e:
-                logger.debug("Failed to read config from %s: %s", path, e)
+                logger.debug("Failed to read config from %s: %r", path, e)
 
     return version_str
 
