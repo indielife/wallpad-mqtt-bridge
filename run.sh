@@ -7,4 +7,4 @@ echo "    KOCOM Wallpad RS485 Controller Add-on"
 echo "    Version: ${ADDON_VERSION}"
 echo "========================================================"
 
-exec python3 -m kocom.main
+exec python3 -m wallpad.main
