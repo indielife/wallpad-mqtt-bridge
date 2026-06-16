@@ -119,7 +119,7 @@
         "ventilator_port": "/dev/ttyUSB2"
       },
       "Socket": {
-        "ip": "[IP_ADDRESS]",
+        "server": "",
         "port": 8899
       },
       "default_speed": "low"
@@ -188,7 +188,7 @@
         "ventilator_port": "str?"
       },
       "Socket": {
-        "ip": "str?",
+        "server": "str?",
         "port": "int?"
       },
       "default_speed": "str"

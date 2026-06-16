@@ -82,7 +82,7 @@ class AppConfig:
         # 6. Ventilator(전열교환기) 설정
         self.ventilator_manufacturer = "None"
         self.ventilator_connection_type = "serial"
-        self.ventilator_socket_ip = ""
+        self.ventilator_socket_server = ""
         self.ventilator_socket_port = 8899
         self.ventilator_ctrl_port = ""
         self.ventilator_unit_port = ""
@@ -165,7 +165,7 @@ class AppConfig:
         self.ventilator_connection_type = vent.get("connection_type", "Serial").lower()
 
         vent_socket = vent.get("Socket", {})
-        self.ventilator_socket_ip = vent_socket.get("ip", "")
+        self.ventilator_socket_server = vent_socket.get("server", "")
         self.ventilator_socket_port = vent_socket.get("port", 8899)
 
         vent_serial = vent.get("Serial", {})
