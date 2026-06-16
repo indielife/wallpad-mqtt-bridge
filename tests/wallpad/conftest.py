@@ -22,7 +22,6 @@ def mock_config():
     config.init_temp = 22
     config.scan_interval = 300
     config.packet_delay = 0.8
-    config.default_speed = "low"
     config.kocom_default_speed = "low"
     config.kocom_light_size = {"livingroom": 3}
     config.kocom_plug_size = {"livingroom": 2}

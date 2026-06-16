@@ -57,7 +57,6 @@ def test_app_config_load(mock_isfile):
         assert config.scan_interval == 500
         assert config.packey_delay == 1.5
         assert config.kocom_default_speed == "high"
-        assert config.default_speed == "high"
         assert config.log_level == "debug"
 
         # 2. 딕셔너리 리스트 (방, 조명, 플러그) 검증
@@ -118,7 +117,6 @@ def test_app_config_defaults(mock_isfile):
     assert config.wp_elevator is False
     assert config.ventilator == "None"
     assert config.kocom_default_speed == "low"
-    assert config.default_speed == "low"
     assert config.ventilator_default_speed == "low"
 
     # 1. 기본 방 정보 검증

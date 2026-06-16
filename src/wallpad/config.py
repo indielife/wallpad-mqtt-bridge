@@ -156,10 +156,6 @@ class AppConfig:
         self.ventilator_default_speed = vent.get("default_speed", self.ventilator_default_speed)
 
     @property
-    def default_speed(self) -> str:
-        return self.kocom_default_speed
-
-    @property
     def ventilator(self) -> str:
         return self.ventilator_manufacturer
 
