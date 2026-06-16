@@ -21,43 +21,39 @@ class MqttClient:
         self._subscribe_callbacks = []
         self._connected = False
 
-    def connect(self) -> bool:
+    def connect(self) -> None:
         """MQTT 브로커에 TCP 연결을 수립하고 백그라운드 루프를 기동합니다."""
-        if not self.config.anonymous:
-            if not self.config.ip or not self.config.username or not self.config.password:
-                logger.error(
-                    "MQTT 설정을 확인하세요. IP[%s] ID[%s] PW[%s]",
-                    self.config.ip,
-                    self.config.username,
-                    self.config.password,
-                )
-                return False
+        if not self.config.ip:
+            logger.error("IP address is missing.")
+            return
+
+        if self.config.anonymous:
+            logger.debug("Anonymous connection to host: %s", self.config.ip)
+        else:
+            if not self.config.username or not self.config.password:
+                logger.error("Authentication credentials are missing for host: %s", self.config.ip)
+                return
             self.client.username_pw_set(
                 username=self.config.username, password=self.config.password
             )
             logger.debug(
-                "MQTT STATUS. IP[%s] ID[%s] PW[%s]",
+                "Authenticated connection to host: %s with user: %s",
                 self.config.ip,
                 self.config.username,
-                self.config.password,
             )
-        else:
-            logger.debug("MQTT STATUS. IP[%s] (Anonymous)", self.config.ip)
 
         try:
             self.client.connect(self.config.ip, 1883, 60)
             self.client.loop_start()
-            return True
         except Exception as e:
-            logger.error("Failed to connect to MQTT broker: %r", e)
-            return False
+            logger.error("Failed to connect to broker: %r", e)
 
     def _on_connect(self, client, userdata, flags, rc):
         if rc == 0:
-            logger.info("[MQTT] Connected successfully")
+            logger.info("Connected successfully")
             self._connected = True
         else:
-            logger.error("[MQTT] Connection failed with code: %s", rc)
+            logger.error("Connection failed with error code: %s", rc)
 
         for cb in self._connect_callbacks:
             try:
@@ -73,7 +69,7 @@ class MqttClient:
                 logger.error("Error in message callback: %r", e)
 
     def _on_subscribe(self, client, userdata, mid, granted_qos):
-        logger.debug("[MQTT] Subscribed to topic. mid: %s, qos: %s", mid, granted_qos)
+        logger.debug("Subscribed to topic. mid: %s, qos: %s", mid, granted_qos)
         for cb in self._subscribe_callbacks:
             try:
                 cb(client, userdata, mid, granted_qos)
