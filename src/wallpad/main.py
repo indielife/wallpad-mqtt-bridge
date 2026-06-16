@@ -8,6 +8,7 @@ import time
 from wallpad.config import AppConfig
 from wallpad.grex import Grex
 from wallpad.kocom import Kocom
+from wallpad.mqtt import MqttClient
 from wallpad.rs485 import RS485
 
 logger = logging.getLogger(__name__)
@@ -49,7 +50,7 @@ def setup_logging(path: str, level: str = "info"):
     )
 
 
-def run_serial_mode(config: AppConfig, rs485: RS485):
+def run_serial_mode(config: AppConfig, rs485: RS485, mqtt_client: MqttClient):
     # 1. Kocom 기기 초기화
     for port_key, name in config.device_list.items():
         if name == "kocom":
@@ -57,7 +58,7 @@ def run_serial_mode(config: AppConfig, rs485: RS485):
             if adapter and adapter.is_open():
                 try:
                     logger.info("Initializing %s", name)
-                    Kocom(config, adapter, name, 42)
+                    Kocom(config, adapter, name, 42, mqtt_client)
                 except Exception as e:
                     logger.error("Failed to initialize %s: %r", name, e)
 
@@ -68,20 +69,20 @@ def run_serial_mode(config: AppConfig, rs485: RS485):
         if unit_adapter and unit_adapter.is_open() and ctrl_adapter and ctrl_adapter.is_open():
             try:
                 logger.info("Initializing Grex")
-                Grex(config, ctrl_adapter, unit_adapter)
+                Grex(config, ctrl_adapter, unit_adapter, mqtt_client)
             except Exception as e:
                 logger.error("Failed to initialize Grex: %r", e)
         else:
             logger.error("Grex adapters are not open or not available")
 
 
-def run_socket_mode(config: AppConfig, rs485: RS485) -> bool:
+def run_socket_mode(config: AppConfig, rs485: RS485, mqtt_client: MqttClient) -> bool:
     name = rs485.config.socket_device
     adapter = rs485.adapters.get(name)
     if name == "kocom" and adapter:
         logger.info("Initializing %s", name)
         try:
-            kocom = Kocom(config, adapter, name, 42)
+            kocom = Kocom(config, adapter, name, 42, mqtt_client)
             if not kocom.connection_lost():
                 logger.error("Server connection lost. Reconnecting in 1 minute...")
                 time.sleep(60)
@@ -103,11 +104,15 @@ if __name__ == "__main__":
 
     setup_logging(log_path, config.log_level)
 
+    # MqttClient 단일 인스턴스 생성 및 시작
+    mqtt_client = MqttClient(config)
+    mqtt_client.connect()
+
     connection_flag = False
     while not connection_flag:
         rs485 = RS485(config)
         if rs485.type == "serial":
-            run_serial_mode(config, rs485)
+            run_serial_mode(config, rs485, mqtt_client)
             connection_flag = True
         elif rs485.type == "socket":
-            connection_flag = run_socket_mode(config, rs485)
+            connection_flag = run_socket_mode(config, rs485, mqtt_client)

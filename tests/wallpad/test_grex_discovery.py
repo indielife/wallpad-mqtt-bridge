@@ -39,7 +39,7 @@ def grex_factory():
             mock_cont_adapter = MagicMock()
             mock_vent_adapter = MagicMock()
 
-            grex = Grex(mock_config, mock_cont_adapter, mock_vent_adapter)
+            grex = Grex(mock_config, mock_cont_adapter, mock_vent_adapter, mock_mqtt_instance)
             return grex, mock_mqtt_instance
 
         yield _create

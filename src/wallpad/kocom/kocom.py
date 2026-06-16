@@ -16,6 +16,7 @@ from wallpad.kocom.devices import (
     Thermostat,
 )
 from wallpad.kocom.state import DeviceState, KocomStateManager, RoomState, ScanState, SubDeviceState
+from wallpad.mqtt import MqttClient
 from wallpad.rs485 import ConnectionAdapter
 
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
@@ -59,11 +60,19 @@ KOCOM_INTERVAL = 100
 
 
 class Kocom:
-    def __init__(self, config: AppConfig, adapter: ConnectionAdapter, name, packet_len):  # noqa: C901
+    def __init__(  # noqa: C901
+        self,
+        config: AppConfig,
+        adapter: ConnectionAdapter,
+        name,
+        packet_len,
+        mqtt_client: MqttClient,
+    ):
         self.config = config
         self.adapter = adapter
         self._name = name
         self.connected = True
+        self.mqtt_client = mqtt_client
 
         self.default_speed = config.kocom_default_speed
         if self.default_speed not in ["low", "medium", "high"]:

@@ -63,7 +63,13 @@ def kocom_factory(mock_config):
 
             mock_adapter = MagicMock()
 
-            wallpad = Kocom(mock_config, mock_adapter, name="test_name", packet_len=10)
+            wallpad = Kocom(
+                mock_config,
+                mock_adapter,
+                name="test_name",
+                packet_len=10,
+                mqtt_client=mock_mqtt_instance,
+            )
 
             return wallpad, mock_mqtt_instance
 

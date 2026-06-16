@@ -32,7 +32,7 @@ def test_grex_initial_state(mock_config, mock_controller_adapter, mock_ventilato
         patch("wallpad.grex.grex.Grex.connect_mqtt"),
         patch("wallpad.grex.grex.threading.Thread"),
     ):
-        grex = Grex(mock_config, mock_controller_adapter, mock_ventilator_adapter)
+        grex = Grex(mock_config, mock_controller_adapter, mock_ventilator_adapter, MagicMock())
 
         # 1. 글로벌 변수 의존성 세팅 검증
         assert grex.default_speed == "low"
@@ -56,7 +56,7 @@ def test_grex_default_speed_fallback(mock_config, mock_controller_adapter, mock_
         patch("wallpad.grex.grex.Grex.connect_mqtt"),
         patch("wallpad.grex.grex.threading.Thread"),
     ):
-        grex = Grex(mock_config, mock_controller_adapter, mock_ventilator_adapter)
+        grex = Grex(mock_config, mock_controller_adapter, mock_ventilator_adapter, MagicMock())
 
         # 이상한 값이 들어와도 low로 방어되는지 검증
         assert grex.default_speed == "low"

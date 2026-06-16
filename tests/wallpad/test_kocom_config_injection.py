@@ -74,7 +74,7 @@ def test_kocom_initial_state(mock_config, mock_adapter):
         patch("wallpad.kocom.kocom.Kocom.connect_mqtt"),
         patch("wallpad.kocom.kocom.threading.Thread"),
     ):
-        kocom = Kocom(mock_config, mock_adapter, "kocom", 42)
+        kocom = Kocom(mock_config, mock_adapter, "kocom", 42, MagicMock())
 
         # 1. 글로벌 변수 의존성 세팅 검증
         assert kocom.default_speed == "low"

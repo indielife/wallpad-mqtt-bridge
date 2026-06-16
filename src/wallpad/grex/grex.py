@@ -7,6 +7,7 @@ import paho.mqtt.client as mqtt
 
 from wallpad.config import AppConfig
 from wallpad.grex.devices import GrexPacketBuilder, GrexVentilator
+from wallpad.mqtt import MqttClient
 from wallpad.rs485 import ConnectionAdapter
 
 logger = logging.getLogger(__name__)
@@ -38,11 +39,13 @@ class Grex:
         config: AppConfig,
         controller_adapter: ConnectionAdapter,
         ventilator_adapter: ConnectionAdapter,
+        mqtt_client: MqttClient,
     ):
         self.config = config
         self._name = "grex"
         self.controller_adapter = controller_adapter
         self.ventilator_adapter = ventilator_adapter
+        self.mqtt_client = mqtt_client
         self.grex_cont = {"mode": "off", "speed": "off"}
         self.vent_cont = {"mode": "off", "speed": "off"}
         self.mqtt_cont = {"mode": "off", "speed": "off"}
