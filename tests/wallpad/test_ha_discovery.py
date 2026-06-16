@@ -17,17 +17,18 @@ from wallpad.kocom.kocom import (
 def mock_config():
     """테스트용 가짜 AppConfig 설정을 생성하는 픽스처"""
     config = MagicMock()
+    config.sw_version = "RS485 Compilation 0.1.0"
     config.init_temp = 22
     config.scan_interval = 300
     config.packet_delay = 0.8
-    config.default_speed = "medium"
+    config.kocom_default_speed = "low"
     config.kocom_light_size = {"room1": 1}
     config.kocom_plug_size = {"room1": 1}
-    config.sw_version = "RS485 Compilation 0.1.0"
     config.kocom_room = {"00": "room1"}
     config.kocom_room_thermostat = {"00": "room1"}
     config.kocom_room_rev = {"room1": "00", "wallpad": "00"}
     config.kocom_room_thermostat_rev = {"room1": "00"}
+    config.ventilator_default_speed = "low"
     return config
 
 

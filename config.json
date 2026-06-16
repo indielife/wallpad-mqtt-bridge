@@ -52,7 +52,7 @@
       "INIT_TEMP": 22,
       "SCAN_INTERVAL": 300,
       "PACKET_DELAY": 0.8,
-      "DEFAULT_SPEED" : "medium",
+      "DEFAULT_SPEED" : "low",
       "LOGLEVEL" : "info"
     },
     "KOCOM_LIGHT_SIZE": [
@@ -122,7 +122,8 @@
       "Serial": {
         "controller_port": "",
         "ventilator_port": ""
-      }
+      },
+      "default_speed": "low"
     }
   },
   "schema": {
@@ -191,7 +192,8 @@
       "Serial": {
         "controller_port": "str?",
         "ventilator_port": "str?"
-      }
+      },
+      "default_speed": "str"
     }
   }
 }

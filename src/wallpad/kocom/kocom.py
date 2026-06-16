@@ -65,13 +65,13 @@ class Kocom:
         self._name = name
         self.connected = True
 
-        self.default_speed = config.default_speed
+        self.default_speed = config.kocom_default_speed
         if self.default_speed not in ["low", "medium", "high"]:
             logger.info(
-                "[Error] Kocom DEFAULT_SPEED 설정오류로 medium 으로 설정. %s -> medium",
+                "[Error] Kocom DEFAULT_SPEED 설정오류로 low로 설정. %s -> low",
                 self.default_speed,
             )
-            self.default_speed = "medium"
+            self.default_speed = "low"
 
         self.ha_registry = False
         self.kocom_scan = True

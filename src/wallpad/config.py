@@ -54,19 +54,21 @@ class AppConfig:
         self.init_temp = 22
         self.scan_interval = 300
         self.packey_delay = 0.8
-        self.default_speed = "medium"
+        self.kocom_default_speed = "low"
         self.log_level = "info"
 
         self.kocom_light_size = dict(KOCOM_LIGHT_SIZE_DEFAULT)
         self.kocom_plug_size = dict(KOCOM_PLUG_SIZE_DEFAULT)
         self.kocom_room = dict(KOCOM_ROOM_DEFAULT)
         self.kocom_room_thermostat = dict(KOCOM_ROOM_THERMOSTAT_DEFAULT)
+
         self.ventilator_manufacturer = "None"
         self.ventilator_connection_type = "serial"
-        self.ventilator_unit_port = ""
-        self.ventilator_ctrl_port = ""
         self.ventilator_socket_server = ""
         self.ventilator_socket_port = 8899
+        self.ventilator_ctrl_port = ""
+        self.ventilator_unit_port = ""
+        self.ventilator_default_speed = "low"
 
         # 통신 및 장치 설정 변수 (기존 rs485.conf 대체)
         self.wp_list = {}
@@ -96,7 +98,7 @@ class AppConfig:
         self.init_temp = adv.get("INIT_TEMP", self.init_temp)
         self.scan_interval = adv.get("SCAN_INTERVAL", self.scan_interval)
         self.packey_delay = adv.get("PACKET_DELAY", self.packey_delay)
-        self.default_speed = adv.get("DEFAULT_SPEED", self.default_speed)
+        self.kocom_default_speed = adv.get("DEFAULT_SPEED", self.kocom_default_speed)
         self.log_level = adv.get("LOGLEVEL", self.log_level).lower()
 
         kocom_light_size_list = json_data.get("KOCOM_LIGHT_SIZE", [])
@@ -150,6 +152,12 @@ class AppConfig:
         vent_serial = vent.get("Serial", {})
         self.ventilator_ctrl_port = vent_serial.get("controller_port", "")
         self.ventilator_unit_port = vent_serial.get("ventilator_port", "")
+
+        self.ventilator_default_speed = vent.get("default_speed", self.ventilator_default_speed)
+
+    @property
+    def default_speed(self) -> str:
+        return self.kocom_default_speed
 
     @property
     def ventilator(self) -> str:

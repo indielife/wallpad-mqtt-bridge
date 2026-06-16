@@ -69,11 +69,11 @@ def test_parse_message_thermostat(kocom_instance):
 
 def test_parse_message_fan(kocom_instance):
     """MQTT 환기팬 제어 메시지가 들어왔을 때 wp_list 상태 변경을 검증합니다."""
-    # 환기팬 모드 on 변경 시 기본 속도는 default_speed (medium)으로 작동
+    # 환기팬 모드 on 변경 시 기본 속도는 default_speed (low)으로 작동
     topic_mode = ["homeassistant", "fan", "wallpad", "mode"]
     kocom_instance.parse_message(topic_mode, "on")
     assert kocom_instance.wp_list[DEVICE_FAN]["wallpad"]["mode"]["set"] == "on"
-    assert kocom_instance.wp_list[DEVICE_FAN]["wallpad"]["speed"]["set"] == "medium"
+    assert kocom_instance.wp_list[DEVICE_FAN]["wallpad"]["speed"]["set"] == "low"
     assert kocom_instance.wp_list[DEVICE_FAN]["wallpad"]["mode"]["last"] == "set"
     assert kocom_instance.wp_list[DEVICE_FAN]["wallpad"]["speed"]["last"] == "set"
 
