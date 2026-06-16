@@ -1,12 +1,14 @@
 import logging
 
+from wallpad.mqtt.config import MqttConfig
+
 logger = logging.getLogger(__name__)
 
 
 class MqttClient:
     """MQTT 브로커와의 TCP 연결 및 메시지 라우팅을 전담하는 공통 클라이언트 래퍼 클래스입니다."""
 
-    def __init__(self, config):
+    def __init__(self, config: MqttConfig):
         self.config = config
         self._connected = False
 

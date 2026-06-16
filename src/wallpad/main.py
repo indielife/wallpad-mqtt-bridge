@@ -105,7 +105,7 @@ if __name__ == "__main__":
     setup_logging(log_path, config.log_level)
 
     # MqttClient 단일 인스턴스 생성 및 시작
-    mqtt_client = MqttClient(config)
+    mqtt_client = MqttClient(config.mqtt_config)
     mqtt_client.connect()
 
     connection_flag = False

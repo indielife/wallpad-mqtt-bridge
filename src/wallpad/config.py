@@ -3,6 +3,7 @@ import json
 import logging
 import os
 
+from wallpad.mqtt import MqttConfig
 from wallpad.version import SW_VERSION
 
 logger = logging.getLogger(__name__)
@@ -72,7 +73,7 @@ class AppConfig:
 
         # 통신 및 장치 설정 변수 (기존 rs485.conf 대체)
         self.wp_list = {}
-        self.mqtt_config = {}
+        self.mqtt_config: MqttConfig = None
         self.comm_type = None
         self.port_url = {}
         self.device_list = {}
@@ -138,7 +139,17 @@ class AppConfig:
         self.socket_port = soc.get("port")
         self.socket_device = json_data.get("SocketDevice", {}).get("device")
 
-        self.mqtt_config = json_data.get("MQTT", {})
+        mqtt_json = json_data.get("MQTT", {})
+        anonymous_val = mqtt_json.get("anonymous")
+        anonymous_bool = (
+            str(anonymous_val).lower() == "true" if anonymous_val is not None else False
+        )
+        self.mqtt_config = MqttConfig(
+            ip=mqtt_json.get("server", ""),
+            username=mqtt_json.get("username", ""),
+            password=mqtt_json.get("password", ""),
+            anonymous=anonymous_bool,
+        )
         self.wp_list = json_data.get("Wallpad", {})
 
         vent = json_data.get("Ventilator", {})
