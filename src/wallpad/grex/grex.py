@@ -47,13 +47,13 @@ class Grex:
         self.vent_cont = {"mode": "off", "speed": "off"}
         self.mqtt_cont = {"mode": "off", "speed": "off"}
 
-        self.default_speed = config.default_speed
+        self.default_speed = config.ventilator_default_speed
         if self.default_speed not in ["low", "medium", "high"]:
             logger.info(
-                "[Error] Grex DEFAULT_SPEED 설정오류로 medium 으로 설정. %s -> medium",
+                "[Error] Grex DEFAULT_SPEED 설정오류로 low로 설정. %s -> low",
                 self.default_speed,
             )
-            self.default_speed = "medium"
+            self.default_speed = "low"
 
         self.d_mqtt = self.connect_mqtt(self.config.mqtt_config, "GREX")
         self.packet_builder = GrexPacketBuilder()

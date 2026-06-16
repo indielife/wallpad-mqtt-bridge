@@ -37,8 +37,9 @@ SAMPLE_OPTIONS_JSON = {
     "Ventilator": {
         "manufacturer": "Grex",
         "connection_type": "Serial",
-        "Socket": {"server": "192.168.1.101", "port": 8899},
         "Serial": {"ventilator_port": "/dev/ttyUSB1", "controller_port": "/dev/ttyUSB2"},
+        "Socket": {"ip": "192.168.1.101", "port": 8899},
+        "default_speed": "low",
     },
 }
 
@@ -55,7 +56,7 @@ def test_app_config_load(mock_isfile):
         assert config.init_temp == 24
         assert config.scan_interval == 500
         assert config.packey_delay == 1.5
-        assert config.default_speed == "high"
+        assert config.kocom_default_speed == "high"
         assert config.log_level == "debug"
 
         # 2. 딕셔너리 리스트 (방, 조명, 플러그) 검증
@@ -96,8 +97,9 @@ def test_app_config_load(mock_isfile):
         assert config.ventilator_connection_type == "serial"
         assert config.ventilator_unit_port == "/dev/ttyUSB1"
         assert config.ventilator_ctrl_port == "/dev/ttyUSB2"
-        assert config.ventilator_socket_server == "192.168.1.101"
+        assert config.ventilator_socket_ip == "192.168.1.101"
         assert config.ventilator_socket_port == 8899
+        assert config.ventilator_default_speed == "low"
 
 
 @patch("wallpad.config.os.path.isfile", return_value=False)
@@ -114,6 +116,8 @@ def test_app_config_defaults(mock_isfile):
     assert config.wp_gas is False
     assert config.wp_elevator is False
     assert config.ventilator == "None"
+    assert config.kocom_default_speed == "low"
+    assert config.ventilator_default_speed == "low"
 
     # 1. 기본 방 정보 검증
     assert config.kocom_room == {

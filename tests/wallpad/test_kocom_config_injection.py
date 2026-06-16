@@ -16,13 +16,13 @@ from wallpad.kocom.kocom import (
 @pytest.fixture
 def mock_config():
     config = MagicMock()
+    config.sw_version = "0.1.0"
     config.init_temp = 22
     config.scan_interval = 300
     config.packet_delay = 0.8
-    config.default_speed = "medium"
+    config.kocom_default_speed = "low"
     config.kocom_light_size = {"livingroom": 3}
     config.kocom_plug_size = {"livingroom": 2}
-    config.sw_version = "0.1.0"
     config.kocom_room = {
         "00": "livingroom",
         "01": "bedroom",
@@ -50,6 +50,8 @@ def mock_config():
         "room1": "02",
         "room2": "03",
     }
+    config.ventilator_default_speed = "low"
+
     config.wp_light = True
     config.wp_fan = True
     config.wp_plug = True
@@ -75,7 +77,7 @@ def test_kocom_initial_state(mock_config, mock_adapter):
         kocom = Kocom(mock_config, mock_adapter, "kocom", 42)
 
         # 1. 글로벌 변수 의존성 세팅 검증
-        assert kocom.default_speed == "medium"
+        assert kocom.default_speed == "low"
 
         # 2. RS485(Config) 의존성 플래그 세팅 검증
         assert kocom.wp_light is True

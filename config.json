@@ -52,8 +52,8 @@
       "INIT_TEMP": 22,
       "SCAN_INTERVAL": 300,
       "PACKET_DELAY": 0.8,
-      "DEFAULT_SPEED" : "medium",
-      "LOGLEVEL" : "info"
+      "DEFAULT_SPEED": "low",
+      "LOGLEVEL": "info"
     },
     "KOCOM_LIGHT_SIZE": [
       {
@@ -115,14 +115,15 @@
     "Ventilator": {
       "manufacturer": "None",
       "connection_type": "Serial",
+      "Serial": {
+        "controller_port": "/dev/ttyUSB1",
+        "ventilator_port": "/dev/ttyUSB2"
+      },
       "Socket": {
-        "server": "",
+        "ip": "[IP_ADDRESS]",
         "port": 8899
       },
-      "Serial": {
-        "controller_port": "",
-        "ventilator_port": ""
-      }
+      "default_speed": "low"
     }
   },
   "schema": {
@@ -160,8 +161,8 @@
       "INIT_TEMP": "int(10,30)",
       "SCAN_INTERVAL": "int(100,1000)",
       "PACKET_DELAY": "float",
-      "DEFAULT_SPEED" : "str",
-      "LOGLEVEL" : "str"
+      "DEFAULT_SPEED": "str",
+      "LOGLEVEL": "str"
     },
     "KOCOM_LIGHT_SIZE": [
       {
@@ -184,14 +185,15 @@
     "Ventilator": {
       "manufacturer": "list(None|Grex)",
       "connection_type": "list(Serial|Socket)",
-      "Socket": {
-        "server": "str?",
-        "port": "int?"
-      },
       "Serial": {
         "controller_port": "str?",
         "ventilator_port": "str?"
-      }
+      },
+      "Socket": {
+        "ip": "str?",
+        "port": "int?"
+      },
+      "default_speed": "str"
     }
   }
 }

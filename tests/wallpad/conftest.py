@@ -18,13 +18,13 @@ from wallpad.kocom.state import KocomStateManager
 def mock_config():
     """테스트용 설정 모킹"""
     config = MagicMock()
+    config.sw_version = "0.1.0"
     config.init_temp = 22
     config.scan_interval = 300
     config.packet_delay = 0.8
-    config.default_speed = "medium"
+    config.kocom_default_speed = "low"
     config.kocom_light_size = {"livingroom": 3}
     config.kocom_plug_size = {"livingroom": 2}
-    config.sw_version = "0.1.0"
     config.kocom_room = {
         "00": "livingroom",
         "01": "bedroom",
@@ -42,6 +42,9 @@ def mock_config():
         "livingroom": "00",
         "bedroom": "01",
     }
+
+    config.ventilator_default_speed = "low"
+
     config.wp_light = True
     config.wp_fan = True
     config.wp_plug = True
@@ -57,7 +60,7 @@ def kocom_instance(mock_config):
     """상위 흐름 테스트를 위해 최소한의 상태만 구성한 Kocom 인스턴스"""
     kocom = Kocom.__new__(Kocom)
     kocom.config = mock_config
-    kocom.default_speed = "medium"
+    kocom.default_speed = "low"
     kocom.ha_registry = False
     kocom.kocom_scan = False
     kocom._name = "kocom"
