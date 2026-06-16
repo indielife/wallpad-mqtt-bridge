@@ -105,7 +105,7 @@ class AppConfig:
         # 1. MQTT 설정
         mqtt_json = json_data.get("MQTT", {})
         self.mqtt_config = MqttConfig(
-            ip=mqtt_json.get("server", ""),
+            server=mqtt_json.get("server", ""),
             username=mqtt_json.get("username", ""),
             password=mqtt_json.get("password", ""),
         )

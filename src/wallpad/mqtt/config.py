@@ -3,6 +3,6 @@ from dataclasses import dataclass
 
 @dataclass
 class MqttConfig:
-    ip: str
+    server: str
     username: str
     password: str

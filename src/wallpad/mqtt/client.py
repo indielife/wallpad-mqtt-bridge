@@ -23,22 +23,25 @@ class MqttClient:
 
     def connect(self) -> None:
         """MQTT 브로커에 TCP 연결을 수립하고 백그라운드 루프를 기동합니다."""
-        if not self.config.ip:
-            logger.error("IP address is missing.")
+        if not self.config.server:
+            logger.error("Server address is missing.")
             return
 
         if not self.config.username or not self.config.password:
-            logger.error("Authentication credentials are missing for host: %s", self.config.ip)
+            logger.error(
+                "Authentication credentials are missing for server: %s",
+                self.config.server,
+            )
             return
         self.client.username_pw_set(username=self.config.username, password=self.config.password)
         logger.debug(
-            "Authenticated connection to host: %s with user: %s",
-            self.config.ip,
+            "Authenticated connection to server: %s with user: %s",
+            self.config.server,
             self.config.username,
         )
 
         try:
-            self.client.connect(self.config.ip, 1883, 60)
+            self.client.connect(self.config.server, 1883, 60)
             self.client.loop_start()
         except Exception as e:
             logger.error("Failed to connect to broker: %r", e)

@@ -52,7 +52,7 @@ def test_app_config_load(mock_isfile):
         config.load()
 
         # 1. MQTT 및 Wallpad 설정 (Boolean 타입 정상 파싱) 검증
-        assert config.mqtt_config.ip == "192.168.1.200"
+        assert config.mqtt_config.server == "192.168.1.200"
         assert config.wp_list["light"] is True
         assert config.wp_list["plug"] is False
         assert config.wp_list["gas"] is True
