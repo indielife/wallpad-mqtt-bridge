@@ -81,11 +81,11 @@ def test_legacy_rs485_serial(tmp_path, mock_serial):
     assert rs485.type == "serial"
     assert len(rs485._port_url) == 1
     assert rs485._port_url[1] == "/dev/ttyUSB0"
-    assert config.grex_ventilator_port == "/dev/ttyUSB1"
-    assert config.grex_controller_port == "/dev/ttyUSB2"
+    assert config.ventilator_unit_port == "/dev/ttyUSB1"
+    assert config.ventilator_ctrl_port == "/dev/ttyUSB2"
     assert 1 in rs485.adapters
-    assert "grex_ventilator" in rs485.adapters
-    assert "grex_controller" in rs485.adapters
+    assert "ventilator_unit" in rs485.adapters
+    assert "ventilator_ctrl" in rs485.adapters
 
 
 def test_legacy_rs485_socket(tmp_path, mock_socket):

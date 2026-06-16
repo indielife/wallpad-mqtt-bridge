@@ -63,12 +63,12 @@ def run_serial_mode(config: AppConfig, rs485: RS485):
 
     # 2. Grex 기기 초기화 (설정에서 Ventilator가 Grex일 때만 수행)
     if config.ventilator == "Grex":
-        v_adapter = rs485.adapters.get("grex_ventilator")
-        c_adapter = rs485.adapters.get("grex_controller")
-        if v_adapter and v_adapter.is_open() and c_adapter and c_adapter.is_open():
+        unit_adapter = rs485.adapters.get("ventilator_unit")
+        ctrl_adapter = rs485.adapters.get("ventilator_ctrl")
+        if unit_adapter and unit_adapter.is_open() and ctrl_adapter and ctrl_adapter.is_open():
             try:
                 logger.info("Initializing Grex")
-                Grex(config, c_adapter, v_adapter)
+                Grex(config, ctrl_adapter, unit_adapter)
             except Exception as e:
                 logger.error("Failed to initialize Grex: %r", e)
         else:

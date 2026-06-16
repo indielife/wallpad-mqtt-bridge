@@ -53,8 +53,8 @@ class RS485:
 
         if self.config.ventilator == "Grex" and self.config.ventilator_connection_type == "serial":
             for role, port_path in [
-                ("grex_ventilator", self.config.grex_ventilator_port),
-                ("grex_controller", self.config.grex_controller_port),
+                ("ventilator_unit", self.config.ventilator_unit_port),
+                ("ventilator_ctrl", self.config.ventilator_ctrl_port),
             ]:
                 if port_path:
                     try:
@@ -63,16 +63,19 @@ class RS485:
                             ser.bytesize = 8
                             ser.stopbits = 1
                             ser.autoOpen = False
-                            logger.info("Grex %s Port: %s", role, port_path)
+                            logger.info("Ventilator %s Port: %s", role, port_path)
                             self.adapters[role] = SerialAdapter(ser)
                             opened += 1
                         else:
                             logger.info(
-                                "Serial port is not open (Grex: %s, port: %s)", role, port_path
+                                "Serial port is not open (Ventilator: %s, port: %s)",
+                                role,
+                                port_path,
                             )
                     except Exception as e:
                         logger.error(
-                            "Failed to connect to serial port (Grex: %s, port: %s, error: %r)",
+                            "Failed to connect to serial port "
+                            "(Ventilator: %s, port: %s, error: %r)",
                             role,
                             port_path,
                             e,

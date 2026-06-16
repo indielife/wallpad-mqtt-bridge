@@ -63,8 +63,8 @@ class AppConfig:
         self.kocom_room_thermostat = dict(KOCOM_ROOM_THERMOSTAT_DEFAULT)
         self.ventilator_manufacturer = "None"
         self.ventilator_connection_type = "serial"
-        self.grex_ventilator_port = ""
-        self.grex_controller_port = ""
+        self.ventilator_unit_port = ""
+        self.ventilator_ctrl_port = ""
         self.ventilator_socket_server = ""
         self.ventilator_socket_port = 8899
 
@@ -148,8 +148,8 @@ class AppConfig:
         self.ventilator_socket_port = vent_socket.get("port", 8899)
 
         vent_serial = vent.get("Serial", {})
-        self.grex_controller_port = vent_serial.get("controller_port", "")
-        self.grex_ventilator_port = vent_serial.get("ventilator_port", "")
+        self.ventilator_ctrl_port = vent_serial.get("controller_port", "")
+        self.ventilator_unit_port = vent_serial.get("ventilator_port", "")
 
     @property
     def ventilator(self) -> str:

@@ -94,8 +94,8 @@ def test_app_config_load(mock_isfile):
         assert config.ventilator == "Grex"
         assert config.ventilator_manufacturer == "Grex"
         assert config.ventilator_connection_type == "serial"
-        assert config.grex_ventilator_port == "/dev/ttyUSB1"
-        assert config.grex_controller_port == "/dev/ttyUSB2"
+        assert config.ventilator_unit_port == "/dev/ttyUSB1"
+        assert config.ventilator_ctrl_port == "/dev/ttyUSB2"
         assert config.ventilator_socket_server == "192.168.1.101"
         assert config.ventilator_socket_port == 8899
 
