@@ -37,8 +37,8 @@ SAMPLE_OPTIONS_JSON = {
     "Ventilator": {
         "manufacturer": "Grex",
         "connection_type": "Serial",
-        "Socket": {"server": "192.168.1.101", "port": 8899},
         "Serial": {"ventilator_port": "/dev/ttyUSB1", "controller_port": "/dev/ttyUSB2"},
+        "Socket": {"ip": "192.168.1.101", "port": 8899},
         "default_speed": "low",
     },
 }
@@ -98,7 +98,7 @@ def test_app_config_load(mock_isfile):
         assert config.ventilator_connection_type == "serial"
         assert config.ventilator_unit_port == "/dev/ttyUSB1"
         assert config.ventilator_ctrl_port == "/dev/ttyUSB2"
-        assert config.ventilator_socket_server == "192.168.1.101"
+        assert config.ventilator_socket_ip == "192.168.1.101"
         assert config.ventilator_socket_port == 8899
         assert config.ventilator_default_speed == "low"
 
