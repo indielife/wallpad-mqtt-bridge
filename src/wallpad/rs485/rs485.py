@@ -50,6 +50,37 @@ class RS485:
                     port_path,
                     e,
                 )
+
+        if self.config.ventilator == "Grex" and self.config.ventilator_connection_type == "serial":
+            for role, port_path in [
+                ("ventilator_unit", self.config.ventilator_unit_port),
+                ("ventilator_ctrl", self.config.ventilator_ctrl_port),
+            ]:
+                if port_path:
+                    try:
+                        ser = serial.Serial(port_path, 9600, timeout=None)
+                        if ser.isOpen():
+                            ser.bytesize = 8
+                            ser.stopbits = 1
+                            ser.autoOpen = False
+                            logger.info("Ventilator %s Port: %s", role, port_path)
+                            self.adapters[role] = SerialAdapter(ser)
+                            opened += 1
+                        else:
+                            logger.info(
+                                "Serial port is not open (Ventilator: %s, port: %s)",
+                                role,
+                                port_path,
+                            )
+                    except Exception as e:
+                        logger.error(
+                            "Failed to connect to serial port "
+                            "(Ventilator: %s, port: %s, error: %r)",
+                            role,
+                            port_path,
+                            e,
+                        )
+
         if opened == 0:
             logger.error("No serial ports were successfully opened.")
 

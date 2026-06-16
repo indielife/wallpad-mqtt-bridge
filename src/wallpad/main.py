@@ -50,25 +50,29 @@ def setup_logging(path: str, level: str = "info"):
 
 
 def run_serial_mode(config: AppConfig, rs485: RS485):
-    grex_ventilator_adapter = None
-    grex_controller_adapter = None
-    for port_key, adapter in rs485.adapters.items():
-        if not adapter.is_open():
-            continue
-        name = rs485.config.device_list.get(port_key)
-        try:
-            logger.info("Initializing %s", name)
-            if name == "kocom":
-                Kocom(config, adapter, name, 42)
-            elif name == "grex_ventilator":
-                grex_ventilator_adapter = adapter
-            elif name == "grex_controller":
-                grex_controller_adapter = adapter
-        except Exception as e:
-            logger.error("Failed to initialize %s: %r", name, e)
+    # 1. Kocom 기기 초기화
+    for port_key, name in config.device_list.items():
+        if name == "kocom":
+            adapter = rs485.adapters.get(port_key)
+            if adapter and adapter.is_open():
+                try:
+                    logger.info("Initializing %s", name)
+                    Kocom(config, adapter, name, 42)
+                except Exception as e:
+                    logger.error("Failed to initialize %s: %r", name, e)
 
-    if grex_ventilator_adapter is not None and grex_controller_adapter is not None:
-        Grex(config, grex_controller_adapter, grex_ventilator_adapter)
+    # 2. Grex 기기 초기화 (설정에서 Ventilator가 Grex일 때만 수행)
+    if config.ventilator == "Grex":
+        unit_adapter = rs485.adapters.get("ventilator_unit")
+        ctrl_adapter = rs485.adapters.get("ventilator_ctrl")
+        if unit_adapter and unit_adapter.is_open() and ctrl_adapter and ctrl_adapter.is_open():
+            try:
+                logger.info("Initializing Grex")
+                Grex(config, ctrl_adapter, unit_adapter)
+            except Exception as e:
+                logger.error("Failed to initialize Grex: %r", e)
+        else:
+            logger.error("Grex adapters are not open or not available")
 
 
 def run_socket_mode(config: AppConfig, rs485: RS485) -> bool:
