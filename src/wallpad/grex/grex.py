@@ -150,19 +150,17 @@ class Grex:
             self.d_mqtt.subscribe(subscribe_list)
         for ha in publish_list:
             for topic, payload in ha.items():
-                self.d_mqtt.publish(topic, payload, retain=True)
+                self.mqtt_client.publish(topic, payload, retain=True)
 
     def publish_state_to_ha(self, target, value):
         if target == HA_FAN:
-            payload = json.dumps(value)
             topic = f"{HA_PREFIX}/{HA_FAN}/grex/state"
-            self.d_mqtt.publish(topic, payload, retain=True)
-            logger.info("[To HA] %s = %s", topic, payload)
+            self.mqtt_client.publish_json(topic, value)
+            logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
         elif target == HA_SENSOR:
-            payload = json.dumps(value, ensure_ascii=False)
             topic = f"{HA_PREFIX}/{HA_SENSOR}/grex_{DEVICE_FAN}/state"
-            self.d_mqtt.publish(topic, payload, retain=True)
-            logger.info("[To HA] %s = %s", topic, payload)
+            self.mqtt_client.publish_json(topic, value)
+            logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
 
     def get_serial(self, adapter, packet_name, packet_len):
         buf = []

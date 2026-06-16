@@ -89,3 +89,10 @@ class MqttClient:
     def publish(self, topic: str, payload: str, retain: bool = True) -> None:
         """MQTT 브로커로 메시지를 발행(Publish)합니다."""
         self.client.publish(topic, payload, retain=retain)
+
+    def publish_json(self, topic: str, payload_data, retain: bool = True) -> None:
+        """JSON 데이터를 직렬화하여 MQTT 브로커로 발행(Publish)합니다. (ensure_ascii=False 적용)"""
+        import json
+
+        payload = json.dumps(payload_data, ensure_ascii=False)
+        self.publish(topic, payload, retain=retain)

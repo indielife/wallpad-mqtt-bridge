@@ -21,6 +21,12 @@ def grex_factory():
         mock_mqtt_instance = MagicMock()
         mock_mqtt_client = MagicMock()
         mock_mqtt_client.client = mock_mqtt_instance
+        mock_mqtt_client.publish.side_effect = mock_mqtt_instance.publish
+        mock_mqtt_client.publish_json.side_effect = lambda topic, payload, retain=True: (
+            mock_mqtt_instance.publish(
+                topic, json.dumps(payload, ensure_ascii=False), retain=retain
+            )
+        )
 
         def _create():
             mock_config = MagicMock()
