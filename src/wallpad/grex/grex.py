@@ -3,10 +3,9 @@ import logging
 import threading
 from typing import ClassVar
 
-import paho.mqtt.client as mqtt
-
 from wallpad.config import AppConfig
 from wallpad.grex.devices import GrexPacketBuilder, GrexVentilator
+from wallpad.mqtt import MqttClient
 from wallpad.rs485 import ConnectionAdapter
 
 logger = logging.getLogger(__name__)
@@ -38,11 +37,13 @@ class Grex:
         config: AppConfig,
         controller_adapter: ConnectionAdapter,
         ventilator_adapter: ConnectionAdapter,
+        mqtt_client: MqttClient,
     ):
         self.config = config
         self._name = "grex"
         self.controller_adapter = controller_adapter
         self.ventilator_adapter = ventilator_adapter
+        self.mqtt_client = mqtt_client
         self.grex_cont = {"mode": "off", "speed": "off"}
         self.vent_cont = {"mode": "off", "speed": "off"}
         self.mqtt_cont = {"mode": "off", "speed": "off"}
@@ -55,7 +56,9 @@ class Grex:
             )
             self.default_speed = "low"
 
-        self.d_mqtt = self.connect_mqtt(self.config.mqtt_config, "GREX")
+        self.mqtt_client.register_connect_callback(self.on_connect)
+        self.mqtt_client.register_message_callback(self.on_message)
+        self.mqtt_client.register_subscribe_callback(self.on_subscribe)
         self.packet_builder = GrexPacketBuilder()
         self.device = GrexVentilator(
             name_prefix=self._name,
@@ -83,38 +86,6 @@ class Grex:
         )
         _t5.daemon = True
         _t5.start()
-
-    def connect_mqtt(self, server, name):
-        mqtt_client = mqtt.Client()
-        mqtt_client.on_message = self.on_message
-        # mqtt_client.on_publish = self.on_publish
-        mqtt_client.on_subscribe = self.on_subscribe
-        mqtt_client.on_connect = self.on_connect
-
-        if server["anonymous"] != "True":
-            if server["server"] == "" or server["username"] == "" or server["password"] == "":
-                logger.info(
-                    "MQTT 설정을 확인하세요. Server[%s] ID[%s] PW[%s] Device[%s]",
-                    server["server"],
-                    server["username"],
-                    server["password"],
-                    name,
-                )
-                return False
-            mqtt_client.username_pw_set(username=server["username"], password=server["password"])
-            logger.debug(
-                "MQTT STATUS. Server[%s] ID[%s] PW[%s] Device[%s]",
-                server["server"],
-                server["username"],
-                server["password"],
-                name,
-            )
-        else:
-            logger.debug("MQTT STATUS. Server[%s] Device[%s]", server["server"], name)
-
-        mqtt_client.connect(server["server"], 1883, 60)
-        mqtt_client.loop_start()
-        return mqtt_client
 
     def on_message(self, client, obj, msg):
         _topic = msg.topic.split("/")
@@ -173,22 +144,20 @@ class Grex:
             subscribe_list.append((topic, 0))
 
         if initial:
-            self.d_mqtt.subscribe(subscribe_list)
+            self.mqtt_client.subscribe(subscribe_list)
         for ha in publish_list:
             for topic, payload in ha.items():
-                self.d_mqtt.publish(topic, payload, retain=True)
+                self.mqtt_client.publish(topic, payload, retain=True)
 
     def publish_state_to_ha(self, target, value):
         if target == HA_FAN:
-            payload = json.dumps(value)
             topic = f"{HA_PREFIX}/{HA_FAN}/grex/state"
-            self.d_mqtt.publish(topic, payload, retain=True)
-            logger.info("[To HA] %s = %s", topic, payload)
+            self.mqtt_client.publish_json(topic, value)
+            logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
         elif target == HA_SENSOR:
-            payload = json.dumps(value, ensure_ascii=False)
             topic = f"{HA_PREFIX}/{HA_SENSOR}/grex_{DEVICE_FAN}/state"
-            self.d_mqtt.publish(topic, payload, retain=True)
-            logger.info("[To HA] %s = %s", topic, payload)
+            self.mqtt_client.publish_json(topic, value)
+            logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
 
     def get_serial(self, adapter, packet_name, packet_len):
         buf = []

@@ -17,10 +17,25 @@ from wallpad.kocom.kocom import (
 def mock_config():
     config = MagicMock()
     config.sw_version = "0.1.0"
+
+    # 1. MQTT 설정
+    config.mqtt_config = {"server": "test"}
+
+    # 3. Wallpad 활성화 정보
+    config.wp_light = True
+    config.wp_fan = True
+    config.wp_plug = True
+    config.wp_gas = True
+    config.wp_elevator = True
+    config.wp_thermostat = True
+
+    # 4. Advanced 세부 제어 설정
     config.init_temp = 22
     config.scan_interval = 300
     config.packet_delay = 0.8
     config.kocom_default_speed = "low"
+
+    # 5. Kocom 사이즈 및 방 이름 매핑 설정
     config.kocom_light_size = {"livingroom": 3}
     config.kocom_plug_size = {"livingroom": 2}
     config.kocom_room = {
@@ -50,15 +65,10 @@ def mock_config():
         "room1": "02",
         "room2": "03",
     }
+
+    # 6. Ventilator(전열교환기) 설정
     config.ventilator_default_speed = "low"
 
-    config.wp_light = True
-    config.wp_fan = True
-    config.wp_plug = True
-    config.wp_gas = True
-    config.wp_elevator = True
-    config.wp_thermostat = True
-    config.mqtt_config = {"server": "test", "anonymous": "True"}
     return config
 
 
@@ -70,11 +80,8 @@ def mock_adapter():
 
 def test_kocom_initial_state(mock_config, mock_adapter):
     """Kocom 객체 생성 시 내부 상태와 설정값들이 정상적으로 초기화되는지 검증합니다."""
-    with (
-        patch("wallpad.kocom.kocom.Kocom.connect_mqtt"),
-        patch("wallpad.kocom.kocom.threading.Thread"),
-    ):
-        kocom = Kocom(mock_config, mock_adapter, "kocom", 42)
+    with patch("wallpad.kocom.kocom.threading.Thread"):
+        kocom = Kocom(mock_config, mock_adapter, "kocom", 42, MagicMock())
 
         # 1. 글로벌 변수 의존성 세팅 검증
         assert kocom.default_speed == "low"

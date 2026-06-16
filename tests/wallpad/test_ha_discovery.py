@@ -18,17 +18,24 @@ def mock_config():
     """테스트용 가짜 AppConfig 설정을 생성하는 픽스처"""
     config = MagicMock()
     config.sw_version = "RS485 Compilation 0.1.0"
+
+    # 4. Advanced 세부 제어 설정
     config.init_temp = 22
     config.scan_interval = 300
     config.packet_delay = 0.8
     config.kocom_default_speed = "low"
+
+    # 5. Kocom 사이즈 및 방 이름 매핑 설정
     config.kocom_light_size = {"room1": 1}
     config.kocom_plug_size = {"room1": 1}
     config.kocom_room = {"00": "room1"}
     config.kocom_room_thermostat = {"00": "room1"}
     config.kocom_room_rev = {"room1": "00", "wallpad": "00"}
     config.kocom_room_thermostat_rev = {"room1": "00"}
+
+    # 6. Ventilator(전열교환기) 설정
     config.ventilator_default_speed = "low"
+
     return config
 
 
@@ -39,31 +46,46 @@ def kocom_factory(mock_config):
     활성화할 디바이스 이름을 전달받아 해당 디바이스만 True로 설정합니다.
     """
     with (
-        patch("wallpad.kocom.kocom.Kocom.connect_mqtt") as mock_connect_mqtt,
         patch("wallpad.kocom.kocom.threading.Thread"),
         patch("wallpad.kocom.kocom.Kocom.get_serial"),
         patch("wallpad.kocom.kocom.Kocom.scan_list"),
     ):
         mock_mqtt_instance = MagicMock()
-        mock_connect_mqtt.return_value = mock_mqtt_instance
+        mock_mqtt_client = MagicMock()
+        mock_mqtt_client.client = mock_mqtt_instance
+        mock_mqtt_client.publish.side_effect = mock_mqtt_instance.publish
+        mock_mqtt_client.publish_json.side_effect = lambda topic, payload, retain=True: (
+            mock_mqtt_instance.publish(
+                topic, json.dumps(payload, ensure_ascii=False), retain=retain
+            )
+        )
+        mock_mqtt_client.subscribe.side_effect = mock_mqtt_instance.subscribe
 
         def _create(active_device: str):
+            # 1. MQTT 설정
+            mock_config.mqtt_config = {
+                "server": "test",
+                "username": "",
+                "password": "",
+            }
+
+            # 3. Wallpad 활성화 정보
             mock_config.wp_light = active_device == "light"
             mock_config.wp_fan = active_device == "fan"
             mock_config.wp_plug = active_device == "plug"
             mock_config.wp_gas = active_device == "gas"
             mock_config.wp_elevator = active_device == "elevator"
             mock_config.wp_thermostat = active_device == "thermostat"
-            mock_config.mqtt_config = {
-                "server": "test",
-                "username": "",
-                "password": "",
-                "anonymous": "True",
-            }
 
             mock_adapter = MagicMock()
 
-            wallpad = Kocom(mock_config, mock_adapter, name="test_name", packet_len=10)
+            wallpad = Kocom(
+                mock_config,
+                mock_adapter,
+                name="test_name",
+                packet_len=10,
+                mqtt_client=mock_mqtt_client,
+            )
 
             return wallpad, mock_mqtt_instance
 
