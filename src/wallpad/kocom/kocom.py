@@ -14,17 +14,19 @@ from wallpad.kocom.devices import (
     Thermostat,
 )
 from wallpad.kocom.state import DeviceState, KocomStateManager, RoomState, ScanState, SubDeviceState
-from wallpad.mqtt import MqttClient
+from wallpad.mqtt import (
+    HA_CLIMATE,
+    HA_FAN,
+    HA_LIGHT,
+    HA_PREFIX,
+    HA_SENSOR,
+    HA_SWITCH,
+    MqttClient,
+)
 from wallpad.rs485 import ConnectionAdapter
 
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
 
-HA_PREFIX = "homeassistant"
-HA_SWITCH = "switch"
-HA_LIGHT = "light"
-HA_CLIMATE = "climate"
-HA_SENSOR = "sensor"
-HA_FAN = "fan"
 
 # DEVICE 명명
 DEVICE_WALLPAD = "wallpad"

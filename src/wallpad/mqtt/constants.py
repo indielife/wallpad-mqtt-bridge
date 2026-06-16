@@ -1,0 +1,6 @@
+HA_PREFIX = "homeassistant"
+HA_SWITCH = "switch"
+HA_LIGHT = "light"
+HA_CLIMATE = "climate"
+HA_SENSOR = "sensor"
+HA_FAN = "fan"

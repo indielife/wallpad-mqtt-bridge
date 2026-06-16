@@ -2,10 +2,7 @@ import json
 
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
-
-HA_PREFIX = "homeassistant"
-HA_SWITCH = "switch"
-HA_SENSOR = "sensor"
+from wallpad.mqtt import HA_PREFIX, HA_SENSOR, HA_SWITCH
 
 
 class Gas(BaseDevice):

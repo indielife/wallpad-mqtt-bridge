@@ -2,9 +2,7 @@ import json
 
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
-
-HA_PREFIX = "homeassistant"
-HA_SWITCH = "switch"
+from wallpad.mqtt import HA_PREFIX, HA_SWITCH
 
 
 class Elevator(BaseDevice):

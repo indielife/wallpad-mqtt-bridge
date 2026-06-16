@@ -2,9 +2,7 @@ import json
 
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
-
-HA_PREFIX = "homeassistant"
-HA_FAN = "fan"
+from wallpad.mqtt import HA_FAN, HA_PREFIX
 
 
 class Fan(BaseDevice):

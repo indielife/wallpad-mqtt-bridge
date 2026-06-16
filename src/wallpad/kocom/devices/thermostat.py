@@ -2,9 +2,7 @@ import json
 
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
-
-HA_PREFIX = "homeassistant"
-HA_CLIMATE = "climate"
+from wallpad.mqtt import HA_CLIMATE, HA_PREFIX
 
 
 class Thermostat(BaseDevice):

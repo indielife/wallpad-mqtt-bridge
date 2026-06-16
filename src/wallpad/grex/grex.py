@@ -5,14 +5,16 @@ from typing import ClassVar
 
 from wallpad.config import AppConfig
 from wallpad.grex.devices import GrexPacketBuilder, GrexVentilator
-from wallpad.mqtt import MqttClient
+from wallpad.mqtt import (
+    HA_FAN,
+    HA_PREFIX,
+    HA_SENSOR,
+    MqttClient,
+)
 from wallpad.rs485 import ConnectionAdapter
 
 logger = logging.getLogger(__name__)
 
-HA_PREFIX = "homeassistant"
-HA_SENSOR = "sensor"
-HA_FAN = "fan"
 
 DEVICE_FAN = "fan"
 
