@@ -58,7 +58,6 @@ class Grex:
 
         self.mqtt_client.register_connect_callback(self.on_connect)
         self.mqtt_client.register_message_callback(self.on_message)
-        self.mqtt_client.register_subscribe_callback(self.on_subscribe)
         self.packet_builder = GrexPacketBuilder()
         self.device = GrexVentilator(
             name_prefix=self._name,
@@ -109,12 +108,6 @@ class Grex:
 
                 if self.mqtt_cont["mode"] == "off" and self.mqtt_cont["speed"] == "off":
                     self.publish_state_to_ha(HA_FAN, self.mqtt_cont)
-
-    def on_publish(self, client, obj, mid):
-        logger.info("Publish: %s", str(mid))
-
-    def on_subscribe(self, client, obj, mid, granted_qos):
-        logger.info("Subscribed: %s %s", str(mid), str(granted_qos))
 
     def on_connect(self, client, userdata, flags, rc):
         if int(rc) == 0:
