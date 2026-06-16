@@ -4,17 +4,16 @@ from unittest.mock import mock_open, patch
 from wallpad.config import AppConfig
 
 SAMPLE_OPTIONS_JSON = {
+    "MQTT": {
+        "server": "192.168.1.200",
+        "username": "test_user",
+        "password": "test_password",
+    },
     "RS485": {"type": "Serial"},
     "Socket": {"server": "192.168.1.100", "port": 8899},
     "SocketDevice": {"device": "kocom"},
     "Serial": {"port1": "/dev/ttyUSB0"},
     "SerialDevice": {"port1": "kocom"},
-    "MQTT": {
-        "anonymous": False,
-        "server": "192.168.1.200",
-        "username": "test_user",
-        "password": "test_password",
-    },
     "Wallpad": {
         "light": True,
         "plug": False,
@@ -52,44 +51,43 @@ def test_app_config_load(mock_isfile):
         config = AppConfig(options_path="/fake/path.json")
         config.load()
 
-        # 1. Advanced 설정 검증
-        assert config.init_temp == 24
-        assert config.scan_interval == 500
-        assert config.packey_delay == 1.5
-        assert config.kocom_default_speed == "high"
-        assert config.log_level == "debug"
-
-        # 2. 딕셔너리 리스트 (방, 조명, 플러그) 검증
-        assert config.kocom_light_size == {"livingroom": 3, "bedroom": 2}
-        assert config.kocom_plug_size == {"livingroom": 2}
-        assert config.kocom_room == {"00": "livingroom", "01": "bedroom"}
-        assert config.kocom_room_thermostat == {"00": "livingroom"}
-
-        # 3. 통신 타입 및 소켓 설정 검증
-        assert config.comm_type == "serial"
-        assert config.socket_server == "192.168.1.100"
-        assert config.socket_port == 8899
-        assert config.socket_device == "kocom"
-
-        # 4. 시리얼 포트 설정 검증 (빈 문자열 무시, 포트 번호 키 추출)
-        assert config.port_url == {1: "/dev/ttyUSB0"}
-        assert config.device_list == {1: "kocom"}
-
-        # 5. MQTT 및 Wallpad 설정 (Boolean 타입 정상 파싱) 검증
+        # 1. MQTT 및 Wallpad 설정 (Boolean 타입 정상 파싱) 검증
         assert config.mqtt_config.ip == "192.168.1.200"
-        assert config.mqtt_config.anonymous is False
         assert config.wp_list["light"] is True
         assert config.wp_list["plug"] is False
         assert config.wp_list["gas"] is True
         assert config.wp_list["fan"] is False
 
-        # 6. 개별 디바이스 헬퍼 프로퍼티 검증
+        # 2. 통신 타입 및 소켓 설정 검증
+        assert config.comm_type == "serial"
+        assert config.socket_server == "192.168.1.100"
+        assert config.socket_port == 8899
+        assert config.socket_device == "kocom"
+
+        # 3. 시리얼 포트 설정 검증 (빈 문자열 무시, 포트 번호 키 추출)
+        assert config.port_url == {1: "/dev/ttyUSB0"}
+        assert config.device_list == {1: "kocom"}
+
+        # 4. 개별 디바이스 헬퍼 프로퍼티 검증
         assert config.wp_light is True
         assert config.wp_plug is False
         assert config.wp_gas is True
         assert config.wp_fan is False
         assert config.wp_thermostat is True
         assert config.wp_elevator is False
+
+        # 5. Advanced 설정 검증
+        assert config.init_temp == 24
+        assert config.scan_interval == 500
+        assert config.packey_delay == 1.5
+        assert config.kocom_default_speed == "high"
+        assert config.log_level == "debug"
+
+        # 6. 딕셔너리 리스트 (방, 조명, 플러그) 검증
+        assert config.kocom_light_size == {"livingroom": 3, "bedroom": 2}
+        assert config.kocom_plug_size == {"livingroom": 2}
+        assert config.kocom_room == {"00": "livingroom", "01": "bedroom"}
+        assert config.kocom_room_thermostat == {"00": "livingroom"}
 
         # 7. 신규 전열교환기(Ventilator) 설정 파싱 검증
         assert config.ventilator == "Grex"

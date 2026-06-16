@@ -19,10 +19,25 @@ def mock_config():
     """테스트용 설정 모킹"""
     config = MagicMock()
     config.sw_version = "0.1.0"
+
+    # 1. MQTT 설정
+    config.mqtt_config = {"server": "test"}
+
+    # 3. Wallpad 활성화 정보
+    config.wp_light = True
+    config.wp_fan = True
+    config.wp_plug = True
+    config.wp_gas = True
+    config.wp_elevator = True
+    config.wp_thermostat = True
+
+    # 4. Advanced 세부 제어 설정
     config.init_temp = 22
     config.scan_interval = 300
     config.packet_delay = 0.8
     config.kocom_default_speed = "low"
+
+    # 5. Kocom 사이즈 및 방 이름 매핑 설정
     config.kocom_light_size = {"livingroom": 3}
     config.kocom_plug_size = {"livingroom": 2}
     config.kocom_room = {
@@ -43,15 +58,9 @@ def mock_config():
         "bedroom": "01",
     }
 
+    # 6. Ventilator(전열교환기) 설정
     config.ventilator_default_speed = "low"
 
-    config.wp_light = True
-    config.wp_fan = True
-    config.wp_plug = True
-    config.wp_gas = True
-    config.wp_elevator = True
-    config.wp_thermostat = True
-    config.mqtt_config = {"server": "test", "anonymous": "True"}
     return config
 
 

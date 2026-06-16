@@ -27,20 +27,15 @@ class MqttClient:
             logger.error("IP address is missing.")
             return
 
-        if self.config.anonymous:
-            logger.debug("Anonymous connection to host: %s", self.config.ip)
-        else:
-            if not self.config.username or not self.config.password:
-                logger.error("Authentication credentials are missing for host: %s", self.config.ip)
-                return
-            self.client.username_pw_set(
-                username=self.config.username, password=self.config.password
-            )
-            logger.debug(
-                "Authenticated connection to host: %s with user: %s",
-                self.config.ip,
-                self.config.username,
-            )
+        if not self.config.username or not self.config.password:
+            logger.error("Authentication credentials are missing for host: %s", self.config.ip)
+            return
+        self.client.username_pw_set(username=self.config.username, password=self.config.password)
+        logger.debug(
+            "Authenticated connection to host: %s with user: %s",
+            self.config.ip,
+            self.config.username,
+        )
 
         try:
             self.client.connect(self.config.ip, 1883, 60)

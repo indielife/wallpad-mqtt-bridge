@@ -9,8 +9,13 @@ from wallpad.grex.grex import Grex
 def mock_config():
     config = MagicMock()
     config.sw_version = "1.0.0"
-    config.mqtt_config = {"server": "test", "anonymous": "True"}
+
+    # 1. MQTT 설정
+    config.mqtt_config = {"server": "test"}
+
+    # 6. Ventilator(전열교환기) 설정
     config.ventilator_default_speed = "low"
+
     return config
 
 

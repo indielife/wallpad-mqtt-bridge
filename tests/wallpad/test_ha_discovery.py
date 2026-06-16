@@ -18,17 +18,24 @@ def mock_config():
     """테스트용 가짜 AppConfig 설정을 생성하는 픽스처"""
     config = MagicMock()
     config.sw_version = "RS485 Compilation 0.1.0"
+
+    # 4. Advanced 세부 제어 설정
     config.init_temp = 22
     config.scan_interval = 300
     config.packet_delay = 0.8
     config.kocom_default_speed = "low"
+
+    # 5. Kocom 사이즈 및 방 이름 매핑 설정
     config.kocom_light_size = {"room1": 1}
     config.kocom_plug_size = {"room1": 1}
     config.kocom_room = {"00": "room1"}
     config.kocom_room_thermostat = {"00": "room1"}
     config.kocom_room_rev = {"room1": "00", "wallpad": "00"}
     config.kocom_room_thermostat_rev = {"room1": "00"}
+
+    # 6. Ventilator(전열교환기) 설정
     config.ventilator_default_speed = "low"
+
     return config
 
 
@@ -48,18 +55,20 @@ def kocom_factory(mock_config):
         mock_mqtt_client.client = mock_mqtt_instance
 
         def _create(active_device: str):
+            # 1. MQTT 설정
+            mock_config.mqtt_config = {
+                "server": "test",
+                "username": "",
+                "password": "",
+            }
+
+            # 3. Wallpad 활성화 정보
             mock_config.wp_light = active_device == "light"
             mock_config.wp_fan = active_device == "fan"
             mock_config.wp_plug = active_device == "plug"
             mock_config.wp_gas = active_device == "gas"
             mock_config.wp_elevator = active_device == "elevator"
             mock_config.wp_thermostat = active_device == "thermostat"
-            mock_config.mqtt_config = {
-                "server": "test",
-                "username": "",
-                "password": "",
-                "anonymous": "True",
-            }
 
             mock_adapter = MagicMock()
 

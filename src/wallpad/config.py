@@ -51,18 +51,35 @@ class AppConfig:
         self.options_path = options_path
 
         self.sw_version = SW_VERSION
-        # options.json 설정 변수
+
+        # 1. MQTT 설정
+        self.mqtt_config: MqttConfig = None
+
+        # 2. RS485 & 하드웨어 통신 설정
+        self.comm_type = None
+        self.port_url = {}
+        self.device_list = {}
+        self.socket_server = None
+        self.socket_port = None
+        self.socket_device = None
+
+        # 3. Wallpad 활성화 정보
+        self.wp_list = {}
+
+        # 4. Advanced 세부 제어 설정
         self.init_temp = 22
         self.scan_interval = 300
         self.packey_delay = 0.8
         self.kocom_default_speed = "low"
         self.log_level = "info"
 
+        # 5. Kocom 사이즈 및 방 이름 매핑 설정
         self.kocom_light_size = dict(KOCOM_LIGHT_SIZE_DEFAULT)
         self.kocom_plug_size = dict(KOCOM_PLUG_SIZE_DEFAULT)
         self.kocom_room = dict(KOCOM_ROOM_DEFAULT)
         self.kocom_room_thermostat = dict(KOCOM_ROOM_THERMOSTAT_DEFAULT)
 
+        # 6. Ventilator(전열교환기) 설정
         self.ventilator_manufacturer = "None"
         self.ventilator_connection_type = "serial"
         self.ventilator_socket_ip = ""
@@ -70,16 +87,6 @@ class AppConfig:
         self.ventilator_ctrl_port = ""
         self.ventilator_unit_port = ""
         self.ventilator_default_speed = "low"
-
-        # 통신 및 장치 설정 변수 (기존 rs485.conf 대체)
-        self.wp_list = {}
-        self.mqtt_config: MqttConfig = None
-        self.comm_type = None
-        self.port_url = {}
-        self.device_list = {}
-        self.socket_server = None
-        self.socket_port = None
-        self.socket_device = None
 
     def load(self):
         """설정 파일을 로드합니다."""
@@ -95,6 +102,31 @@ class AppConfig:
         with open(self.options_path, encoding="utf-8") as json_file:
             json_data = json.load(json_file)
 
+        # 1. MQTT 설정
+        mqtt_json = json_data.get("MQTT", {})
+        self.mqtt_config = MqttConfig(
+            ip=mqtt_json.get("server", ""),
+            username=mqtt_json.get("username", ""),
+            password=mqtt_json.get("password", ""),
+        )
+
+        # 2. RS485 & 하드웨어 통신 설정
+        self.comm_type = json_data.get("RS485", {}).get("type", "Serial").lower()
+
+        self.port_url = {int(k[-1]): v for k, v in json_data.get("Serial", {}).items() if v}
+        self.device_list = {
+            int(k[-1]): v for k, v in json_data.get("SerialDevice", {}).items() if v
+        }
+
+        soc = json_data.get("Socket", {})
+        self.socket_server = soc.get("server")
+        self.socket_port = soc.get("port")
+        self.socket_device = json_data.get("SocketDevice", {}).get("device")
+
+        # 3. Wallpad 활성화 설정
+        self.wp_list = json_data.get("Wallpad", {})
+
+        # 4. Advanced 세부 제어 설정
         adv = json_data.get("Advanced", {})
         self.init_temp = adv.get("INIT_TEMP", self.init_temp)
         self.scan_interval = adv.get("SCAN_INTERVAL", self.scan_interval)
@@ -102,6 +134,7 @@ class AppConfig:
         self.kocom_default_speed = adv.get("DEFAULT_SPEED", self.kocom_default_speed)
         self.log_level = adv.get("LOGLEVEL", self.log_level).lower()
 
+        # 5. Kocom 사이즈 및 방 이름 매핑 설정
         kocom_light_size_list = json_data.get("KOCOM_LIGHT_SIZE", [])
         if kocom_light_size_list:
             self.kocom_light_size = {}
@@ -126,32 +159,7 @@ class AppConfig:
             for num, i in enumerate(kocom_room_thermostat_list):
                 self.kocom_room_thermostat[f"{num:02d}"] = i
 
-        # 통신 및 장치 설정 (기존 rs485.conf의 역할)
-        self.comm_type = json_data.get("RS485", {}).get("type", "Serial").lower()
-
-        self.port_url = {int(k[-1]): v for k, v in json_data.get("Serial", {}).items() if v}
-        self.device_list = {
-            int(k[-1]): v for k, v in json_data.get("SerialDevice", {}).items() if v
-        }
-
-        soc = json_data.get("Socket", {})
-        self.socket_server = soc.get("server")
-        self.socket_port = soc.get("port")
-        self.socket_device = json_data.get("SocketDevice", {}).get("device")
-
-        mqtt_json = json_data.get("MQTT", {})
-        anonymous_val = mqtt_json.get("anonymous")
-        anonymous_bool = (
-            str(anonymous_val).lower() == "true" if anonymous_val is not None else False
-        )
-        self.mqtt_config = MqttConfig(
-            ip=mqtt_json.get("server", ""),
-            username=mqtt_json.get("username", ""),
-            password=mqtt_json.get("password", ""),
-            anonymous=anonymous_bool,
-        )
-        self.wp_list = json_data.get("Wallpad", {})
-
+        # 6. Ventilator(전열교환기) 설정
         vent = json_data.get("Ventilator", {})
         self.ventilator_manufacturer = vent.get("manufacturer", "None")
         self.ventilator_connection_type = vent.get("connection_type", "Serial").lower()

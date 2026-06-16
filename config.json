@@ -18,6 +18,11 @@
     "share:rw"
   ],
   "options": {
+    "MQTT": {
+      "server": "192.168.x.x",
+      "username": "id",
+      "password": "pw"
+    },
     "RS485": {
       "type": "Serial"
     },
@@ -33,12 +38,6 @@
     },
     "SerialDevice": {
       "port1": "kocom"
-    },
-    "MQTT": {
-      "anonymous": false,
-      "server": "192.168.x.x",
-      "username": "id",
-      "password": "pw"
     },
     "Wallpad": {
       "light": false,
@@ -127,6 +126,11 @@
     }
   },
   "schema": {
+    "MQTT": {
+      "server": "str",
+      "username": "str",
+      "password": "str"
+    },
     "RS485": {
       "type": "list(Serial|Socket)"
     },
@@ -142,12 +146,6 @@
     },
     "SerialDevice": {
       "port1": "str?"
-    },
-    "MQTT": {
-      "anonymous": "bool",
-      "server": "str",
-      "username": "str",
-      "password": "str"
     },
     "Wallpad": {
       "light": "bool",
