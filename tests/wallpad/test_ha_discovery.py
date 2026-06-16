@@ -59,6 +59,7 @@ def kocom_factory(mock_config):
                 topic, json.dumps(payload, ensure_ascii=False), retain=retain
             )
         )
+        mock_mqtt_client.subscribe.side_effect = mock_mqtt_instance.subscribe
 
         def _create(active_device: str):
             # 1. MQTT 설정

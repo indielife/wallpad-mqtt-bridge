@@ -96,3 +96,10 @@ class MqttClient:
 
         payload = json.dumps(payload_data, ensure_ascii=False)
         self.publish(topic, payload, retain=retain)
+
+    def subscribe(self, topic, qos=0) -> None:
+        """MQTT 브로커로부터 특정 토픽 또는 토픽 리스트를 구독(Subscribe)합니다.
+
+        topic: 단일 토픽 문자열(str) 또는 (topic, qos) 튜플의 리스트
+        """
+        self.client.subscribe(topic, qos)

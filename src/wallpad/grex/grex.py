@@ -3,8 +3,6 @@ import logging
 import threading
 from typing import ClassVar
 
-import paho.mqtt.client as mqtt
-
 from wallpad.config import AppConfig
 from wallpad.grex.devices import GrexPacketBuilder, GrexVentilator
 from wallpad.mqtt import MqttClient
@@ -58,7 +56,6 @@ class Grex:
             )
             self.default_speed = "low"
 
-        self.d_mqtt = self.mqtt_client.client
         self.mqtt_client.register_connect_callback(self.on_connect)
         self.mqtt_client.register_message_callback(self.on_message)
         self.mqtt_client.register_subscribe_callback(self.on_subscribe)
@@ -147,7 +144,7 @@ class Grex:
             subscribe_list.append((topic, 0))
 
         if initial:
-            self.d_mqtt.subscribe(subscribe_list)
+            self.mqtt_client.subscribe(subscribe_list)
         for ha in publish_list:
             for topic, payload in ha.items():
                 self.mqtt_client.publish(topic, payload, retain=True)
