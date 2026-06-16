@@ -17,12 +17,10 @@ def grex_factory():
     """
     Grex 인스턴스와 mock_mqtt_instance를 생성해주는 팩토리 픽스처.
     """
-    with (
-        patch("wallpad.grex.grex.Grex.connect_mqtt") as mock_connect_mqtt,
-        patch("wallpad.grex.grex.threading.Thread"),
-    ):
+    with patch("wallpad.grex.grex.threading.Thread"):
         mock_mqtt_instance = MagicMock()
-        mock_connect_mqtt.return_value = mock_mqtt_instance
+        mock_mqtt_client = MagicMock()
+        mock_mqtt_client.client = mock_mqtt_instance
 
         def _create():
             mock_config = MagicMock()
@@ -39,7 +37,12 @@ def grex_factory():
             mock_cont_adapter = MagicMock()
             mock_vent_adapter = MagicMock()
 
-            grex = Grex(mock_config, mock_cont_adapter, mock_vent_adapter, mock_mqtt_instance)
+            grex = Grex(
+                mock_config,
+                mock_cont_adapter,
+                mock_vent_adapter,
+                mqtt_client=mock_mqtt_client,
+            )
             return grex, mock_mqtt_instance
 
         yield _create

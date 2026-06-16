@@ -17,6 +17,8 @@ class MqttClient:
         self.client.on_message = self._on_message
         self.client.on_subscribe = self._on_subscribe
         self._connect_callbacks = []
+        self._message_callbacks = []
+        self._subscribe_callbacks = []
         self._connected = False
 
     def connect(self) -> bool:
@@ -54,33 +56,42 @@ class MqttClient:
         if rc == 0:
             logger.info("[MQTT] Connected successfully")
             self._connected = True
-            for cb in self._connect_callbacks:
-                try:
-                    cb()
-                except Exception as e:
-                    logger.error("Failed to run MQTT connect callback: %r", e)
         else:
             logger.error("[MQTT] Connection failed with code: %s", rc)
 
+        for cb in self._connect_callbacks:
+            try:
+                cb(client, userdata, flags, rc)
+            except Exception as e:
+                logger.error("Error in connect callback: %r", e)
+
     def _on_message(self, client, userdata, msg):
-        pass
+        for cb in self._message_callbacks:
+            try:
+                cb(client, userdata, msg)
+            except Exception as e:
+                logger.error("Error in message callback: %r", e)
 
     def _on_subscribe(self, client, userdata, mid, granted_qos):
         logger.debug("[MQTT] Subscribed to topic. mid: %s, qos: %s", mid, granted_qos)
+        for cb in self._subscribe_callbacks:
+            try:
+                cb(client, userdata, mid, granted_qos)
+            except Exception as e:
+                logger.error("Error in subscribe callback: %r", e)
 
     def register_connect_callback(self, callback) -> None:
         """MQTT 브로커에 정상 연결(또는 재연결)되었을 때 호출될 콜백을 등록합니다."""
         self._connect_callbacks.append(callback)
-        if self._connected:
-            try:
-                callback()
-            except Exception as e:
-                logger.error("Failed to run MQTT connect callback on registration: %r", e)
 
-    def register_message_callback(self, topic: str, callback) -> None:
-        """특정 토픽(와일드카드 지원)으로 메시지가 수신되었을 때 호출될 콜백을 등록합니다."""
-        pass
+    def register_message_callback(self, callback) -> None:
+        """메시지가 수신되었을 때 호출될 콜백을 등록합니다."""
+        self._message_callbacks.append(callback)
+
+    def register_subscribe_callback(self, callback) -> None:
+        """토픽 구독이 완료되었을 때 호출될 콜백을 등록합니다."""
+        self._subscribe_callbacks.append(callback)
 
     def publish(self, topic: str, payload: str, retain: bool = True) -> None:
         """MQTT 브로커로 메시지를 발행(Publish)합니다."""
-        pass
+        self.client.publish(topic, payload, retain=retain)

@@ -196,7 +196,10 @@ class Kocom:
                     )
                 )
 
-        self.d_mqtt = self.connect_mqtt(self.config.mqtt_config, name)
+        self.d_mqtt = self.mqtt_client.client
+        self.mqtt_client.register_connect_callback(self.on_connect)
+        self.mqtt_client.register_message_callback(self.on_message)
+        self.mqtt_client.register_subscribe_callback(self.on_subscribe)
 
         self._t1 = threading.Thread(target=self.get_serial, args=(name, packet_len))
         self._t1.start()
@@ -227,38 +230,6 @@ class Kocom:
             return res
         except Exception as e:
             logger.error("Connection error during write: %r", e)
-
-    def connect_mqtt(self, server, name):
-        mqtt_client = mqtt.Client()
-        mqtt_client.on_message = self.on_message
-        # mqtt_client.on_publish = self.on_publish
-        mqtt_client.on_subscribe = self.on_subscribe
-        mqtt_client.on_connect = self.on_connect
-
-        if server["anonymous"] != "True":
-            if server["server"] == "" or server["username"] == "" or server["password"] == "":
-                logger.info(
-                    "MQTT 설정을 확인하세요. Server[%s] ID[%s] PW[%s] Device[%s]",
-                    server["server"],
-                    server["username"],
-                    server["password"],
-                    name,
-                )
-                return False
-            mqtt_client.username_pw_set(username=server["username"], password=server["password"])
-            logger.debug(
-                "MQTT STATUS. Server[%s] ID[%s] PW[%s] Device[%s]",
-                server["server"],
-                server["username"],
-                server["password"],
-                name,
-            )
-        else:
-            logger.debug("MQTT STATUS. Server[%s] Device[%s]", server["server"], name)
-
-        mqtt_client.connect(server["server"], 1883, 60)
-        mqtt_client.loop_start()
-        return mqtt_client
 
     def on_message(self, client, obj, msg):  # noqa: C901
         _topic = msg.topic.split("/")

@@ -70,10 +70,7 @@ def mock_adapter():
 
 def test_kocom_initial_state(mock_config, mock_adapter):
     """Kocom 객체 생성 시 내부 상태와 설정값들이 정상적으로 초기화되는지 검증합니다."""
-    with (
-        patch("wallpad.kocom.kocom.Kocom.connect_mqtt"),
-        patch("wallpad.kocom.kocom.threading.Thread"),
-    ):
+    with patch("wallpad.kocom.kocom.threading.Thread"):
         kocom = Kocom(mock_config, mock_adapter, "kocom", 42, MagicMock())
 
         # 1. 글로벌 변수 의존성 세팅 검증
