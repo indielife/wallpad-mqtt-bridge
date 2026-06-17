@@ -10,20 +10,22 @@
 애드온 설정 탭에서 다음과 같이 기본 설정 항목을 입력합니다.
 
 ### 1. MQTT Broker
-MQTT 브로커 연결 정보입니다.
-- **Server**: MQTT 브로커 IP 주소 (예: `192.168.0.10`)
+홈어시스턴트에서 사용하는 MQTT 브로커(예: Mosquitto Broker 애드온)와의 연결 정보입니다.
+- **Server**: MQTT 브로커가 동작 중인 서버 IP 주소 (예: `192.168.0.10`)
 - **Username**: MQTT 사용자 계정 ID
 - **Password**: MQTT 사용자 계정 비밀번호
 
 ### 2. Wallpad
 월패드 제조사 및 연결 정보 설정입니다.
 - **Manufacturer**: 월패드 제조사 명칭. 현재는 `kocom`만 지원됩니다. (기본값: `kocom`)
-- **Connection Type**: 월패드 연결 방식 (`Serial` 또는 `Socket`)
-- **Socket**: 소켓 연결(네트워크) 시 주소 및 포트 설정
-  - **Server**: 소켓 서버 IP 주소 (예: `192.168.0.11`)
-  - **Port**: 소켓 서버 포트 번호 (기본값: `8899`)
-- **Serial**: 시리얼 연결 시 포트 설정
-  - **Port**: 시리얼 디바이스 포트 경로 (예: `/dev/ttyUSB0`)
+- **Connection Type**: 월패드와 통신하는 물리적인 연결 방식 선택 (`Serial` 또는 `Socket`)
+  - `Serial`: RS485 라인이 USB 시리얼 젠더를 통해 홈어시스턴트 서버(라즈베리 파이, 미니PC 등)에 직접 연결되어 있는 경우 사용합니다.
+  - `Socket`: RS485 라인이 EW11 등 시리얼-네트워크 변환기에 연결되어 네트워크를 통해 통신하는 경우 사용합니다.
+- **Socket**: `Connection Type`을 `Socket`으로 설정한 경우 활성화되는 네트워크 연결 설정입니다.
+  - **Server**: 시리얼-네트워크 변환기(예: Elfin EW11)의 IP 주소를 입력합니다. (예: `192.168.0.11`)
+  - **Port**: 변환기에 설정한 소켓 포트 번호를 입력합니다. (기본값: `8899`)
+- **Serial**: `Connection Type`을 `Serial`로 설정한 경우 활성화되는 시리얼 포트 설정입니다.
+  - **Port**: 홈어시스턴트 서버에 연결된 USB 시리얼 디바이스 경로를 입력합니다. (예: `/dev/ttyUSB0`)
 
 ### 3. Enabled Devices
 월패드 제어 대상 기기를 활성화하는 설정입니다. (활성화할 기기는 `true`로 설정)
@@ -37,10 +39,16 @@ MQTT 브로커 연결 정보입니다.
 ### 4. Ventilator
 전열교환기(환기장치) 연동 설정입니다.
 - **Manufacturer**: 전열교환기 제조사 선택 (`None`, `Grex` 중 선택. 기본값: `None`)
-- **Connection Type**: 전열교환기 연결 방식 (`Serial` 또는 `Socket`)
-- **Serial**: 시리얼 연결 시 포트 경로 설정 (`Controller Port`, `Ventilator Port`)
-- **Socket**: 소켓 연결 시 서버 주소 및 포트 설정 (`Server`, `Port`)
-- **Default Speed**: 기본 환기 속도 (`low`, `medium`, `high` 등)
+- **Connection Type**: 전열교환기 연결 방식 선택 (`Serial` 또는 `Socket`)
+  - `Serial`: 전열교환기 통신선이 USB 시리얼 젠더를 통해 홈어시스턴트 서버에 직접 연결되어 있는 경우 사용합니다. (벽면 조절기용, 환기장치 본체용 총 2개의 시리얼 포트가 필요합니다.)
+  - `Socket`: 전열교환기 통신선이 EW11 등 시리얼-네트워크 변환기에 연결되어 네트워크를 통해 통신하는 경우 사용합니다.
+- **Serial**: `Connection Type`을 `Serial`로 설정한 경우 활성화되는 시리얼 포트 설정입니다.
+  - **Controller Port**: 전열교환기 벽면 조절기 라인에 연결된 USB 시리얼 디바이스 경로를 입력합니다. (예: `/dev/ttyUSB1`)
+  - **Ventilator Port**: 전열교환기 본체 라인에 연결된 USB 시리얼 디바이스 경로를 입력합니다. (예: `/dev/ttyUSB2`)
+- **Socket**: `Connection Type`을 `Socket`으로 설정한 경우 활성화되는 네트워크 연결 설정입니다.
+  - **Server**: 시리얼-네트워크 변환기(예: Elfin EW11)의 IP 주소를 입력합니다. (예: `192.168.0.12`)
+  - **Port**: 변환기에 설정한 소켓 포트 번호를 입력합니다. (기본값: `8899`)
+- **Default Speed**: 기본 환기 속도 선택 (`low`, `medium`, `high` 등. 기본값: `low`)
 
 ## 문서 (Documentation)
 
