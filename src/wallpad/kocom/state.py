@@ -1,14 +1,15 @@
 import time
 from typing import Any
 
-# 디바이스 명명 상수 복사 (순환 참조 방지)
-DEVICE_WALLPAD = "wallpad"
-DEVICE_LIGHT = "light"
-DEVICE_THERMOSTAT = "thermostat"
-DEVICE_PLUG = "plug"
-DEVICE_GAS = "gas"
-DEVICE_ELEVATOR = "elevator"
-DEVICE_FAN = "fan"
+from wallpad.kocom.constants import (
+    DEVICE_ELEVATOR,
+    DEVICE_FAN,
+    DEVICE_GAS,
+    DEVICE_LIGHT,
+    DEVICE_PLUG,
+    DEVICE_THERMOSTAT,
+    DEVICE_WALLPAD,
+)
 
 
 class SubDeviceState(dict):

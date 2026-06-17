@@ -2,24 +2,15 @@ import json
 from typing import ClassVar
 
 from wallpad.devices.base import BaseDevice
+from wallpad.grex.constants import MODE_HEX_MAP, SPEED_HEX_MAP
 from wallpad.mqtt import HA_FAN, HA_PREFIX, HA_SENSOR
 
 from .grex_packet_builder import GrexPacketBuilder
 
 
 class GrexVentilator(BaseDevice):
-    MODE_HEX_MAP: ClassVar[dict[str, str]] = {
-        "off": "0000",
-        "auto": "0100",
-        "manual": "0200",
-        "sleep": "0300",
-    }
-    SPEED_HEX_MAP: ClassVar[dict[str, str]] = {
-        "off": "0000",
-        "low": "0101",
-        "medium": "0202",
-        "high": "0303",
-    }
+    MODE_HEX_MAP: ClassVar[dict[str, str]] = MODE_HEX_MAP
+    SPEED_HEX_MAP: ClassVar[dict[str, str]] = SPEED_HEX_MAP
 
     def __init__(
         self, name_prefix: str, sw_version: str, packet_builder: GrexPacketBuilder | None = None

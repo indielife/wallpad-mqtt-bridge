@@ -4,6 +4,7 @@ import threading
 from typing import ClassVar
 
 from wallpad.config import AppConfig
+from wallpad.grex.constants import DEVICE_FAN, MODE, SPEED
 from wallpad.grex.devices import GrexPacketBuilder, GrexVentilator
 from wallpad.mqtt import (
     HA_FAN,
@@ -16,23 +17,10 @@ from wallpad.rs485 import ConnectionAdapter
 logger = logging.getLogger(__name__)
 
 
-DEVICE_FAN = "fan"
-
-
 class Grex:
     # GREX 전열교환기 패킷 기본정보
-    MODE: ClassVar[dict[str, str]] = {
-        "0100": "auto",
-        "0200": "manual",
-        "0300": "sleep",
-        "0000": "off",
-    }
-    SPEED: ClassVar[dict[str, str]] = {
-        "0101": "low",
-        "0202": "medium",
-        "0303": "high",
-        "0000": "off",
-    }
+    MODE: ClassVar[dict[str, str]] = MODE
+    SPEED: ClassVar[dict[str, str]] = SPEED
 
     def __init__(
         self,
