@@ -4,17 +4,18 @@ from unittest.mock import mock_open, patch
 from wallpad.config import AppConfig
 
 SAMPLE_OPTIONS_JSON = {
-    "MQTT": {
-        "server": "192.168.1.200",
-        "username": "test_user",
-        "password": "test_password",
+    "MQTT Broker": {
+        "Server": "192.168.1.200",
+        "Username": "test_user",
+        "Password": "test_password",
     },
-    "RS485": {"type": "Serial"},
-    "Socket": {"server": "192.168.1.100", "port": 8899},
-    "SocketDevice": {"device": "kocom"},
-    "Serial": {"port1": "/dev/ttyUSB0"},
-    "SerialDevice": {"port1": "kocom"},
     "Wallpad": {
+        "Manufacturer": "kocom",
+        "Connection Type": "Serial",
+        "Socket": {"Server": "192.168.1.100", "Port": 8899},
+        "Serial": {"Port": "/dev/ttyUSB0"},
+    },
+    "Enabled Devices": {
         "light": True,
         "plug": False,
         "thermostat": True,
@@ -34,11 +35,11 @@ SAMPLE_OPTIONS_JSON = {
     "KOCOM_ROOM": ["livingroom", "bedroom"],
     "KOCOM_ROOM_THERMOSTAT": ["livingroom"],
     "Ventilator": {
-        "manufacturer": "Grex",
-        "connection_type": "Serial",
-        "Serial": {"ventilator_port": "/dev/ttyUSB1", "controller_port": "/dev/ttyUSB2"},
-        "Socket": {"server": "192.168.1.101", "port": 8899},
-        "default_speed": "low",
+        "Manufacturer": "Grex",
+        "Connection Type": "Serial",
+        "Serial": {"Ventilator Port": "/dev/ttyUSB1", "Controller Port": "/dev/ttyUSB2"},
+        "Socket": {"Server": "192.168.1.101", "Port": 8899},
+        "Default Speed": "low",
     },
 }
 
@@ -51,8 +52,10 @@ def test_app_config_load(mock_isfile):
         config = AppConfig(options_path="/fake/path.json")
         config.load()
 
-        # 1. MQTT 및 Wallpad 설정 (Boolean 타입 정상 파싱) 검증
+        # 1. MQTT 및 기기 활성화 설정 (Enabled Devices, Boolean 타입 정상 파싱) 검증
         assert config.mqtt_config.server == "192.168.1.200"
+        assert config.wallpad == "kocom"
+        assert config.wallpad_manufacturer == "kocom"
         assert config.wp_list["light"] is True
         assert config.wp_list["plug"] is False
         assert config.wp_list["gas"] is True
@@ -114,6 +117,7 @@ def test_app_config_defaults(mock_isfile):
     assert config.wp_gas is False
     assert config.wp_elevator is False
     assert config.ventilator == "None"
+    assert config.wallpad == "kocom"
     assert config.kocom_default_speed == "low"
     assert config.ventilator_default_speed == "low"
 
