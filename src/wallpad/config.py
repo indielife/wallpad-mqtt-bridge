@@ -95,6 +95,21 @@ class AppConfig:
         """설정 파일을 로드합니다."""
         self._load_options_json()
 
+    def _parse_serial_ports(self, serial_data: dict) -> dict:
+        ports = {}
+        for k, v in serial_data.items():
+            if not v:
+                continue
+            if k == "port":
+                ports[1] = v
+            elif k.startswith("port"):
+                try:
+                    port_num = int(k[4:])
+                    ports[port_num] = v
+                except ValueError:
+                    pass
+        return ports
+
     def _load_options_json(self):
         if not os.path.isfile(self.options_path):
             logger.debug(
@@ -114,15 +129,18 @@ class AppConfig:
         )
 
         # 2. Wallpad 설정
-        self.wallpad_manufacturer = json_data.get("Wallpad", {}).get("Manufacturer", "kocom")
+        wallpad_json = json_data.get("Wallpad", {})
+        self.wallpad_manufacturer = wallpad_json.get("Manufacturer", "kocom")
 
         # 3. RS485 & 하드웨어 통신 설정
-        self.comm_type = json_data.get("RS485", {}).get("type", "Serial").lower()
+        rs485_type = json_data.get("RS485", {}).get("type", "Serial")
+        self.comm_type = wallpad_json.get("type", rs485_type).lower()
 
-        self.port_url = {int(k[-1]): v for k, v in json_data.get("Serial", {}).items() if v}
+        serial_data = wallpad_json.get("Serial", json_data.get("Serial", {}))
+        self.port_url = self._parse_serial_ports(serial_data)
         self.device_list = {port_num: self.wallpad_manufacturer for port_num in self.port_url}
 
-        soc = json_data.get("Socket", {})
+        soc = wallpad_json.get("Socket", json_data.get("Socket", {}))
         self.socket_server = soc.get("server")
         self.socket_port = soc.get("port")
         self.socket_device = self.wallpad_manufacturer

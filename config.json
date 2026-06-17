@@ -19,22 +19,20 @@
   ],
   "options": {
     "MQTT Broker": {
-      "server": "192.168.x.x",
+      "server": "",
       "username": "id",
       "password": "pw"
     },
     "Wallpad": {
-      "Manufacturer": "kocom"
-    },
-    "RS485": {
-      "type": "Serial"
-    },
-    "Socket": {
-      "server": "192.168.x.x",
-      "port": 8899
-    },
-    "Serial": {
-      "port1": "/dev/ttyUSB0"
+      "Manufacturer": "kocom",
+      "type": "Serial",
+      "Socket": {
+        "server": "",
+        "port": 8899
+      },
+      "Serial": {
+        "port": "/dev/ttyUSB0"
+      }
     },
     "Enabled Devices": {
       "light": false,
@@ -129,17 +127,15 @@
       "password": "str"
     },
     "Wallpad": {
-      "Manufacturer": "str"
-    },
-    "RS485": {
-      "type": "list(Serial|Socket)"
-    },
-    "Socket": {
-      "server": "str?",
-      "port": "int?"
-    },
-    "Serial": {
-      "port1": "str?"
+      "Manufacturer": "str",
+      "type": "list(Serial|Socket)",
+      "Socket": {
+        "server": "str?",
+        "port": "int?"
+      },
+      "Serial": {
+        "port": "str?"
+      }
     },
     "Enabled Devices": {
       "light": "bool",

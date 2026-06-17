@@ -22,6 +22,7 @@ SERIAL_OPTIONS_JSON = {
         "password": "my_pass",
     },
     "Wallpad": {
+        "type": "Serial",
         "light": True,
         "fan": False,
         "thermostat": True,
@@ -40,6 +41,7 @@ SOCKET_OPTIONS_JSON = {
         "server": "192.168.1.100",
     },
     "Wallpad": {
+        "type": "Socket",
         "light": False,
         "fan": True,
         "thermostat": False,

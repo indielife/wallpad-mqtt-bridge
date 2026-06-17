@@ -9,10 +9,12 @@ SAMPLE_OPTIONS_JSON = {
         "username": "test_user",
         "password": "test_password",
     },
-    "Wallpad": {"Manufacturer": "kocom"},
-    "RS485": {"type": "Serial"},
-    "Socket": {"server": "192.168.1.100", "port": 8899},
-    "Serial": {"port1": "/dev/ttyUSB0"},
+    "Wallpad": {
+        "Manufacturer": "kocom",
+        "type": "Serial",
+        "Socket": {"server": "192.168.1.100", "port": 8899},
+        "Serial": {"port": "/dev/ttyUSB0"},
+    },
     "Enabled Devices": {
         "light": True,
         "plug": False,
