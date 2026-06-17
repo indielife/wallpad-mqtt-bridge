@@ -83,7 +83,7 @@ class AppConfig:
         self.kocom_room_thermostat = dict(KOCOM_ROOM_THERMOSTAT_DEFAULT)
 
         # 7. Ventilator(전열교환기) 설정
-        self.ventilator_manufacturer = "None"
+        self.ventilator_manufacturer = "none"
         self.ventilator_connection_type = "serial"
         self.ventilator_socket_server = ""
         self.ventilator_socket_port = 8899
@@ -131,7 +131,8 @@ class AppConfig:
 
         # 2. Wallpad 설정
         wallpad_json = json_data.get("Wallpad", {})
-        self.wallpad_manufacturer = wallpad_json.get("Manufacturer", "kocom")
+        wp_mfg = wallpad_json.get("Manufacturer", "kocom")
+        self.wallpad_manufacturer = wp_mfg.lower() if isinstance(wp_mfg, str) else "kocom"
 
         # 3. RS485 & 하드웨어 통신 설정
         rs485_type = json_data.get("RS485", {}).get("type", "Serial")
@@ -147,7 +148,7 @@ class AppConfig:
         self.socket_device = self.wallpad_manufacturer
 
         # 4. 기기 활성화 설정 (Enabled Devices)
-        self.wp_list = json_data.get("Enabled Devices", {})
+        self.wp_list = wallpad_json.get("Enabled Devices", {})
 
         # 5. Advanced 세부 제어 설정
         adv = json_data.get("Advanced", {})
@@ -184,7 +185,8 @@ class AppConfig:
 
         # 7. Ventilator(전열교환기) 설정
         vent = json_data.get("Ventilator", {})
-        self.ventilator_manufacturer = vent.get("Manufacturer", vent.get("manufacturer", "None"))
+        vent_mfg = vent.get("Manufacturer", vent.get("manufacturer", "none"))
+        self.ventilator_manufacturer = vent_mfg.lower() if isinstance(vent_mfg, str) else "none"
         self.ventilator_connection_type = vent.get(
             "Connection Type", vent.get("connection_type", "Serial")
         ).lower()

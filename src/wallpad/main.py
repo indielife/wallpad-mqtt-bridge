@@ -63,7 +63,7 @@ def run_serial_mode(config: AppConfig, rs485: RS485, mqtt_client: MqttClient):
                     logger.error("Failed to initialize %s: %r", name, e)
 
     # 2. Grex 기기 초기화 (설정에서 Ventilator가 Grex일 때만 수행)
-    if config.ventilator == "Grex":
+    if config.ventilator == "grex":
         unit_adapter = rs485.adapters.get("ventilator_unit")
         ctrl_adapter = rs485.adapters.get("ventilator_ctrl")
         if unit_adapter and unit_adapter.is_open() and ctrl_adapter and ctrl_adapter.is_open():

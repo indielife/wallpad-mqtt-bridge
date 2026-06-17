@@ -14,14 +14,14 @@ SAMPLE_OPTIONS_JSON = {
         "Connection Type": "Serial",
         "Socket": {"Server": "192.168.1.100", "Port": 8899},
         "Serial": {"Port": "/dev/ttyUSB0"},
-    },
-    "Enabled Devices": {
-        "light": True,
-        "plug": False,
-        "thermostat": True,
-        "fan": False,
-        "gas": True,
-        "elevator": False,
+        "Enabled Devices": {
+            "light": True,
+            "plug": False,
+            "thermostat": True,
+            "fan": False,
+            "gas": True,
+            "elevator": False,
+        },
     },
     "Advanced": {
         "INIT_TEMP": 24,
@@ -93,8 +93,8 @@ def test_app_config_load(mock_isfile):
         assert config.kocom_room_thermostat == {"00": "livingroom"}
 
         # 7. 신규 전열교환기(Ventilator) 설정 파싱 검증
-        assert config.ventilator == "Grex"
-        assert config.ventilator_manufacturer == "Grex"
+        assert config.ventilator == "grex"
+        assert config.ventilator_manufacturer == "grex"
         assert config.ventilator_connection_type == "serial"
         assert config.ventilator_unit_port == "/dev/ttyUSB1"
         assert config.ventilator_ctrl_port == "/dev/ttyUSB2"
@@ -116,7 +116,7 @@ def test_app_config_defaults(mock_isfile):
     assert config.wp_plug is False
     assert config.wp_gas is False
     assert config.wp_elevator is False
-    assert config.ventilator == "None"
+    assert config.ventilator == "none"
     assert config.wallpad == "kocom"
     assert config.kocom_default_speed == "low"
     assert config.ventilator_default_speed == "low"

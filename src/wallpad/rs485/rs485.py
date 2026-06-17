@@ -51,7 +51,7 @@ class RS485:
                     e,
                 )
 
-        if self.config.ventilator == "Grex" and self.config.ventilator_connection_type == "serial":
+        if self.config.ventilator == "grex" and self.config.ventilator_connection_type == "serial":
             for role, port_path in [
                 ("ventilator_unit", self.config.ventilator_unit_port),
                 ("ventilator_ctrl", self.config.ventilator_ctrl_port),
