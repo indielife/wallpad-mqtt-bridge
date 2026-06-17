@@ -12,11 +12,17 @@ dependencies = [
 [dependency-groups]
 dev = [
     "commitizen>=4.16.3",
+    "cz-conventional-gitmoji>=0.7.0",
     "pre-commit>=4.6.0",
     "pytest>=9.0.3",
     "ruff>=0.15.16",
     "syrupy>=5.3.2",
 ]
+
+[tool.commitizen]
+name = "cz_gitmoji"  # gitmoji 프리셋 사용
+version = "0.1.0"
+tag_format = "v$version"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

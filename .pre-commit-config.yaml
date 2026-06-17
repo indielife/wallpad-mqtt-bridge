@@ -1,6 +1,10 @@
+default_install_hook_types:
+  - pre-commit
+  - commit-msg
+
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v2.3.0
+  rev: v6.0.0
   hooks:
   - id: check-yaml
   - id: check-toml
@@ -9,14 +13,16 @@ repos:
   - id: detect-private-key
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.15.13
+  rev: v0.15.17
   hooks:
-  # - id: ruff
-  #   args: [--fix]
+  - id: ruff
+    args: [--fix]
   - id: ruff-format
 
 - repo: https://github.com/commitizen-tools/commitizen
-  rev: v4.16.2
+  rev: v4.16.3
   hooks:
   - id: commitizen
+    name: "✅ Validate commit message"
     stages: [commit-msg]
+    additional_dependencies: [cz-conventional-gitmoji]
