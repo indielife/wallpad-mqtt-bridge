@@ -39,7 +39,7 @@
     "SerialDevice": {
       "port1": "kocom"
     },
-    "Wallpad": {
+    "Enabled Devices": {
       "light": false,
       "plug": false,
       "thermostat": false,
@@ -147,7 +147,7 @@
     "SerialDevice": {
       "port1": "str?"
     },
-    "Wallpad": {
+    "Enabled Devices": {
       "light": "bool",
       "plug": "bool",
       "thermostat": "bool",

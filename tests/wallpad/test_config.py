@@ -14,7 +14,7 @@ SAMPLE_OPTIONS_JSON = {
     "SocketDevice": {"device": "kocom"},
     "Serial": {"port1": "/dev/ttyUSB0"},
     "SerialDevice": {"port1": "kocom"},
-    "Wallpad": {
+    "Enabled Devices": {
         "light": True,
         "plug": False,
         "thermostat": True,
@@ -51,7 +51,7 @@ def test_app_config_load(mock_isfile):
         config = AppConfig(options_path="/fake/path.json")
         config.load()
 
-        # 1. MQTT 및 Wallpad 설정 (Boolean 타입 정상 파싱) 검증
+        # 1. MQTT 및 기기 활성화 설정 (Enabled Devices, Boolean 타입 정상 파싱) 검증
         assert config.mqtt_config.server == "192.168.1.200"
         assert config.wp_list["light"] is True
         assert config.wp_list["plug"] is False

@@ -63,7 +63,7 @@ class AppConfig:
         self.socket_port = None
         self.socket_device = None
 
-        # 3. Wallpad 활성화 정보
+        # 3. 기기 활성화 정보 (Enabled Devices)
         self.wp_list = {}
 
         # 4. Advanced 세부 제어 설정
@@ -123,8 +123,8 @@ class AppConfig:
         self.socket_port = soc.get("port")
         self.socket_device = json_data.get("SocketDevice", {}).get("device")
 
-        # 3. Wallpad 활성화 설정
-        self.wp_list = json_data.get("Wallpad", {})
+        # 3. 기기 활성화 설정 (Enabled Devices)
+        self.wp_list = json_data.get("Enabled Devices", {})
 
         # 4. Advanced 세부 제어 설정
         adv = json_data.get("Advanced", {})
