@@ -20,8 +20,8 @@
   "options": {
     "MQTT Broker": {
       "Server": "",
-      "Username": "id",
-      "Password": "pw"
+      "Username": "",
+      "Password": ""
     },
     "Wallpad": {
       "Manufacturer": "kocom",
@@ -107,7 +107,7 @@
       "room2"
     ],
     "Ventilator": {
-      "Manufacturer": "None",
+      "Manufacturer": "none",
       "Connection Type": "Serial",
       "Serial": {
         "Controller Port": "/dev/ttyUSB1",
@@ -124,7 +124,7 @@
     "MQTT Broker": {
       "Server": "str",
       "Username": "str",
-      "Password": "str"
+      "Password": "password"
     },
     "Wallpad": {
       "Manufacturer": "str",
