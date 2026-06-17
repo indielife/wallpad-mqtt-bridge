@@ -100,11 +100,12 @@ class AppConfig:
         for k, v in serial_data.items():
             if not v:
                 continue
-            if k == "port":
+            k_lower = k.lower()
+            if k_lower == "port":
                 ports[1] = v
-            elif k.startswith("port"):
+            elif k_lower.startswith("port"):
                 try:
-                    port_num = int(k[4:])
+                    port_num = int(k_lower[4:])
                     ports[port_num] = v
                 except ValueError:
                     pass
@@ -123,9 +124,9 @@ class AppConfig:
         # 1. MQTT Broker 설정
         mqtt_json = json_data.get("MQTT Broker", {})
         self.mqtt_config = MqttConfig(
-            server=mqtt_json.get("server", ""),
-            username=mqtt_json.get("username", ""),
-            password=mqtt_json.get("password", ""),
+            server=mqtt_json.get("Server", ""),
+            username=mqtt_json.get("Username", ""),
+            password=mqtt_json.get("Password", ""),
         )
 
         # 2. Wallpad 설정
@@ -134,15 +135,15 @@ class AppConfig:
 
         # 3. RS485 & 하드웨어 통신 설정
         rs485_type = json_data.get("RS485", {}).get("type", "Serial")
-        self.comm_type = wallpad_json.get("type", rs485_type).lower()
+        self.comm_type = wallpad_json.get("Connection Type", rs485_type).lower()
 
         serial_data = wallpad_json.get("Serial", json_data.get("Serial", {}))
         self.port_url = self._parse_serial_ports(serial_data)
         self.device_list = {port_num: self.wallpad_manufacturer for port_num in self.port_url}
 
         soc = wallpad_json.get("Socket", json_data.get("Socket", {}))
-        self.socket_server = soc.get("server")
-        self.socket_port = soc.get("port")
+        self.socket_server = soc.get("Server")
+        self.socket_port = soc.get("Port")
         self.socket_device = self.wallpad_manufacturer
 
         # 4. 기기 활성화 설정 (Enabled Devices)
@@ -183,18 +184,26 @@ class AppConfig:
 
         # 7. Ventilator(전열교환기) 설정
         vent = json_data.get("Ventilator", {})
-        self.ventilator_manufacturer = vent.get("manufacturer", "None")
-        self.ventilator_connection_type = vent.get("connection_type", "Serial").lower()
+        self.ventilator_manufacturer = vent.get("Manufacturer", vent.get("manufacturer", "None"))
+        self.ventilator_connection_type = vent.get(
+            "Connection Type", vent.get("connection_type", "Serial")
+        ).lower()
 
         vent_socket = vent.get("Socket", {})
-        self.ventilator_socket_server = vent_socket.get("server", "")
-        self.ventilator_socket_port = vent_socket.get("port", 8899)
+        self.ventilator_socket_server = vent_socket.get("Server", vent_socket.get("server", ""))
+        self.ventilator_socket_port = vent_socket.get("Port", vent_socket.get("port", 8899))
 
         vent_serial = vent.get("Serial", {})
-        self.ventilator_ctrl_port = vent_serial.get("controller_port", "")
-        self.ventilator_unit_port = vent_serial.get("ventilator_port", "")
+        self.ventilator_ctrl_port = vent_serial.get(
+            "Controller Port", vent_serial.get("controller_port", "")
+        )
+        self.ventilator_unit_port = vent_serial.get(
+            "Ventilator Port", vent_serial.get("ventilator_port", "")
+        )
 
-        self.ventilator_default_speed = vent.get("default_speed", self.ventilator_default_speed)
+        self.ventilator_default_speed = vent.get(
+            "Default Speed", vent.get("default_speed", self.ventilator_default_speed)
+        )
 
     @property
     def ventilator(self) -> str:

@@ -11,19 +11,19 @@
 
 ### 1. MQTT Broker
 MQTT 브로커 연결 정보입니다.
-- **server**: MQTT 브로커 IP 주소 (예: `192.168.0.10`)
-- **username**: MQTT 사용자 계정 ID
-- **password**: MQTT 사용자 계정 비밀번호
+- **Server**: MQTT 브로커 IP 주소 (예: `192.168.0.10`)
+- **Username**: MQTT 사용자 계정 ID
+- **Password**: MQTT 사용자 계정 비밀번호
 
 ### 2. Wallpad
 월패드 제조사 및 연결 정보 설정입니다.
 - **Manufacturer**: 월패드 제조사 명칭. 현재는 `kocom`만 지원됩니다. (기본값: `kocom`)
-- **type**: 월패드 연결 방식 (`Serial` 또는 `Socket`)
+- **Connection Type**: 월패드 연결 방식 (`Serial` 또는 `Socket`)
 - **Socket**: 소켓 연결(네트워크) 시 주소 및 포트 설정
-  - **server**: 소켓 서버 IP 주소 (예: `192.168.0.11`)
-  - **port**: 소켓 서버 포트 번호 (기본값: `8899`)
+  - **Server**: 소켓 서버 IP 주소 (예: `192.168.0.11`)
+  - **Port**: 소켓 서버 포트 번호 (기본값: `8899`)
 - **Serial**: 시리얼 연결 시 포트 설정
-  - **port**: 시리얼 디바이스 포트 경로 (예: `/dev/ttyUSB0`)
+  - **Port**: 시리얼 디바이스 포트 경로 (예: `/dev/ttyUSB0`)
 
 ### 3. Enabled Devices
 월패드 제어 대상 기기를 활성화하는 설정입니다. (활성화할 기기는 `true`로 설정)
@@ -36,11 +36,11 @@ MQTT 브로커 연결 정보입니다.
 
 ### 4. Ventilator
 전열교환기(환기장치) 연동 설정입니다.
-- **manufacturer**: 전열교환기 제조사 선택 (`None`, `Grex` 중 선택. 기본값: `None`)
-- **connection_type**: 전열교환기 연결 방식 (`Serial` 또는 `Socket`)
-- **Serial**: 시리얼 연결 시 포트 경로 설정 (`controller_port`, `ventilator_port`)
-- **Socket**: 소켓 연결 시 서버 주소 및 포트 설정
-- **default_speed**: 기본 환기 속도 (`low`, `medium`, `high` 등)
+- **Manufacturer**: 전열교환기 제조사 선택 (`None`, `Grex` 중 선택. 기본값: `None`)
+- **Connection Type**: 전열교환기 연결 방식 (`Serial` 또는 `Socket`)
+- **Serial**: 시리얼 연결 시 포트 경로 설정 (`Controller Port`, `Ventilator Port`)
+- **Socket**: 소켓 연결 시 서버 주소 및 포트 설정 (`Server`, `Port`)
+- **Default Speed**: 기본 환기 속도 (`low`, `medium`, `high` 등)
 
 ## 문서 (Documentation)
 

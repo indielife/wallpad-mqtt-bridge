@@ -19,19 +19,19 @@
   ],
   "options": {
     "MQTT Broker": {
-      "server": "",
-      "username": "id",
-      "password": "pw"
+      "Server": "",
+      "Username": "id",
+      "Password": "pw"
     },
     "Wallpad": {
       "Manufacturer": "kocom",
-      "type": "Serial",
+      "Connection Type": "Serial",
       "Socket": {
-        "server": "",
-        "port": 8899
+        "Server": "",
+        "Port": 8899
       },
       "Serial": {
-        "port": "/dev/ttyUSB0"
+        "Port": "/dev/ttyUSB0"
       }
     },
     "Enabled Devices": {
@@ -107,34 +107,34 @@
       "room2"
     ],
     "Ventilator": {
-      "manufacturer": "None",
-      "connection_type": "Serial",
+      "Manufacturer": "None",
+      "Connection Type": "Serial",
       "Serial": {
-        "controller_port": "/dev/ttyUSB1",
-        "ventilator_port": "/dev/ttyUSB2"
+        "Controller Port": "/dev/ttyUSB1",
+        "Ventilator Port": "/dev/ttyUSB2"
       },
       "Socket": {
-        "server": "",
-        "port": 8899
+        "Server": "",
+        "Port": 8899
       },
-      "default_speed": "low"
+      "Default Speed": "low"
     }
   },
   "schema": {
     "MQTT Broker": {
-      "server": "str",
-      "username": "str",
-      "password": "str"
+      "Server": "str",
+      "Username": "str",
+      "Password": "str"
     },
     "Wallpad": {
       "Manufacturer": "str",
-      "type": "list(Serial|Socket)",
+      "Connection Type": "list(Serial|Socket)",
       "Socket": {
-        "server": "str?",
-        "port": "int?"
+        "Server": "str?",
+        "Port": "int?"
       },
       "Serial": {
-        "port": "str?"
+        "Port": "str?"
       }
     },
     "Enabled Devices": {
@@ -171,17 +171,17 @@
       "str?"
     ],
     "Ventilator": {
-      "manufacturer": "str",
-      "connection_type": "list(Serial|Socket)",
+      "Manufacturer": "str",
+      "Connection Type": "list(Serial|Socket)",
       "Serial": {
-        "controller_port": "str?",
-        "ventilator_port": "str?"
+        "Controller Port": "str?",
+        "Ventilator Port": "str?"
       },
       "Socket": {
-        "server": "str?",
-        "port": "int?"
+        "Server": "str?",
+        "Port": "int?"
       },
-      "default_speed": "str"
+      "Default Speed": "str"
     }
   }
 }

@@ -5,15 +5,15 @@ from wallpad.config import AppConfig
 
 SAMPLE_OPTIONS_JSON = {
     "MQTT Broker": {
-        "server": "192.168.1.200",
-        "username": "test_user",
-        "password": "test_password",
+        "Server": "192.168.1.200",
+        "Username": "test_user",
+        "Password": "test_password",
     },
     "Wallpad": {
         "Manufacturer": "kocom",
-        "type": "Serial",
-        "Socket": {"server": "192.168.1.100", "port": 8899},
-        "Serial": {"port": "/dev/ttyUSB0"},
+        "Connection Type": "Serial",
+        "Socket": {"Server": "192.168.1.100", "Port": 8899},
+        "Serial": {"Port": "/dev/ttyUSB0"},
     },
     "Enabled Devices": {
         "light": True,
@@ -35,11 +35,11 @@ SAMPLE_OPTIONS_JSON = {
     "KOCOM_ROOM": ["livingroom", "bedroom"],
     "KOCOM_ROOM_THERMOSTAT": ["livingroom"],
     "Ventilator": {
-        "manufacturer": "Grex",
-        "connection_type": "Serial",
-        "Serial": {"ventilator_port": "/dev/ttyUSB1", "controller_port": "/dev/ttyUSB2"},
-        "Socket": {"server": "192.168.1.101", "port": 8899},
-        "default_speed": "low",
+        "Manufacturer": "Grex",
+        "Connection Type": "Serial",
+        "Serial": {"Ventilator Port": "/dev/ttyUSB1", "Controller Port": "/dev/ttyUSB2"},
+        "Socket": {"Server": "192.168.1.101", "Port": 8899},
+        "Default Speed": "low",
     },
 }
 

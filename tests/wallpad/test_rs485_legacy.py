@@ -11,9 +11,9 @@ SERIAL_OPTIONS_JSON = {
     "Serial": {"port1": "/dev/ttyUSB0"},
     "SerialDevice": {"port1": "kocom"},
     "Ventilator": {
-        "manufacturer": "Grex",
-        "connection_type": "Serial",
-        "Serial": {"ventilator_port": "/dev/ttyUSB1", "controller_port": "/dev/ttyUSB2"},
+        "Manufacturer": "Grex",
+        "Connection Type": "Serial",
+        "Serial": {"Ventilator Port": "/dev/ttyUSB1", "Controller Port": "/dev/ttyUSB2"},
     },
     "MQTT": {
         "anonymous": False,
@@ -22,7 +22,7 @@ SERIAL_OPTIONS_JSON = {
         "password": "my_pass",
     },
     "Wallpad": {
-        "type": "Serial",
+        "Connection Type": "Serial",
         "light": True,
         "fan": False,
         "thermostat": True,
@@ -41,7 +41,7 @@ SOCKET_OPTIONS_JSON = {
         "server": "192.168.1.100",
     },
     "Wallpad": {
-        "type": "Socket",
+        "Connection Type": "Socket",
         "light": False,
         "fan": True,
         "thermostat": False,
