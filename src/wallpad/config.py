@@ -148,7 +148,7 @@ class AppConfig:
         self.socket_device = self.wallpad_manufacturer
 
         # 4. 기기 활성화 설정 (Enabled Devices)
-        self.wp_list = json_data.get("Enabled Devices", {})
+        self.wp_list = wallpad_json.get("Enabled Devices", {})
 
         # 5. Advanced 세부 제어 설정
         adv = json_data.get("Advanced", {})

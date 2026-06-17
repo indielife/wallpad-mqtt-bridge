@@ -25,22 +25,22 @@
     },
     "Wallpad": {
       "Manufacturer": "kocom",
-      "Connection Type": "Serial",
+      "Connection Type": "Socket",
       "Socket": {
         "Server": "",
         "Port": 8899
       },
       "Serial": {
         "Port": "/dev/ttyUSB0"
+      },
+      "Enabled Devices": {
+        "light": true,
+        "plug": false,
+        "thermostat": false,
+        "fan": false,
+        "gas": false,
+        "elevator": false
       }
-    },
-    "Enabled Devices": {
-      "light": false,
-      "plug": false,
-      "thermostat": false,
-      "fan": false,
-      "gas": false,
-      "elevator": false
     },
     "Advanced": {
       "INIT_TEMP": 22,
@@ -109,13 +109,13 @@
     "Ventilator": {
       "Manufacturer": "none",
       "Connection Type": "Serial",
-      "Serial": {
-        "Controller Port": "/dev/ttyUSB1",
-        "Ventilator Port": "/dev/ttyUSB2"
-      },
       "Socket": {
         "Server": "",
         "Port": 8899
+      },
+      "Serial": {
+        "Controller Port": "/dev/ttyUSB1",
+        "Ventilator Port": "/dev/ttyUSB2"
       },
       "Default Speed": "low"
     }
@@ -128,22 +128,22 @@
     },
     "Wallpad": {
       "Manufacturer": "str",
-      "Connection Type": "list(Serial|Socket)",
+      "Connection Type": "list(Socket|Serial)",
       "Socket": {
         "Server": "str?",
         "Port": "int?"
       },
       "Serial": {
         "Port": "str?"
+      },
+      "Enabled Devices": {
+        "light": "bool",
+        "plug": "bool",
+        "thermostat": "bool",
+        "fan": "bool",
+        "gas": "bool",
+        "elevator": "bool"
       }
-    },
-    "Enabled Devices": {
-      "light": "bool",
-      "plug": "bool",
-      "thermostat": "bool",
-      "fan": "bool",
-      "gas": "bool",
-      "elevator": "bool"
     },
     "Advanced": {
       "INIT_TEMP": "int(10,30)",
@@ -172,14 +172,14 @@
     ],
     "Ventilator": {
       "Manufacturer": "str",
-      "Connection Type": "list(Serial|Socket)",
-      "Serial": {
-        "Controller Port": "str?",
-        "Ventilator Port": "str?"
-      },
+      "Connection Type": "list(Socket|Serial)",
       "Socket": {
         "Server": "str?",
         "Port": "int?"
+      },
+      "Serial": {
+        "Controller Port": "str?",
+        "Ventilator Port": "str?"
       },
       "Default Speed": "str"
     }

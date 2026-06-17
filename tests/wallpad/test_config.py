@@ -14,14 +14,14 @@ SAMPLE_OPTIONS_JSON = {
         "Connection Type": "Serial",
         "Socket": {"Server": "192.168.1.100", "Port": 8899},
         "Serial": {"Port": "/dev/ttyUSB0"},
-    },
-    "Enabled Devices": {
-        "light": True,
-        "plug": False,
-        "thermostat": True,
-        "fan": False,
-        "gas": True,
-        "elevator": False,
+        "Enabled Devices": {
+            "light": True,
+            "plug": False,
+            "thermostat": True,
+            "fan": False,
+            "gas": True,
+            "elevator": False,
+        },
     },
     "Advanced": {
         "INIT_TEMP": 24,
