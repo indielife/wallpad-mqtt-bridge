@@ -52,10 +52,13 @@ class AppConfig:
 
         self.sw_version = SW_VERSION
 
-        # 1. MQTT 설정
+        # 1. MQTT Broker 설정
         self.mqtt_config: MqttConfig = None
 
-        # 2. RS485 & 하드웨어 통신 설정
+        # 2. Wallpad 설정
+        self.wallpad_manufacturer = "kocom"
+
+        # 3. RS485 & 하드웨어 통신 설정
         self.comm_type = None
         self.port_url = {}
         self.device_list = {}
@@ -63,23 +66,23 @@ class AppConfig:
         self.socket_port = None
         self.socket_device = None
 
-        # 3. 기기 활성화 정보 (Enabled Devices)
+        # 4. 기기 활성화 정보 (Enabled Devices)
         self.wp_list = {}
 
-        # 4. Advanced 세부 제어 설정
+        # 5. Advanced 세부 제어 설정
         self.init_temp = 22
         self.scan_interval = 300
         self.packey_delay = 0.8
         self.kocom_default_speed = "low"
         self.log_level = "info"
 
-        # 5. Kocom 사이즈 및 방 이름 매핑 설정
+        # 6. Kocom 사이즈 및 방 이름 매핑 설정
         self.kocom_light_size = dict(KOCOM_LIGHT_SIZE_DEFAULT)
         self.kocom_plug_size = dict(KOCOM_PLUG_SIZE_DEFAULT)
         self.kocom_room = dict(KOCOM_ROOM_DEFAULT)
         self.kocom_room_thermostat = dict(KOCOM_ROOM_THERMOSTAT_DEFAULT)
 
-        # 6. Ventilator(전열교환기) 설정
+        # 7. Ventilator(전열교환기) 설정
         self.ventilator_manufacturer = "None"
         self.ventilator_connection_type = "serial"
         self.ventilator_socket_server = ""
@@ -102,7 +105,7 @@ class AppConfig:
         with open(self.options_path, encoding="utf-8") as json_file:
             json_data = json.load(json_file)
 
-        # 1. MQTT 설정
+        # 1. MQTT Broker 설정
         mqtt_json = json_data.get("MQTT Broker", {})
         self.mqtt_config = MqttConfig(
             server=mqtt_json.get("server", ""),
@@ -110,23 +113,24 @@ class AppConfig:
             password=mqtt_json.get("password", ""),
         )
 
-        # 2. RS485 & 하드웨어 통신 설정
+        # 2. Wallpad 설정
+        self.wallpad_manufacturer = json_data.get("Wallpad", {}).get("Manufacturer", "kocom")
+
+        # 3. RS485 & 하드웨어 통신 설정
         self.comm_type = json_data.get("RS485", {}).get("type", "Serial").lower()
 
         self.port_url = {int(k[-1]): v for k, v in json_data.get("Serial", {}).items() if v}
-        self.device_list = {
-            int(k[-1]): v for k, v in json_data.get("SerialDevice", {}).items() if v
-        }
+        self.device_list = {port_num: self.wallpad_manufacturer for port_num in self.port_url}
 
         soc = json_data.get("Socket", {})
         self.socket_server = soc.get("server")
         self.socket_port = soc.get("port")
-        self.socket_device = json_data.get("SocketDevice", {}).get("device")
+        self.socket_device = self.wallpad_manufacturer
 
-        # 3. 기기 활성화 설정 (Enabled Devices)
+        # 4. 기기 활성화 설정 (Enabled Devices)
         self.wp_list = json_data.get("Enabled Devices", {})
 
-        # 4. Advanced 세부 제어 설정
+        # 5. Advanced 세부 제어 설정
         adv = json_data.get("Advanced", {})
         self.init_temp = adv.get("INIT_TEMP", self.init_temp)
         self.scan_interval = adv.get("SCAN_INTERVAL", self.scan_interval)
@@ -134,7 +138,7 @@ class AppConfig:
         self.kocom_default_speed = adv.get("DEFAULT_SPEED", self.kocom_default_speed)
         self.log_level = adv.get("LOGLEVEL", self.log_level).lower()
 
-        # 5. Kocom 사이즈 및 방 이름 매핑 설정
+        # 6. Kocom 사이즈 및 방 이름 매핑 설정
         kocom_light_size_list = json_data.get("KOCOM_LIGHT_SIZE", [])
         if kocom_light_size_list:
             self.kocom_light_size = {}
@@ -159,7 +163,7 @@ class AppConfig:
             for num, i in enumerate(kocom_room_thermostat_list):
                 self.kocom_room_thermostat[f"{num:02d}"] = i
 
-        # 6. Ventilator(전열교환기) 설정
+        # 7. Ventilator(전열교환기) 설정
         vent = json_data.get("Ventilator", {})
         self.ventilator_manufacturer = vent.get("manufacturer", "None")
         self.ventilator_connection_type = vent.get("connection_type", "Serial").lower()
@@ -177,6 +181,10 @@ class AppConfig:
     @property
     def ventilator(self) -> str:
         return self.ventilator_manufacturer
+
+    @property
+    def wallpad(self) -> str:
+        return self.wallpad_manufacturer
 
     @property
     def wp_light(self) -> bool:

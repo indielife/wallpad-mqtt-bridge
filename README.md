@@ -1,5 +1,32 @@
 # Kocom Wallpad Add-on for Home Assistant
 
+## 지원 제조사 (Supported Manufacturers)
+
+현재 이 애드온이 지원하는 월패드 제조사는 다음과 같습니다.
+- **Kocom (코콤)**
+
+## 설정 가이드 (Configuration)
+
+애드온 설정 탭에서 다음과 같이 기본 설정 항목을 입력합니다.
+
+### 1. MQTT Broker
+MQTT 브로커 연결 정보입니다.
+- **server**: MQTT 브로커 IP 주소 (예: `192.168.x.x`)
+- **username**: MQTT 사용자 계정 ID
+- **password**: MQTT 사용자 계정 비밀번호
+
+### 2. Wallpad
+월패드 제조사 설정입니다.
+- **Manufacturer**: 월패드 제조사 명칭. 현재는 `kocom`만 지원됩니다. (기본값: `kocom`)
+
+### 3. Ventilator
+전열교환기(환기장치) 연동 설정입니다.
+- **manufacturer**: 전열교환기 제조사 선택 (`None`, `Grex` 중 선택. 기본값: `None`)
+- **connection_type**: 전열교환기 연결 방식 (`Serial` 또는 `Socket`)
+- **Serial**: 시리얼 연결 시 포트 경로 설정 (`controller_port`, `ventilator_port`)
+- **Socket**: 소켓 연결 시 서버 주소 및 포트 설정
+- **default_speed**: 기본 환기 속도 (`low`, `medium`, `high` 등)
+
 ## 문서 (Documentation)
 
 프로젝트에 대한 상세한 가이드는 다음 문서들을 참고하세요.

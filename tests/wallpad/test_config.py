@@ -9,11 +9,10 @@ SAMPLE_OPTIONS_JSON = {
         "username": "test_user",
         "password": "test_password",
     },
+    "Wallpad": {"Manufacturer": "kocom"},
     "RS485": {"type": "Serial"},
     "Socket": {"server": "192.168.1.100", "port": 8899},
-    "SocketDevice": {"device": "kocom"},
     "Serial": {"port1": "/dev/ttyUSB0"},
-    "SerialDevice": {"port1": "kocom"},
     "Enabled Devices": {
         "light": True,
         "plug": False,
@@ -53,6 +52,8 @@ def test_app_config_load(mock_isfile):
 
         # 1. MQTT 및 기기 활성화 설정 (Enabled Devices, Boolean 타입 정상 파싱) 검증
         assert config.mqtt_config.server == "192.168.1.200"
+        assert config.wallpad == "kocom"
+        assert config.wallpad_manufacturer == "kocom"
         assert config.wp_list["light"] is True
         assert config.wp_list["plug"] is False
         assert config.wp_list["gas"] is True
@@ -114,6 +115,7 @@ def test_app_config_defaults(mock_isfile):
     assert config.wp_gas is False
     assert config.wp_elevator is False
     assert config.ventilator == "None"
+    assert config.wallpad == "kocom"
     assert config.kocom_default_speed == "low"
     assert config.ventilator_default_speed == "low"
 

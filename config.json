@@ -23,6 +23,9 @@
       "username": "id",
       "password": "pw"
     },
+    "Wallpad": {
+      "Manufacturer": "kocom"
+    },
     "RS485": {
       "type": "Serial"
     },
@@ -30,14 +33,8 @@
       "server": "192.168.x.x",
       "port": 8899
     },
-    "SocketDevice": {
-      "device": "kocom"
-    },
     "Serial": {
       "port1": "/dev/ttyUSB0"
-    },
-    "SerialDevice": {
-      "port1": "kocom"
     },
     "Enabled Devices": {
       "light": false,
@@ -131,6 +128,9 @@
       "username": "str",
       "password": "str"
     },
+    "Wallpad": {
+      "Manufacturer": "str"
+    },
     "RS485": {
       "type": "list(Serial|Socket)"
     },
@@ -138,13 +138,7 @@
       "server": "str?",
       "port": "int?"
     },
-    "SocketDevice": {
-      "device": "str?"
-    },
     "Serial": {
-      "port1": "str?"
-    },
-    "SerialDevice": {
       "port1": "str?"
     },
     "Enabled Devices": {
@@ -181,7 +175,7 @@
       "str?"
     ],
     "Ventilator": {
-      "manufacturer": "list(None|Grex)",
+      "manufacturer": "str",
       "connection_type": "list(Serial|Socket)",
       "Serial": {
         "controller_port": "str?",
