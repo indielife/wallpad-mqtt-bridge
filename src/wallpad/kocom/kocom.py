@@ -14,17 +14,19 @@ from wallpad.kocom.devices import (
     Thermostat,
 )
 from wallpad.kocom.state import DeviceState, KocomStateManager, RoomState, ScanState, SubDeviceState
-from wallpad.mqtt import MqttClient
+from wallpad.mqtt import (
+    HA_CLIMATE,
+    HA_FAN,
+    HA_LIGHT,
+    HA_PREFIX,
+    HA_SENSOR,
+    HA_SWITCH,
+    MqttClient,
+)
 from wallpad.rs485 import ConnectionAdapter
 
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
 
-HA_PREFIX = "homeassistant"
-HA_SWITCH = "switch"
-HA_LIGHT = "light"
-HA_CLIMATE = "climate"
-HA_SENSOR = "sensor"
-HA_FAN = "fan"
 
 # DEVICE 명명
 DEVICE_WALLPAD = "wallpad"
@@ -196,7 +198,6 @@ class Kocom:
 
         self.mqtt_client.register_connect_callback(self.on_connect)
         self.mqtt_client.register_message_callback(self.on_message)
-        self.mqtt_client.register_subscribe_callback(self.on_subscribe)
 
         self._t1 = threading.Thread(target=self.get_serial, args=(name, packet_len))
         self._t1.start()
@@ -362,12 +363,6 @@ class Kocom:
                 self.publish_state_to_ha(device, room, ha_payload)
             except Exception as e:
                 logger.error("[From HA] %s = %s, %r", topic, payload, e)
-
-    def on_publish(self, client, obj, mid):
-        logger.info("Publish: %s", str(mid))
-
-    def on_subscribe(self, client, obj, mid, granted_qos):
-        logger.info("Subscribed: %s %s", str(mid), str(granted_qos))
 
     def on_connect(self, client, userdata, flags, rc):
         if int(rc) == 0:

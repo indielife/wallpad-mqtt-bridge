@@ -2,12 +2,9 @@ import json
 from typing import ClassVar
 
 from wallpad.devices.base import BaseDevice
+from wallpad.mqtt import HA_FAN, HA_PREFIX, HA_SENSOR
 
 from .grex_packet_builder import GrexPacketBuilder
-
-HA_PREFIX = "homeassistant"
-HA_FAN = "fan"
-HA_SENSOR = "sensor"
 
 
 class GrexVentilator(BaseDevice):
