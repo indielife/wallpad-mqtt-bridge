@@ -18,7 +18,7 @@
     "share:rw"
   ],
   "options": {
-    "MQTT": {
+    "MQTT Broker": {
       "server": "192.168.x.x",
       "username": "id",
       "password": "pw"
@@ -126,7 +126,7 @@
     }
   },
   "schema": {
-    "MQTT": {
+    "MQTT Broker": {
       "server": "str",
       "username": "str",
       "password": "str"

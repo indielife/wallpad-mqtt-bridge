@@ -103,7 +103,7 @@ class AppConfig:
             json_data = json.load(json_file)
 
         # 1. MQTT 설정
-        mqtt_json = json_data.get("MQTT", {})
+        mqtt_json = json_data.get("MQTT Broker", {})
         self.mqtt_config = MqttConfig(
             server=mqtt_json.get("server", ""),
             username=mqtt_json.get("username", ""),

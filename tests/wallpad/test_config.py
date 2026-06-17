@@ -4,7 +4,7 @@ from unittest.mock import mock_open, patch
 from wallpad.config import AppConfig
 
 SAMPLE_OPTIONS_JSON = {
-    "MQTT": {
+    "MQTT Broker": {
         "server": "192.168.1.200",
         "username": "test_user",
         "password": "test_password",
