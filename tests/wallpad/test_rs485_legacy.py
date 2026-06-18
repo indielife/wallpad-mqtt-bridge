@@ -11,6 +11,7 @@ SERIAL_OPTIONS_JSON = {
     "Serial": {"port1": "/dev/ttyUSB0"},
     "SerialDevice": {"port1": "kocom"},
     "Ventilator": {
+        "enable": True,
         "Manufacturer": "Grex",
         "Connection Type": "Serial",
         "Serial": {"Ventilator Port": "/dev/ttyUSB1", "Controller Port": "/dev/ttyUSB2"},
@@ -22,6 +23,7 @@ SERIAL_OPTIONS_JSON = {
         "password": "my_pass",
     },
     "Wallpad": {
+        "enable": True,
         "Connection Type": "Serial",
         "light": True,
         "fan": False,
@@ -34,13 +36,14 @@ SERIAL_OPTIONS_JSON = {
 
 SOCKET_OPTIONS_JSON = {
     "RS485": {"type": "Socket"},
-    "Socket": {"server": "192.168.1.200", "port": 8899},
+    "Socket": {"Server": "192.168.1.200", "Port": 8899},
     "SocketDevice": {"device": "kocom"},
     "MQTT": {
         "anonymous": True,
         "server": "192.168.1.100",
     },
     "Wallpad": {
+        "enable": True,
         "Connection Type": "Socket",
         "light": False,
         "fan": True,
@@ -63,9 +66,9 @@ def mock_serial():
 
 @pytest.fixture
 def mock_socket():
-    with patch("wallpad.rs485.rs485.socket.socket") as mock:
+    with patch("wallpad.rs485.rs485.socket") as mock:
         mock_instance = MagicMock()
-        mock.return_value = mock_instance
+        mock.socket.return_value = mock_instance
         yield mock
 
 
@@ -78,6 +81,8 @@ def test_legacy_rs485_serial(tmp_path, mock_serial):
     config.load()
 
     rs485 = RS485(config)
+    assert rs485.connect_wallpad() is True
+    assert rs485.connect_ventilator() is True
 
     # 1. Serial 포트 및 디바이스 파싱 검증
     assert rs485.type == "serial"
@@ -99,6 +104,7 @@ def test_legacy_rs485_socket(tmp_path, mock_socket):
     config.load()
 
     rs485 = RS485(config)
+    assert rs485.connect_wallpad() is True
 
     # 1. Socket 설정 파싱 검증
     assert rs485.type == "socket"

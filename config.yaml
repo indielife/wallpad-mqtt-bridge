@@ -39,6 +39,7 @@ options:
     Password: ""
 
   Wallpad:
+    enable: true
     Manufacturer: kocom
     Connection Type: Socket
     Socket:
@@ -104,6 +105,7 @@ options:
 
   # 환기장치(전열교환기) 설정
   Ventilator:
+    enable: false
     Manufacturer: none
     Connection Type: Serial
     Socket:
@@ -126,6 +128,7 @@ schema:
     Password: password
 
   Wallpad:
+    enable: bool
     Manufacturer: str
     Connection Type: "list(Socket|Serial)"
     Socket:
@@ -163,6 +166,7 @@ schema:
     - str?
 
   Ventilator:
+    enable: bool
     Manufacturer: str
     Connection Type: "list(Socket|Serial)"
     Socket:

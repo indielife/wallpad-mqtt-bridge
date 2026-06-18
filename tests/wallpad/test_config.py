@@ -10,6 +10,7 @@ SAMPLE_OPTIONS_JSON = {
         "Password": "test_password",
     },
     "Wallpad": {
+        "enable": True,
         "Manufacturer": "kocom",
         "Connection Type": "Serial",
         "Socket": {"Server": "192.168.1.100", "Port": 8899},
@@ -35,6 +36,7 @@ SAMPLE_OPTIONS_JSON = {
     "KOCOM_ROOM": ["livingroom", "bedroom"],
     "KOCOM_ROOM_THERMOSTAT": ["livingroom"],
     "Ventilator": {
+        "enable": False,
         "Manufacturer": "Grex",
         "Connection Type": "Serial",
         "Serial": {"Ventilator Port": "/dev/ttyUSB1", "Controller Port": "/dev/ttyUSB2"},
@@ -54,6 +56,7 @@ def test_app_config_load(mock_isfile):
 
         # 1. MQTT 및 기기 활성화 설정 (Enabled Devices, Boolean 타입 정상 파싱) 검증
         assert config.mqtt_config.server == "192.168.1.200"
+        assert config.wallpad_enabled is True
         assert config.wallpad == "kocom"
         assert config.wallpad_manufacturer == "kocom"
         assert config.wp_list["light"] is True
@@ -93,6 +96,7 @@ def test_app_config_load(mock_isfile):
         assert config.kocom_room_thermostat == {"00": "livingroom"}
 
         # 7. 신규 전열교환기(Ventilator) 설정 파싱 검증
+        assert config.ventilator_enabled is False
         assert config.ventilator == "grex"
         assert config.ventilator_manufacturer == "grex"
         assert config.ventilator_connection_type == "serial"
@@ -116,9 +120,11 @@ def test_app_config_defaults(mock_isfile):
     assert config.wp_plug is False
     assert config.wp_gas is False
     assert config.wp_elevator is False
-    assert config.ventilator == "none"
+    assert config.wallpad_enabled is True
     assert config.wallpad == "kocom"
     assert config.kocom_default_speed == "low"
+    assert config.ventilator_enabled is False
+    assert config.ventilator == "none"
     assert config.ventilator_default_speed == "low"
 
     # 1. 기본 방 정보 검증
