@@ -56,6 +56,7 @@ class AppConfig:
         self.mqtt_config: MqttConfig = None
 
         # 2. Wallpad 설정
+        self._wallpad_enabled = True
         self.wallpad_manufacturer = "kocom"
 
         # 3. RS485 & 하드웨어 통신 설정
@@ -83,6 +84,7 @@ class AppConfig:
         self.kocom_room_thermostat = dict(KOCOM_ROOM_THERMOSTAT_DEFAULT)
 
         # 7. Ventilator(전열교환기) 설정
+        self._ventilator_enabled = False
         self.ventilator_manufacturer = "none"
         self.ventilator_connection_type = "serial"
         self.ventilator_socket_server = ""
@@ -131,6 +133,7 @@ class AppConfig:
 
         # 2. Wallpad 설정
         wallpad_json = json_data.get("Wallpad", {})
+        self._wallpad_enabled = wallpad_json.get("enable", True)
         wp_mfg = wallpad_json.get("Manufacturer", "kocom")
         self.wallpad_manufacturer = wp_mfg.lower() if isinstance(wp_mfg, str) else "kocom"
 
@@ -143,8 +146,8 @@ class AppConfig:
         self.device_list = {port_num: self.wallpad_manufacturer for port_num in self.port_url}
 
         soc = wallpad_json.get("Socket", json_data.get("Socket", {}))
-        self.socket_server = soc.get("Server")
-        self.socket_port = soc.get("Port")
+        self.socket_server = soc.get("Server", soc.get("server"))
+        self.socket_port = soc.get("Port", soc.get("port"))
         self.socket_device = self.wallpad_manufacturer
 
         # 4. 기기 활성화 설정 (Enabled Devices)
@@ -185,6 +188,7 @@ class AppConfig:
 
         # 7. Ventilator(전열교환기) 설정
         vent = json_data.get("Ventilator", {})
+        self._ventilator_enabled = vent.get("enable", False)
         vent_mfg = vent.get("Manufacturer", vent.get("manufacturer", "none"))
         self.ventilator_manufacturer = vent_mfg.lower() if isinstance(vent_mfg, str) else "none"
         self.ventilator_connection_type = vent.get(
@@ -250,3 +254,11 @@ class AppConfig:
     def kocom_room_thermostat_rev(self):
         """난방기 방 이름에서 패킷 식별용 16진수 문자열로의 역방향 매핑입니다."""
         return {v: k for k, v in self.kocom_room_thermostat.items()}
+
+    @property
+    def wallpad_enabled(self) -> bool:
+        return self._wallpad_enabled
+
+    @property
+    def ventilator_enabled(self) -> bool:
+        return self._ventilator_enabled
