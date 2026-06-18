@@ -10,6 +10,7 @@ from wallpad.grex import Grex
 from wallpad.kocom import Kocom
 from wallpad.mqtt import MqttClient
 from wallpad.rs485 import RS485
+from wallpad.version import SW_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +104,10 @@ if __name__ == "__main__":
     log_path = os.path.join(root_dir, "log", "kocom.log")
 
     setup_logging(log_path, config.log_level)
+
+    logger.info("========================================================")
+    logger.info("    KOCOM Wallpad RS485 Controller Add-on  %s", SW_VERSION)
+    logger.info("========================================================")
 
     # MqttClient 단일 인스턴스 생성 및 시작
     mqtt_client = MqttClient(config.mqtt_config)

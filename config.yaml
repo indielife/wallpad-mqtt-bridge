@@ -1,0 +1,174 @@
+# ==============================================================================
+# Kocom Wallpad HA Add-on 설정 파일
+# ==============================================================================
+
+# 애드온 메타데이터
+name: "Kocom Wallpad (Local Custom)"
+version: "0.1.1"
+slug: kocom_wallpad
+description: "Kocom Wallpad Controller for Homeassistant"
+url: "https://github.com/HAKorea/addons"
+
+# 지원 아키텍처
+arch:
+  - armhf
+  - armv7
+  - aarch64
+  - amd64
+  - i386
+
+# 시작 유형 및 부팅 설정
+startup: application
+boot: auto
+
+# 시리얼(UART) 디바이스 접근 허용
+uart: true
+
+# 공유 폴더 매핑 (읽기/쓰기)
+map:
+  - "share:rw"
+
+# ==============================================================================
+# 사용자 설정 기본값 (options)
+# HA UI에서 사용자가 변경할 수 있는 설정의 기본값입니다.
+# ==============================================================================
+options:
+  MQTT Broker:
+    Server: ""
+    Username: ""
+    Password: ""
+
+  Wallpad:
+    Manufacturer: kocom
+    Connection Type: Socket
+    Socket:
+      Server: ""
+      Port: 8899
+    Serial:
+      Port: "/dev/ttyUSB0"
+    Enabled Devices:
+      light: true
+      plug: false
+      thermostat: false
+      fan: false
+      gas: false
+      elevator: false
+
+  Advanced:
+    INIT_TEMP: 22          # 초기 온도 설정값 (°C)
+    SCAN_INTERVAL: 300     # 상태 조회 주기 (초)
+    PACKET_DELAY: 0.8      # 패킷 전송 간격 (초)
+    DEFAULT_SPEED: low     # 환풍기 기본 풍속
+    LOGLEVEL: info         # 로그 레벨 (debug, info, warn, error, critical)
+
+  # 방별 조명 개수 설정
+  KOCOM_LIGHT_SIZE:
+    - name: livingroom
+      number: 3
+    - name: bedroom
+      number: 2
+    - name: room1
+      number: 2
+    - name: room2
+      number: 2
+    - name: kitchen
+      number: 3
+
+  # 방별 콘센트 개수 설정
+  KOCOM_PLUG_SIZE:
+    - name: livingroom
+      number: 3
+    - name: bedroom
+      number: 2
+    - name: room1
+      number: 2
+    - name: room2
+      number: 2
+    - name: kitchen
+      number: 3
+
+  # 전체 방 목록
+  KOCOM_ROOM:
+    - livingroom
+    - bedroom
+    - room1
+    - room2
+    - kitchen
+
+  # 온도조절기가 설치된 방 목록
+  KOCOM_ROOM_THERMOSTAT:
+    - livingroom
+    - bedroom
+    - room1
+    - room2
+
+  # 환기장치(전열교환기) 설정
+  Ventilator:
+    Manufacturer: none
+    Connection Type: Serial
+    Socket:
+      Server: ""
+      Port: 8899
+    Serial:
+      Controller Port: "/dev/ttyUSB1"
+      Ventilator Port: "/dev/ttyUSB2"
+    Default Speed: low
+
+# ==============================================================================
+# 설정 스키마 (schema)
+# HA UI에서 입력값 유효성 검증에 사용됩니다.
+# '?' 접미사는 선택 입력 필드를 의미합니다.
+# ==============================================================================
+schema:
+  MQTT Broker:
+    Server: str
+    Username: str
+    Password: password
+
+  Wallpad:
+    Manufacturer: str
+    Connection Type: "list(Socket|Serial)"
+    Socket:
+      Server: str?
+      Port: int?
+    Serial:
+      Port: str?
+    Enabled Devices:
+      light: bool
+      plug: bool
+      thermostat: bool
+      fan: bool
+      gas: bool
+      elevator: bool
+
+  Advanced:
+    INIT_TEMP: "int(10,30)"
+    SCAN_INTERVAL: "int(100,1000)"
+    PACKET_DELAY: float
+    DEFAULT_SPEED: str
+    LOGLEVEL: str
+
+  KOCOM_LIGHT_SIZE:
+    - name: str?
+      number: int?
+
+  KOCOM_PLUG_SIZE:
+    - name: str?
+      number: int?
+
+  KOCOM_ROOM:
+    - str?
+
+  KOCOM_ROOM_THERMOSTAT:
+    - str?
+
+  Ventilator:
+    Manufacturer: str
+    Connection Type: "list(Socket|Serial)"
+    Socket:
+      Server: str?
+      Port: int?
+    Serial:
+      Controller Port: str?
+      Ventilator Port: str?
+    Default Speed: str
