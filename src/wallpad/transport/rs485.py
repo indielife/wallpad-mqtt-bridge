@@ -15,7 +15,6 @@ class RS485:
 
     def __init__(self, config: AppConfig):
         self.config = config
-        self._port_url = config.port_url
         self.type = config.comm_type
         self.adapters = {}
 
@@ -48,31 +47,25 @@ class RS485:
             return False
 
     def _init_wallpad_serial(self) -> bool:
-        opened = 0
-        for p in self._port_url:
-            port_path = self._port_url[p]
-            try:
-                ser = serial.Serial(port_path, 9600, timeout=None)
-                if ser.isOpen():
-                    ser.bytesize = 8
-                    ser.stopbits = 1
-                    ser.autoOpen = False
-                    logger.info("Port %s : %s", p, port_path)
-                    self.adapters[p] = SerialAdapter(ser)
-                    opened += 1
-                else:
-                    logger.info("Serial port is not open (device: %s, port: %s)", p, port_path)
-            except Exception as e:
-                logger.info(
-                    "Failed to connect to serial port (device: %s, port: %s, error: %r)",
-                    p,
-                    port_path,
-                    e,
-                )
-        if opened == 0:
-            logger.error("No Wallpad serial ports were successfully opened.")
+        port_path = self.config.serial_port
+        if not port_path:
+            logger.error("Wallpad serial port is not configured.")
             return False
-        return True
+        try:
+            ser = serial.Serial(port_path, 9600, timeout=None)
+            if ser.isOpen():
+                ser.bytesize = 8
+                ser.stopbits = 1
+                ser.autoOpen = False
+                logger.info("Wallpad Serial Port: %s", port_path)
+                self.adapters["wallpad"] = SerialAdapter(ser)
+                return True
+            else:
+                logger.error("Serial port is not open: %s", port_path)
+                return False
+        except Exception as e:
+            logger.error("Failed to connect to serial port (%s): %r", port_path, e)
+            return False
 
     def _init_wallpad_socket(self) -> bool:
         server = self.config.socket_server
@@ -82,7 +75,7 @@ class RS485:
         try:
             soc.connect((server, int(port)))
             soc.settimeout(None)
-            self.adapters[self.config.socket_device] = SocketAdapter(soc)
+            self.adapters["wallpad"] = SocketAdapter(soc)
             return True
         except Exception as e:
             logger.info("Failed to connect to socket (target: %s:%s, error: %r)", server, port, e)

@@ -199,7 +199,7 @@ class Kocom:
             return False
 
     def read(self):
-        if not self.adapter or not self.adapter.readable():
+        if not self.adapter:
             return ""
         try:
             return self.adapter.read()
