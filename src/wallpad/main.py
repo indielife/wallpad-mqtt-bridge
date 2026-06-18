@@ -9,7 +9,7 @@ from wallpad.config import AppConfig
 from wallpad.grex import Grex
 from wallpad.kocom import Kocom
 from wallpad.mqtt import MqttClient
-from wallpad.rs485 import RS485
+from wallpad.transport import RS485
 from wallpad.version import SW_VERSION
 
 logger = logging.getLogger(__name__)

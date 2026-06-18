@@ -12,7 +12,7 @@ from wallpad.mqtt import (
     HA_SENSOR,
     MqttClient,
 )
-from wallpad.rs485 import ConnectionAdapter
+from wallpad.transport import ConnectionAdapter
 
 logger = logging.getLogger(__name__)
 

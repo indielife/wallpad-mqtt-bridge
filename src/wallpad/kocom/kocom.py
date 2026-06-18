@@ -41,7 +41,7 @@ from wallpad.mqtt import (
     HA_SWITCH,
     MqttClient,
 )
-from wallpad.rs485 import ConnectionAdapter
+from wallpad.transport import ConnectionAdapter
 
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
 

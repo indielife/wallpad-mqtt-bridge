@@ -1,6 +1,6 @@
 import serial
 
-from wallpad.rs485.base import ConnectionAdapter
+from wallpad.transport.base import ConnectionAdapter
 
 
 class SerialAdapter(ConnectionAdapter):

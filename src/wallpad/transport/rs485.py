@@ -4,8 +4,8 @@ import socket
 import serial
 
 from wallpad.config import AppConfig
-from wallpad.rs485.serial import SerialAdapter
-from wallpad.rs485.socket import SocketAdapter
+from wallpad.transport.serial import SerialAdapter
+from wallpad.transport.socket import SocketAdapter
 
 logger = logging.getLogger(__name__)
 
