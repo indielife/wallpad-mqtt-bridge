@@ -43,7 +43,7 @@ class SerialAdapter(ConnectionAdapter):
 
     def read(self) -> bytes:
         if not self._connection.readable():
-            return ""
+            return b""
         return self._connection.read()
 
     def write(self, data: bytes) -> int:

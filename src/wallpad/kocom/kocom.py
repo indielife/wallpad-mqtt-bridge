@@ -192,11 +192,12 @@ class Kocom:
 
     def read(self):
         if not self.adapter:
-            return ""
+            return b""
         try:
             return self.adapter.read()
         except Exception as e:
             logger.error("Connection error during read: %r", e)
+            return b""
 
     def write(self, data):
         if not data or not self.adapter:
