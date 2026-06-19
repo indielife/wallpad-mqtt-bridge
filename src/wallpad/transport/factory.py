@@ -22,7 +22,7 @@ def create_wallpad_adapter(config: AppConfig) -> ConnectionAdapter:
         logger.info("Wallpad Serial Port: %s", port)
         return adapter
     elif comm_type == "socket":
-        return SocketAdapter(config.socket_server, config.socket_port)
+        return SocketAdapter(config.socket_host, config.socket_port)
     raise ValueError(f"Invalid Wallpad connection type: {comm_type}")
 
 

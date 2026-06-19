@@ -1,4 +1,4 @@
-# Kocom Wallpad Add-on for Home Assistant
+# Wallpad MQTT Bridge — Home Assistant Add-on
 
 ## 지원 제조사 (Supported Manufacturers)
 
@@ -11,7 +11,7 @@
 
 ### 1. MQTT Broker
 홈어시스턴트에서 사용하는 MQTT 브로커(예: Mosquitto Broker 애드온)와의 연결 정보입니다.
-- **Server**: MQTT 브로커가 동작 중인 서버 IP 주소 (예: `192.168.0.10`)
+- **Host**: MQTT 브로커가 동작 중인 호스트 IP 주소 (예: `192.168.0.10`)
 - **Username**: MQTT 사용자 계정 ID
 - **Password**: MQTT 사용자 계정 비밀번호
 
@@ -22,7 +22,7 @@
   - `Serial`: RS485 라인이 USB 시리얼 젠더를 통해 홈어시스턴트 서버(라즈베리 파이, 미니PC 등)에 직접 연결되어 있는 경우 사용합니다.
   - `Socket`: RS485 라인이 EW11 등 시리얼-네트워크 변환기에 연결되어 네트워크를 통해 통신하는 경우 사용합니다.
 - **Socket**: `Connection Type`을 `Socket`으로 설정한 경우 활성화되는 네트워크 연결 설정입니다.
-  - **Server**: 시리얼-네트워크 변환기(예: Elfin EW11)의 IP 주소를 입력합니다. (예: `192.168.0.11`)
+  - **Host**: 시리얼-네트워크 변환기(예: Elfin EW11)의 IP 주소를 입력합니다. (예: `192.168.0.11`)
   - **Port**: 변환기에 설정한 소켓 포트 번호를 입력합니다. (기본값: `8899`)
 - **Serial**: `Connection Type`을 `Serial`로 설정한 경우 활성화되는 시리얼 포트 설정입니다.
   - **Port**: 홈어시스턴트 서버에 연결된 USB 시리얼 디바이스 경로를 입력합니다. (예: `/dev/ttyUSB0`)
@@ -46,7 +46,7 @@
   - **Controller Port**: 전열교환기 벽면 조절기 라인에 연결된 USB 시리얼 디바이스 경로를 입력합니다. (예: `/dev/ttyUSB1`)
   - **Ventilator Port**: 전열교환기 본체 라인에 연결된 USB 시리얼 디바이스 경로를 입력합니다. (예: `/dev/ttyUSB2`)
 - **Socket**: `Connection Type`을 `Socket`으로 설정한 경우 활성화되는 네트워크 연결 설정입니다.
-  - **Server**: 시리얼-네트워크 변환기(예: Elfin EW11)의 IP 주소를 입력합니다. (예: `192.168.0.12`)
+  - **Host**: 시리얼-네트워크 변환기(예: Elfin EW11)의 IP 주소를 입력합니다. (예: `192.168.0.12`)
   - **Port**: 변환기에 설정한 소켓 포트 번호를 입력합니다. (기본값: `8899`)
 - **Default Speed**: 기본 환기 속도 선택 (`low`, `medium`, `high` 등. 기본값: `low`)
 

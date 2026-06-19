@@ -85,13 +85,13 @@ pre-commit run --all-files
 ### 도커 이미지 빌드
 프로젝트 루트 디렉토리에서 아래 명령어를 실행하여 도커 빌드가 정상적으로 수행되는지 확인합니다.
 ```bash
-docker build -t kocom-wallpad-addon .
+docker build -t wallpad-mqtt-bridge .
 ```
 
 ### 컨테이너 내부 파일 구조 확인 (인터랙티브 쉘 진입)
 빌드가 완료된 이미지 내부의 파일 시스템을 직접 눈으로 확인하기 위해, 메인 스크립트(`run.sh`) 대신 컨테이너의 `bash` 쉘을 실행하여 진입합니다.
 ```bash
-docker run --rm -it kocom-wallpad-addon bash
+docker run --rm -it wallpad-mqtt-bridge bash
 ```
 * `--rm`: 검증을 마치고 컨테이너를 종료할 때, 잔여 컨테이너 찌꺼기를 자동으로 삭제합니다.
 * `-it`: 터미널 환경에서 대화형 인터페이스로 컨테이너 내부 시스템과 통신합니다.

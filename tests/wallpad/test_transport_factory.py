@@ -22,7 +22,6 @@ SERIAL_OPTIONS_JSON = {
         "Serial": {"Ventilator Port": "/dev/ttyUSB1", "Controller Port": "/dev/ttyUSB2"},
     },
     "MQTT": {
-        "anonymous": False,
         "server": "192.168.1.50",
         "username": "my_user",
         "password": "my_pass",
@@ -44,7 +43,6 @@ SOCKET_OPTIONS_JSON = {
     "Socket": {"Server": "192.168.1.200", "Port": 8899},
     "SocketDevice": {"device": "kocom"},
     "MQTT": {
-        "anonymous": True,
         "server": "192.168.1.100",
     },
     "Wallpad": {

@@ -62,7 +62,7 @@ class AppConfig:
         # 3. RS485 & 하드웨어 통신 설정
         self.comm_type = None
         self.serial_port = ""
-        self.socket_server = None
+        self.socket_host = None
         self.socket_port = None
 
         # 4. 기기 활성화 정보 (Enabled Devices)
@@ -85,7 +85,7 @@ class AppConfig:
         self._ventilator_enabled = False
         self.ventilator_manufacturer = "none"
         self.ventilator_connection_type = "serial"
-        self.ventilator_socket_server = ""
+        self.ventilator_socket_host = ""
         self.ventilator_socket_port = 8899
         self.ventilator_ctrl_port = ""
         self.ventilator_unit_port = ""
@@ -108,9 +108,9 @@ class AppConfig:
         # 1. MQTT Broker 설정
         mqtt_json = json_data.get("MQTT Broker", {})
         self.mqtt_config = MqttConfig(
-            server=mqtt_json.get("Server", ""),
-            username=mqtt_json.get("Username", ""),
-            password=mqtt_json.get("Password", ""),
+            host=os.environ.get("MQTT_HOST") or mqtt_json.get("Server", ""),
+            username=os.environ.get("MQTT_USERNAME") or mqtt_json.get("Username", ""),
+            password=os.environ.get("MQTT_PASSWORD") or mqtt_json.get("Password", ""),
         )
 
         # 2. Wallpad 설정
@@ -127,7 +127,7 @@ class AppConfig:
         self.serial_port = serial_data.get("Port", serial_data.get("port", ""))
 
         soc = wallpad_json.get("Socket", json_data.get("Socket", {}))
-        self.socket_server = soc.get("Server", soc.get("server"))
+        self.socket_host = os.environ.get("WALLPAD_HOST") or soc.get("Server", soc.get("server"))
         self.socket_port = soc.get("Port", soc.get("port"))
 
         # 4. 기기 활성화 설정 (Enabled Devices)
@@ -176,7 +176,7 @@ class AppConfig:
         ).lower()
 
         vent_socket = vent.get("Socket", {})
-        self.ventilator_socket_server = vent_socket.get("Server", vent_socket.get("server", ""))
+        self.ventilator_socket_host = vent_socket.get("Server", vent_socket.get("server", ""))
         self.ventilator_socket_port = vent_socket.get("Port", vent_socket.get("port", 8899))
 
         vent_serial = vent.get("Serial", {})

@@ -3,11 +3,11 @@
 # ==============================================================================
 
 # 애드온 메타데이터
-name: "Kocom Wallpad (Local Custom)"
-version: "0.1.1"
-slug: kocom_wallpad
-description: "Kocom Wallpad Controller for Homeassistant"
-url: "https://github.com/HAKorea/addons"
+name: "Wallpad MQTT Bridge"
+version: "0.1.0"
+slug: wallpad_mqtt_bridge
+description: "RS485 wallpad and ventilator MQTT gateway for Home Assistant"
+url: "https://github.com/indielife/wallpad-mqtt-bridge"
 
 # 지원 아키텍처
 arch:

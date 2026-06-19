@@ -1,7 +1,7 @@
 [project]
-name = "kocom-wallpad"
+name = "wallpad-mqtt-bridge"
 version = "0.1.0"
-description = "Kocom Wallpad Add-on for Home Assistant"
+description = "RS485 wallpad and ventilator MQTT gateway for Home Assistant"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
