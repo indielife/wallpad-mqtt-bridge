@@ -68,11 +68,9 @@ def test_app_config_load(mock_isfile):
         assert config.comm_type == "serial"
         assert config.socket_server == "192.168.1.100"
         assert config.socket_port == 8899
-        assert config.socket_device == "kocom"
 
-        # 3. 시리얼 포트 설정 검증 (빈 문자열 무시, 포트 번호 키 추출)
-        assert config.port_url == {1: "/dev/ttyUSB0"}
-        assert config.device_list == {1: "kocom"}
+        # 3. 시리얼 포트 설정 검증
+        assert config.serial_port == "/dev/ttyUSB0"
 
         # 4. 개별 디바이스 헬퍼 프로퍼티 검증
         assert config.wp_light is True

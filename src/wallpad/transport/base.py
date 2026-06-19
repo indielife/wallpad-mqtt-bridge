@@ -1,6 +1,20 @@
 from abc import ABC, abstractmethod
 
 
+class BaseTransport(ABC):
+    @abstractmethod
+    async def connect(self): ...
+
+    @abstractmethod
+    async def read(self, size: int = 1) -> bytes: ...
+
+    @abstractmethod
+    async def write(self, data: bytes): ...
+
+    @abstractmethod
+    async def close(self): ...
+
+
 class ConnectionAdapter(ABC):
     """Abstract base class defining the interface for RS485 communication adapters."""
 
@@ -12,14 +26,4 @@ class ConnectionAdapter(ABC):
     @abstractmethod
     def write(self, data: bytes) -> int:
         """Write bytes of data to the connection."""
-        pass
-
-    @abstractmethod
-    def readable(self) -> bool:
-        """Check if the connection is open/readable."""
-        pass
-
-    @abstractmethod
-    def is_open(self) -> bool:
-        """Check if the connection is currently open."""
         pass

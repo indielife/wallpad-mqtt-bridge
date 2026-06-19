@@ -61,11 +61,9 @@ class AppConfig:
 
         # 3. RS485 & 하드웨어 통신 설정
         self.comm_type = None
-        self.port_url = {}
-        self.device_list = {}
+        self.serial_port = ""
         self.socket_server = None
         self.socket_port = None
-        self.socket_device = None
 
         # 4. 기기 활성화 정보 (Enabled Devices)
         self.wp_list = {}
@@ -97,22 +95,6 @@ class AppConfig:
         """설정 파일을 로드합니다."""
         self._load_options_json()
 
-    def _parse_serial_ports(self, serial_data: dict) -> dict:
-        ports = {}
-        for k, v in serial_data.items():
-            if not v:
-                continue
-            k_lower = k.lower()
-            if k_lower == "port":
-                ports[1] = v
-            elif k_lower.startswith("port"):
-                try:
-                    port_num = int(k_lower[4:])
-                    ports[port_num] = v
-                except ValueError:
-                    pass
-        return ports
-
     def _load_options_json(self):
         if not os.path.isfile(self.options_path):
             logger.debug(
@@ -142,13 +124,11 @@ class AppConfig:
         self.comm_type = wallpad_json.get("Connection Type", rs485_type).lower()
 
         serial_data = wallpad_json.get("Serial", json_data.get("Serial", {}))
-        self.port_url = self._parse_serial_ports(serial_data)
-        self.device_list = {port_num: self.wallpad_manufacturer for port_num in self.port_url}
+        self.serial_port = serial_data.get("Port", serial_data.get("port", ""))
 
         soc = wallpad_json.get("Socket", json_data.get("Socket", {}))
         self.socket_server = soc.get("Server", soc.get("server"))
         self.socket_port = soc.get("Port", soc.get("port"))
-        self.socket_device = self.wallpad_manufacturer
 
         # 4. 기기 활성화 설정 (Enabled Devices)
         self.wp_list = wallpad_json.get("Enabled Devices", {})

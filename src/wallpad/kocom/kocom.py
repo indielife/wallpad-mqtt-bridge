@@ -41,7 +41,7 @@ from wallpad.mqtt import (
     HA_SWITCH,
     MqttClient,
 )
-from wallpad.rs485 import ConnectionAdapter
+from wallpad.transport import ConnectionAdapter
 
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
 
@@ -58,7 +58,6 @@ class Kocom:
         self.config = config
         self.adapter = adapter
         self._name = name
-        self.connected = True
         self.mqtt_client = mqtt_client
 
         self.default_speed = config.kocom_default_speed
@@ -191,20 +190,14 @@ class Kocom:
         self._t2 = threading.Thread(target=self.scan_list)
         self._t2.start()
 
-    def connection_lost(self):
-        self._t1.join()
-        self._t2.join()
-        if not self.connected:
-            logger.info("Terminating Kocom instance")
-            return False
-
     def read(self):
-        if not self.adapter or not self.adapter.readable():
-            return ""
+        if not self.adapter:
+            return b""
         try:
             return self.adapter.read()
         except Exception as e:
             logger.error("Connection error during read: %r", e)
+            return b""
 
     def write(self, data):
         if not data or not self.adapter:
@@ -465,10 +458,6 @@ class Kocom:
                 packet = ""
                 start_flag = False
 
-            if not self.connected:
-                logger.info("Terminating get_serial thread")
-                break
-
     def check_sum(self, packet):
         sum_packet = sum(bytearray.fromhex(packet)[:17])
         v_sum = int(packet[34:36], 16) if len(packet) >= 36 else 0
@@ -685,9 +674,6 @@ class Kocom:
                         self._perform_scan(now)
                     except Exception as e:
                         logger.debug("Scan failed: %r", e)
-            if not self.connected:
-                logger.info("Terminating scan_list thread")
-                break
             time.sleep(0.2)
 
     def set_serial(self, device, room, target, value, cmd="상태"):

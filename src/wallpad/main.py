@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import logging.handlers
 import os
@@ -9,7 +10,10 @@ from wallpad.config import AppConfig
 from wallpad.grex import Grex
 from wallpad.kocom import Kocom
 from wallpad.mqtt import MqttClient
-from wallpad.rs485 import RS485
+from wallpad.transport import (
+    create_ventilator_adapters,
+    create_wallpad_adapter,
+)
 from wallpad.version import SW_VERSION
 
 logger = logging.getLogger(__name__)
@@ -51,91 +55,45 @@ def setup_logging(path: str, level: str = "info"):
     )
 
 
-def _run_wallpad_serial(config: AppConfig, rs485: RS485, mqtt_client: MqttClient):
-    for port_key, name in config.device_list.items():
-        adapter = rs485.adapters.get(port_key)
-        if adapter and adapter.is_open():
-            try:
-                logger.info("Initializing Wallpad %s", name)
-                Kocom(config, adapter, name, 42, mqtt_client)
-            except Exception as e:
-                logger.error("Failed to initialize Wallpad %s: %r", name, e)
-
-
-def _run_wallpad_socket(config: AppConfig, rs485: RS485, mqtt_client: MqttClient) -> bool:
-    name = config.socket_device
-    adapter = rs485.adapters.get(name)
-    if adapter:
-        logger.info("Initializing Wallpad (Socket) %s", name)
-        try:
-            kocom = Kocom(config, adapter, name, 42, mqtt_client)
-            if not kocom.connection_lost():
-                logger.error("Wallpad socket connection lost. Reconnecting in 1 minute...")
-                time.sleep(60)
-                return False
-        except Exception as e:
-            logger.error("Failed to initialize Wallpad socket %s: %r", name, e)
-            time.sleep(60)
-            return False
-    return True
-
-
-def run_wallpad(config: AppConfig, rs485: RS485, mqtt_client: MqttClient) -> bool:
-    """Wallpad 연결 및 Kocom 초기화를 수행합니다. 소켓 모드 실패 시 False를 반환합니다."""
+def run_wallpad(config: AppConfig, mqtt_client: MqttClient) -> bool:
+    """Wallpad 연결 및 Kocom 초기화를 수행합니다. 연결 실패 시 False를 반환합니다."""
     if not config.wallpad_enabled:
         return True
 
-    # 연결 시도
-    if not rs485.connect_wallpad():
-        logger.error("Failed to connect to Wallpad. Retrying in 1 minute...")
-        time.sleep(60)
+    try:
+        logger.info("Initializing Wallpad %s", config.wallpad_manufacturer)
+        transport = create_wallpad_adapter(config)
+        Kocom(config, transport, config.wallpad_manufacturer, 42, mqtt_client)
+        return True
+    except Exception as e:
+        logger.error("Failed to initialize Wallpad %s: %r", config.wallpad_manufacturer, e)
         return False
 
-    comm_type = config.comm_type
-    if comm_type == "serial":
-        _run_wallpad_serial(config, rs485, mqtt_client)
-        return True
-    elif comm_type == "socket":
-        return _run_wallpad_socket(config, rs485, mqtt_client)
 
-    return True
-
-
-def run_ventilator(config: AppConfig, rs485: RS485, mqtt_client: MqttClient) -> bool:
+def run_ventilator(config: AppConfig, mqtt_client: MqttClient) -> bool:
     """Ventilator 연결 및 Grex 초기화를 수행합니다."""
     if not config.ventilator_enabled:
         return True
 
-    # 연결 시도
-    if not rs485.connect_ventilator():
-        logger.error("Failed to connect to Ventilator.")
-        return False
-
     conn_type = config.ventilator_connection_type
-    if conn_type == "serial":
-        unit_adapter = rs485.adapters.get("ventilator_unit")
-        ctrl_adapter = rs485.adapters.get("ventilator_ctrl")
-        if unit_adapter and unit_adapter.is_open() and ctrl_adapter and ctrl_adapter.is_open():
-            try:
-                logger.info("Initializing Grex (Serial)")
-                Grex(config, ctrl_adapter, unit_adapter, mqtt_client)
-                return True
-            except Exception as e:
-                logger.error("Failed to initialize Grex: %r", e)
-        else:
-            logger.error("Grex adapters are not open or not available")
-            return False
-    elif conn_type == "socket":
+    if conn_type == "socket":
         logger.warning(
             "Ventilator socket mode is configured, but "
             "Grex implementation might require serial adapters."
         )
         return True
 
-    return True
+    try:
+        logger.info("Initializing Grex (Serial)")
+        ctrl_transport, unit_transport = create_ventilator_adapters(config)
+        Grex(config, ctrl_transport, unit_transport, mqtt_client)
+        return True
+    except Exception as e:
+        logger.error("Failed to initialize Grex: %r", e)
+        return False
 
 
-if __name__ == "__main__":
+async def main():
     config = AppConfig()
     config.load()
 
@@ -153,23 +111,9 @@ if __name__ == "__main__":
     mqtt_client = MqttClient(config.mqtt_config)
     mqtt_client.connect()
 
-    connection_flag = False
-    while not connection_flag:
-        rs485 = RS485(config)
+    run_wallpad(config, mqtt_client)
+    run_ventilator(config, mqtt_client)
 
-        # 1. Wallpad 실행
-        wallpad_ok = run_wallpad(config, rs485, mqtt_client)
 
-        # 2. Ventilator 실행
-        ventilator_ok = run_ventilator(config, rs485, mqtt_client)
-
-        # 소켓 모드가 활성화되어 있고 연결에 실패한 경우 재시도 루프를 계속 돕니다.
-        # 시리얼 모드만 동작할 때는 한 번 실행 후 루프를 빠져나옵니다.
-        is_socket_mode = (config.wallpad_enabled and config.comm_type == "socket") or (
-            config.ventilator_enabled and config.ventilator_connection_type == "socket"
-        )
-
-        if is_socket_mode and (not wallpad_ok or not ventilator_ok):
-            connection_flag = False
-        else:
-            connection_flag = True
+if __name__ == "__main__":
+    asyncio.run(main())
