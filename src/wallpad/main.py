@@ -10,8 +10,7 @@ from wallpad.config import AppConfig
 from wallpad.grex import Grex
 from wallpad.kocom import Kocom
 from wallpad.mqtt import MqttClient
-from wallpad.transport import RS485, BaseTransport
-from wallpad.transport import create as create_transport
+from wallpad.transport import RS485
 from wallpad.version import SW_VERSION
 
 logger = logging.getLogger(__name__)
@@ -53,55 +52,24 @@ def setup_logging(path: str, level: str = "info"):
     )
 
 
-def _run_wallpad_serial(config: AppConfig, transport: BaseTransport, mqtt_client: MqttClient):
-    if transport:
-        try:
-            Kocom(config, transport, config.wallpad_manufacturer, 42, mqtt_client)
-        except Exception as e:
-            logger.error("Failed to initialize Wallpad %s: %r", config.wallpad_manufacturer, e)
-
-
-def _run_wallpad_socket(
-    config: AppConfig, transport: BaseTransport, mqtt_client: MqttClient
-) -> bool:
-    name = config.wallpad_manufacturer
-
-    if transport:
-        logger.info("Initializing Wallpad (Socket) %s", name)
-        try:
-            kocom = Kocom(config, transport, name, 42, mqtt_client)
-            if kocom.connection_lost():
-                logger.error("Wallpad socket connection lost. Reconnecting in 1 minute...")
-                time.sleep(60)
-                return False
-        except Exception as e:
-            logger.error("Failed to initialize Wallpad socket %s: %r", name, e)
-            time.sleep(60)
-            return False
-    return True
-
-
 def run_wallpad(config: AppConfig, rs485: RS485, mqtt_client: MqttClient) -> bool:
-    """Wallpad 연결 및 Kocom 초기화를 수행합니다. 소켓 모드 실패 시 False를 반환합니다."""
+    """Wallpad 연결 및 Kocom 초기화를 수행합니다. 연결 실패 시 False를 반환합니다."""
     if not config.wallpad_enabled:
         return True
 
-    # 연결 시도
     if not rs485.connect_wallpad():
         logger.error("Failed to connect to Wallpad. Retrying in 1 minute...")
         time.sleep(60)
         return False
 
-    logger.info("Initializing Wallpad %s", config.wallpad_manufacturer)
-
-    comm_type = config.comm_type
     transport = rs485.adapters.get("wallpad")
-
-    if comm_type == "serial":
-        _run_wallpad_serial(config, transport, mqtt_client)
-        return True
-    elif comm_type == "socket":
-        return _run_wallpad_socket(config, transport, mqtt_client)
+    if transport:
+        try:
+            logger.info("Initializing Wallpad %s", config.wallpad_manufacturer)
+            Kocom(config, transport, config.wallpad_manufacturer, 42, mqtt_client)
+        except Exception as e:
+            logger.error("Failed to initialize Wallpad %s: %r", config.wallpad_manufacturer, e)
+            return False
 
     return True
 
@@ -161,26 +129,9 @@ async def main():
     mqtt_client = MqttClient(config.mqtt_config)
     mqtt_client.connect()
 
-    connection_flag = False
-    while not connection_flag:
-        rs485 = RS485(config)
-
-        # 1. Wallpad 실행
-        wallpad_ok = run_wallpad(config, rs485, mqtt_client)
-
-        # 2. Ventilator 실행
-        ventilator_ok = run_ventilator(config, rs485, mqtt_client)
-
-        # 소켓 모드가 활성화되어 있고 연결에 실패한 경우 재시도 루프를 계속 돕니다.
-        # 시리얼 모드만 동작할 때는 한 번 실행 후 루프를 빠져나옵니다.
-        is_socket_mode = (config.wallpad_enabled and config.comm_type == "socket") or (
-            config.ventilator_enabled and config.ventilator_connection_type == "socket"
-        )
-
-        if is_socket_mode and (not wallpad_ok or not ventilator_ok):
-            connection_flag = False
-        else:
-            connection_flag = True
+    rs485 = RS485(config)
+    run_wallpad(config, rs485, mqtt_client)
+    run_ventilator(config, rs485, mqtt_client)
 
 
 if __name__ == "__main__":
