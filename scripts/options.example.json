@@ -1,0 +1,64 @@
+{
+  "MQTT Broker": {
+    "Server": "192.168.0.x",
+    "Username": "mqtt_user",
+    "Password": "mqtt_password"
+  },
+  "Wallpad": {
+    "enable": true,
+    "Manufacturer": "kocom",
+    "Connection Type": "Socket",
+    "Socket": {
+      "Server": "192.168.0.x",
+      "Port": 8899
+    },
+    "Serial": {
+      "Port": "/dev/ttyUSB0"
+    },
+    "Enabled Devices": {
+      "light": true,
+      "plug": false,
+      "thermostat": false,
+      "fan": false,
+      "gas": false,
+      "elevator": false
+    }
+  },
+  "Advanced": {
+    "INIT_TEMP": 22,
+    "SCAN_INTERVAL": 300,
+    "PACKET_DELAY": 0.8,
+    "DEFAULT_SPEED": "low",
+    "LOGLEVEL": "debug"
+  },
+  "KOCOM_LIGHT_SIZE": [
+    {"name": "livingroom", "number": 3},
+    {"name": "bedroom", "number": 2},
+    {"name": "room1", "number": 2},
+    {"name": "room2", "number": 2},
+    {"name": "kitchen", "number": 3}
+  ],
+  "KOCOM_PLUG_SIZE": [
+    {"name": "livingroom", "number": 3},
+    {"name": "bedroom", "number": 2},
+    {"name": "room1", "number": 2},
+    {"name": "room2", "number": 2},
+    {"name": "kitchen", "number": 3}
+  ],
+  "KOCOM_ROOM": ["livingroom", "bedroom", "room1", "room2", "kitchen"],
+  "KOCOM_ROOM_THERMOSTAT": ["livingroom", "bedroom", "room1", "room2"],
+  "Ventilator": {
+    "enable": false,
+    "Manufacturer": "none",
+    "Connection Type": "Serial",
+    "Socket": {
+      "Server": "",
+      "Port": 8899
+    },
+    "Serial": {
+      "Controller Port": "/dev/ttyUSB1",
+      "Ventilator Port": "/dev/ttyUSB2"
+    },
+    "Default Speed": "low"
+  }
+}

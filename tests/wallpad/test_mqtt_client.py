@@ -8,7 +8,7 @@ from wallpad.mqtt import MqttClient, MqttConfig
 
 
 def test_mqtt_client_init():
-    config = MqttConfig(server="127.0.0.1", username="user", password="pwd")
+    config = MqttConfig(host="127.0.0.1", username="user", password="pwd")
     with patch("wallpad.mqtt.client.mqtt.Client") as mock_client_cls:
         client_instance = MagicMock()
         mock_client_cls.return_value = client_instance
@@ -28,17 +28,17 @@ def test_mqtt_client_init():
         assert client_instance.on_subscribe == mqtt_client._on_subscribe
 
 
-def test_mqtt_client_connect_missing_server(caplog):
-    config = MqttConfig(server="", username="user", password="pwd")
+def test_mqtt_client_connect_missing_host(caplog):
+    config = MqttConfig(host="", username="user", password="pwd")
     with patch("wallpad.mqtt.client.mqtt.Client"):
         mqtt_client = MqttClient(config)
         with caplog.at_level(logging.ERROR):
             mqtt_client.connect()
-        assert "Server address is missing." in caplog.text
+        assert "Host address is missing." in caplog.text
 
 
 def test_mqtt_client_connect_missing_credentials(caplog):
-    config = MqttConfig(server="127.0.0.1", username="", password="")
+    config = MqttConfig(host="127.0.0.1", username="", password="")
     with patch("wallpad.mqtt.client.mqtt.Client"):
         mqtt_client = MqttClient(config)
         with caplog.at_level(logging.ERROR):
@@ -47,7 +47,7 @@ def test_mqtt_client_connect_missing_credentials(caplog):
 
 
 def test_mqtt_client_connect_success():
-    config = MqttConfig(server="127.0.0.1", username="user", password="pwd")
+    config = MqttConfig(host="127.0.0.1", username="user", password="pwd")
     with patch("wallpad.mqtt.client.mqtt.Client") as mock_client_cls:
         client_instance = MagicMock()
         mock_client_cls.return_value = client_instance
@@ -61,7 +61,7 @@ def test_mqtt_client_connect_success():
 
 
 def test_mqtt_client_connect_exception(caplog):
-    config = MqttConfig(server="127.0.0.1", username="user", password="pwd")
+    config = MqttConfig(host="127.0.0.1", username="user", password="pwd")
     with patch("wallpad.mqtt.client.mqtt.Client") as mock_client_cls:
         client_instance = MagicMock()
         client_instance.connect.side_effect = Exception("connection error")
@@ -74,7 +74,7 @@ def test_mqtt_client_connect_exception(caplog):
 
 
 def test_mqtt_client_callbacks():
-    config = MqttConfig(server="127.0.0.1", username="user", password="pwd")
+    config = MqttConfig(host="127.0.0.1", username="user", password="pwd")
     with patch("wallpad.mqtt.client.mqtt.Client"):
         mqtt_client = MqttClient(config)
 
@@ -107,7 +107,7 @@ def test_mqtt_client_callbacks():
 
 
 def test_mqtt_client_callback_exceptions(caplog):
-    config = MqttConfig(server="127.0.0.1", username="user", password="pwd")
+    config = MqttConfig(host="127.0.0.1", username="user", password="pwd")
     with patch("wallpad.mqtt.client.mqtt.Client"):
         mqtt_client = MqttClient(config)
 
@@ -153,7 +153,7 @@ def test_mqtt_client_callback_exceptions(caplog):
 
 
 def test_mqtt_client_publish_and_subscribe():
-    config = MqttConfig(server="127.0.0.1", username="user", password="pwd")
+    config = MqttConfig(host="127.0.0.1", username="user", password="pwd")
     with patch("wallpad.mqtt.client.mqtt.Client") as mock_client_cls:
         client_instance = MagicMock()
         mock_client_cls.return_value = client_instance

@@ -40,7 +40,6 @@ Serial:
 SerialDevice:
   port1: kocom
 MQTT:
-  anonymous: false
   server: 192.168.x.x
   username: id
   password: pw
@@ -128,7 +127,6 @@ grex_controller = 그렉스 환기장치의 리모콘(환기모드, 정지 등)
 
 ### Option `MQTT` (required)
 ```yaml
-anonymous: false           // MQTT 설정
 server: 192.168.x.xx         // MQTT 서버
 username: id                 // MQTT ID
 password: pw                // MQTT PW

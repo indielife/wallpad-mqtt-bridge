@@ -1,4 +1,5 @@
 import json
+import os
 from unittest.mock import mock_open, patch
 
 from wallpad.config import AppConfig
@@ -46,6 +47,9 @@ SAMPLE_OPTIONS_JSON = {
 }
 
 
+@patch.dict(
+    os.environ, {"MQTT_HOST": "", "MQTT_USERNAME": "", "MQTT_PASSWORD": "", "WALLPAD_HOST": ""}
+)
 @patch("wallpad.config.os.path.isfile", return_value=True)
 def test_app_config_load(mock_isfile):
     """AppConfig가 options.json을 읽고 각 변수에 올바르게 매핑하는지 검증합니다."""
@@ -55,7 +59,7 @@ def test_app_config_load(mock_isfile):
         config.load()
 
         # 1. MQTT 및 기기 활성화 설정 (Enabled Devices, Boolean 타입 정상 파싱) 검증
-        assert config.mqtt_config.server == "192.168.1.200"
+        assert config.mqtt_config.host == "192.168.1.200"
         assert config.wallpad_enabled is True
         assert config.wallpad == "kocom"
         assert config.wallpad_manufacturer == "kocom"
@@ -66,7 +70,7 @@ def test_app_config_load(mock_isfile):
 
         # 2. 통신 타입 및 소켓 설정 검증
         assert config.comm_type == "serial"
-        assert config.socket_server == "192.168.1.100"
+        assert config.socket_host == "192.168.1.100"
         assert config.socket_port == 8899
 
         # 3. 시리얼 포트 설정 검증
@@ -100,7 +104,7 @@ def test_app_config_load(mock_isfile):
         assert config.ventilator_connection_type == "serial"
         assert config.ventilator_unit_port == "/dev/ttyUSB1"
         assert config.ventilator_ctrl_port == "/dev/ttyUSB2"
-        assert config.ventilator_socket_server == "192.168.1.101"
+        assert config.ventilator_socket_host == "192.168.1.101"
         assert config.ventilator_socket_port == 8899
         assert config.ventilator_default_speed == "low"
 
@@ -171,3 +175,26 @@ def test_app_config_defaults(mock_isfile):
         "room2": 2,
         "kitchen": 2,
     }
+
+
+@patch.dict(
+    os.environ,
+    {
+        "MQTT_HOST": "10.0.0.99",
+        "MQTT_USERNAME": "envuser",
+        "MQTT_PASSWORD": "envpass",
+        "WALLPAD_HOST": "10.0.0.50",
+    },
+)
+@patch("wallpad.config.os.path.isfile", return_value=True)
+def test_env_var_overrides_options_json(mock_isfile):
+    """환경변수가 options.json 값보다 우선 적용되는지 검증합니다."""
+    mock_file = mock_open(read_data=json.dumps(SAMPLE_OPTIONS_JSON))
+    with patch("builtins.open", mock_file):
+        config = AppConfig(options_path="/fake/path.json")
+        config.load()
+
+        assert config.mqtt_config.host == "10.0.0.99"
+        assert config.mqtt_config.username == "envuser"
+        assert config.mqtt_config.password == "envpass"
+        assert config.socket_host == "10.0.0.50"

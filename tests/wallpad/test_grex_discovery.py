@@ -38,7 +38,6 @@ def grex_factory():
                 "server": "test",
                 "username": "",
                 "password": "",
-                "anonymous": "True",
             }
 
             mock_cont_adapter = MagicMock()

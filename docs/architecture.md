@@ -22,12 +22,35 @@ graph LR
 
 ## 2. 주요 구성 요소 (Key Components)
 
-- **[RS485](../src/kocom/rs485.py#L22) 클래스**
-  - 설정 파일(`rs485.conf`)을 읽어 시리얼(Serial) 포트 또는 TCP 소켓(Socket)을 연결하고 관리합니다.
-- **[Kocom](../src/kocom/core.py#L68) 클래스**
+### Transport 계층 (`src/wallpad/transport/`)
+
+연결 생성과 I/O 추상화를 담당합니다. 기기 클래스(`Kocom`, `Grex`)는 어댑터를 직접 생성하지 않고, 팩토리 함수가 생성한 인스턴스를 주입받습니다.
+
+- **[`ConnectionAdapter`](../src/wallpad/transport/base.py)** (추상 클래스)
+  - 현재 사용 중인 동기식 I/O 인터페이스. `read() → bytes`, `write(data)` 두 메서드만 정의합니다.
+  - `SerialAdapter` — pyserial 기반 시리얼 포트 구현체
+  - `SocketAdapter` — TCP 소켓 구현체. 연결 유실 시 내부에서 자동 재연결(`_reconnect`)을 수행합니다.
+
+- **[`BaseTransport`](../src/wallpad/transport/base.py)** (추상 클래스, 마이그레이션 준비 중)
+  - 향후 `ConnectionAdapter`를 대체할 비동기 인터페이스. `async connect/read/write/close`를 정의합니다.
+  - `SerialTransport`, `SocketTransport` 구현체가 이미 작성되어 있으나, 기기 클래스가 아직 `ConnectionAdapter`를 사용하므로 현재는 미사용 상태입니다. (#75)
+
+- **[팩토리 함수](../src/wallpad/transport/factory.py)**
+  - `create_wallpad_adapter(config)` — 설정의 `comm_type`에 따라 `SerialAdapter` 또는 `SocketAdapter`를 생성합니다.
+  - `create_ventilator_adapters(config)` — Grex용 ctrl/unit 어댑터 쌍을 생성합니다.
+
+### 기기 계층
+
+- **[`Kocom`](../src/wallpad/kocom/kocom.py) 클래스**
   - 이 프로젝트의 코어 모듈입니다.
-  - MQTT 연결과 RS485 송수신 스레드를 구동하고, 양방향 메시지 변환 및 상태 관리를 전담합니다.
-- **디바이스 모델 및 빌더 ([Light](../src/kocom/devices/light.py) / [Plug](../src/kocom/devices/plug.py) / [Thermostat](../src/kocom/devices/thermostat.py) 등)**
+  - 초기화 시 `ConnectionAdapter`를 주입받아, MQTT 연결과 RS485 송수신 스레드(`_t1`, `_t2`)를 구동합니다.
+  - 양방향 메시지 변환 및 상태 관리를 전담합니다.
+
+- **[`Grex`](../src/wallpad/grex/grex.py) 클래스**
+  - 전열교환기(환기장치) 연동 모듈입니다.
+  - 벽 조절기(ctrl)와 환기 유닛(unit) 두 개의 `ConnectionAdapter`를 주입받아 중간자(MITM) 방식으로 동작합니다.
+
+- **디바이스 모델 및 빌더 ([Light](../src/wallpad/kocom/devices/light.py) / [Plug](../src/wallpad/kocom/devices/plug.py) / [Thermostat](../src/wallpad/kocom/devices/thermostat.py) 등)**
   - 각 기기별 프로토콜 사양에 맞춰 수신된 Hex 패킷을 의미 있는 상태 값으로 디코딩하거나, HA의 제어 명령을 RS485 Hex 패킷으로 조립(Build)합니다.
 
 ---
@@ -36,13 +59,13 @@ graph LR
 
 ### 3.1. RS485 ➡️ Home Assistant (상태 모니터링)
 
-1. **패킷 모니터링 스레드 (`_t1` / [get_serial](../src/kocom/core.py#L496))**
-   - 시리얼/소켓 연결로부터 유입되는 바이트 스트림을 실시간으로 읽어 들입니다.
+1. **패킷 모니터링 스레드 (`_t1` / `get_serial`)**
+   - `ConnectionAdapter.read()`를 통해 시리얼/소켓 연결에서 바이트 스트림을 실시간으로 읽습니다.
    - Kocom 헤더(`aa`)가 수집되면, 지정된 패킷 길이만큼 데이터를 모아 체크섬을 검증합니다.
-2. **패킷 파싱 ([packet_parsing](../src/kocom/core.py#L594))**
+2. **패킷 파싱 (`packet_parsing`)**
    - 수신 완료된 패킷에서 목적지(Destination), 출발지(Source), 명령(Command), 제어 대상, 상태 값 등을 분석합니다.
    - 분석된 정보는 내부 상태 관리자(`self.wp_list`)에 업데이트됩니다.
-3. **HA 전송 ([publish_state_to_ha](../src/kocom/core.py#L463))**
+3. **HA 전송 (`publish_state_to_ha`)**
    - 기기의 상태 업데이트가 있으면 JSON 형태로 가공하여 미리 정의된 HA 상태 토픽으로 MQTT 메시지를 발행(Publish)합니다.
    * **예시 토픽:** `homeassistant/light/livingroom/state`
    * **예시 페이로드:** `{"state": "on"}`
@@ -51,22 +74,22 @@ graph LR
 
 ### 3.2. Home Assistant ➡️ RS485 (기기 제어)
 
-1. **제어 명령 수신 ([on_message](../src/kocom/core.py#L278) & [parse_message](../src/kocom/core.py#L330))**
+1. **제어 명령 수신 (`on_message` & `parse_message`)**
    - Home Assistant 대시보드나 자동화 규칙에 의해 기기 제어가 트리거되면, HA는 MQTT 제어 토픽으로 메시지를 발행합니다.
    - 브릿지는 이를 구독(Subscribe)하고 있다가 이벤트를 수신합니다.
 2. **목표 상태 기록**
    - 수신한 명령 토픽과 페이로드(예: `on`/`off`, 설정 온도 등)를 확인하고, `self.wp_list`에 해당 기기의 목표 제어 값(`set_val`)을 기록합니다.
-3. **주기적 스캔 및 패킷 전송 스레드 (`_t2` / [scan_list](../src/kocom/core.py#L718))**
+3. **주기적 스캔 및 패킷 전송 스레드 (`_t2` / `scan_list`)**
    - 백그라운드 스레드에서 주기적으로 전체 기기 상태를 스캔하며, HA가 설정한 목표 제어 값(`set_val`)과 실제 기기 상태(`state`)에 차이가 있는지 감시합니다.
-   - 차이가 발견되면 [set_serial](../src/kocom/core.py#L732)을 호출합니다.
+   - 차이가 발견되면 `set_serial`을 호출합니다.
    - 각 기기 클래스는 전략 패턴과 빌더 패턴을 사용해 해당 조작 명령에 부합하는 **RS485 Hex 패킷**을 생성합니다.
-   - 최종적으로 `self.write(packet)`를 통해 EW11(시리얼/소켓)로 데이터를 내보냅니다.
+   - 최종적으로 `self.write(packet)`를 통해 `ConnectionAdapter.write()`로 EW11(시리얼/소켓)에 데이터를 내보냅니다.
 
 ---
 
 ## 4. HA MQTT Discovery (자동 기기 등록)
 
-브릿지 실행 초기 혹은 HA 상태 변경 시 [publish_ha_discovery](../src/kocom/core.py#L437)를 실행합니다.
+브릿지 실행 초기 혹은 HA 상태 변경 시 `publish_ha_discovery`를 실행합니다.
 - 활성화된 기기들로부터 디스커버리 정보를 취합하여 `homeassistant/<component>/<device_id>/config` 토픽으로 MQTT 메시지를 발행합니다.
 - 이 정보를 받은 Home Assistant는 별도의 수동 구성 없이 대시보드 및 기기 목록에 월패드 구성 요소를 자동으로 추가합니다.
 
@@ -78,7 +101,7 @@ graph LR
 
 ### 5.1. 동작 차이 요약
 
-| 구분 | [Kocom 클래스](../src/kocom/core.py#L68) | [Grex 클래스](../src/kocom/core.py#L868) |
+| 구분 | [Kocom 클래스](../src/wallpad/kocom/kocom.py) | [Grex 클래스](../src/wallpad/grex/grex.py) |
 | :--- | :--- | :--- |
 | **제어 대상** | 조명, 플러그, 보일러, 가스, 엘리베이터 등 | 그렉스 전열교환기(환기 장치) |
 | **연결 방식** | 단일 회선 (RS485 Bus 접속) | 이중 회선 (벽 조절기 ↔ 브릿지 ↔ 환기 장치) |
