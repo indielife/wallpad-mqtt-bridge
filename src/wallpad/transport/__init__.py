@@ -1,5 +1,8 @@
 from wallpad.transport.base import ConnectionAdapter
-from wallpad.transport.rs485 import RS485
+from wallpad.transport.factory import (
+    create_ventilator_adapters,
+    create_wallpad_adapter,
+)
 from wallpad.transport.serial import SerialAdapter
 from wallpad.transport.socket import SocketAdapter
 
@@ -18,4 +21,11 @@ def create(device_cfg: dict) -> BaseTransport:
     raise ValueError(f"Unknown transport: {transport_type}")
 
 
-__all__ = ["RS485", "ConnectionAdapter", "SerialAdapter", "SocketAdapter", "create"]
+__all__ = [
+    "ConnectionAdapter",
+    "SerialAdapter",
+    "SocketAdapter",
+    "create",
+    "create_ventilator_adapters",
+    "create_wallpad_adapter",
+]

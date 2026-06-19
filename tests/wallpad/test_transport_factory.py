@@ -4,7 +4,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from wallpad.config import AppConfig
-from wallpad.transport import RS485
+from wallpad.transport import (
+    create_ventilator_adapters,
+    create_wallpad_adapter,
+)
+from wallpad.transport.serial import SerialAdapter
+from wallpad.transport.socket import SocketAdapter
 
 SERIAL_OPTIONS_JSON = {
     "RS485": {"type": "Serial"},
@@ -72,38 +77,57 @@ def mock_socket():
         yield mock
 
 
-def test_legacy_rs485_serial(tmp_path, mock_serial):
-    """rs485.conf 대신 AppConfig를 사용하여 serial 타입 설정을 파싱하는 동작을 검증합니다."""
+def test_create_wallpad_adapter_serial(tmp_path, mock_serial):
+    """create_wallpad_adapter가 Serial 포트 설정을 바탕으로 SerialAdapter를 생성하는지 검증합니다."""
     options_file = tmp_path / "options.json"
     options_file.write_text(json.dumps(SERIAL_OPTIONS_JSON))
 
     config = AppConfig(options_path=str(options_file))
     config.load()
 
-    rs485 = RS485(config)
-    assert rs485.connect_wallpad() is True
-    assert rs485.connect_ventilator() is True
-
-    # 1. Serial 포트 및 디바이스 파싱 검증
-    assert rs485.type == "serial"
+    adapter = create_wallpad_adapter(config)
+    assert isinstance(adapter, SerialAdapter)
     assert config.serial_port == "/dev/ttyUSB0"
-    assert config.ventilator_unit_port == "/dev/ttyUSB1"
-    assert config.ventilator_ctrl_port == "/dev/ttyUSB2"
-    assert "wallpad" in rs485.adapters
-    assert "ventilator_unit" in rs485.adapters
-    assert "ventilator_ctrl" in rs485.adapters
 
 
-def test_legacy_rs485_socket(tmp_path, mock_socket):
-    """rs485.conf 대신 AppConfig를 사용하여 socket 타입 설정을 파싱하는 동작을 검증합니다."""
+def test_create_wallpad_adapter_socket(tmp_path, mock_socket):
+    """create_wallpad_adapter가 Socket 설정을 바탕으로 SocketAdapter를 생성하는지 검증합니다."""
     options_file = tmp_path / "options.json"
     options_file.write_text(json.dumps(SOCKET_OPTIONS_JSON))
 
     config = AppConfig(options_path=str(options_file))
     config.load()
 
-    rs485 = RS485(config)
-    assert rs485.connect_wallpad() is True
+    adapter = create_wallpad_adapter(config)
+    assert isinstance(adapter, SocketAdapter)
 
-    # 1. Socket 설정 파싱 검증
-    assert rs485.type == "socket"
+
+def test_create_ventilator_adapters_serial(tmp_path, mock_serial):
+    """create_ventilator_adapters가 Serial 설정을 바탕으로 두 개의 SerialAdapter를 생성하는지 검증합니다."""
+    options_file = tmp_path / "options.json"
+    options_file.write_text(json.dumps(SERIAL_OPTIONS_JSON))
+
+    config = AppConfig(options_path=str(options_file))
+    config.load()
+
+    ctrl, unit = create_ventilator_adapters(config)
+    assert isinstance(ctrl, SerialAdapter)
+    assert isinstance(unit, SerialAdapter)
+    assert config.ventilator_ctrl_port == "/dev/ttyUSB2"
+    assert config.ventilator_unit_port == "/dev/ttyUSB1"
+
+
+def test_create_wallpad_adapter_invalid_type(tmp_path):
+    """잘못된 wallpad 연결 타입 설정 시 ValueError를 발생하는지 검증합니다."""
+    invalid_options = SOCKET_OPTIONS_JSON.copy()
+    invalid_options["Wallpad"] = invalid_options["Wallpad"].copy()
+    invalid_options["Wallpad"]["Connection Type"] = "unknown"
+
+    options_file = tmp_path / "options.json"
+    options_file.write_text(json.dumps(invalid_options))
+
+    config = AppConfig(options_path=str(options_file))
+    config.load()
+
+    with pytest.raises(ValueError, match="Invalid Wallpad connection type: unknown"):
+        create_wallpad_adapter(config)
