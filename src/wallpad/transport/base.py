@@ -6,7 +6,7 @@ class BaseTransport(ABC):
     async def connect(self): ...
 
     @abstractmethod
-    async def read(self, size: int) -> bytes: ...
+    async def read(self, size: int = 1) -> bytes: ...
 
     @abstractmethod
     async def write(self, data: bytes): ...
@@ -26,9 +26,4 @@ class ConnectionAdapter(ABC):
     @abstractmethod
     def write(self, data: bytes) -> int:
         """Write bytes of data to the connection."""
-        pass
-
-    @abstractmethod
-    def is_open(self) -> bool:
-        """Check if the connection is currently open."""
         pass

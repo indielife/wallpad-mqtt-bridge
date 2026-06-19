@@ -18,7 +18,7 @@ class SerialTransport(BaseTransport):
             url=self.port, baudrate=self.baud_rate
         )
 
-    async def read(self, size: int) -> bytes:
+    async def read(self, size: int = 1) -> bytes:
         return await self._reader.read(size)
 
     async def write(self, data: bytes):
@@ -31,8 +31,15 @@ class SerialTransport(BaseTransport):
 class SerialAdapter(ConnectionAdapter):
     """ConnectionAdapter implementation for serial communication."""
 
-    def __init__(self, connection: serial.Serial):
-        self._connection = connection
+    def __init__(self, port: str, baud_rate: int):
+        try:
+            ser = serial.Serial(port, baud_rate, timeout=None)
+            ser.bytesize = 8
+            ser.stopbits = 1
+            ser.autoOpen = False
+            self._connection = ser
+        except Exception as e:
+            raise ConnectionError(f"Failed to connect to serial port: {port}") from e
 
     def read(self) -> bytes:
         if not self._connection.readable():
@@ -41,10 +48,3 @@ class SerialAdapter(ConnectionAdapter):
 
     def write(self, data: bytes) -> int:
         return self._connection.write(data)
-
-    def is_open(self) -> bool:
-        return (
-            self._connection.is_open
-            if hasattr(self._connection, "is_open")
-            else self._connection.isOpen()
-        )

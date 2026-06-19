@@ -4,8 +4,8 @@ import socket
 import serial
 
 from wallpad.config import AppConfig
-from wallpad.transport.serial import SerialAdapter
-from wallpad.transport.socket import SocketAdapter
+from wallpad.transport.serial import SerialAdapter, SerialTransport
+from wallpad.transport.socket import SocketAdapter, SocketTransport
 
 logger = logging.getLogger(__name__)
 
@@ -51,18 +51,11 @@ class RS485:
         if not port_path:
             logger.error("Wallpad serial port is not configured.")
             return False
+
         try:
-            ser = serial.Serial(port_path, 9600, timeout=None)
-            if ser.isOpen():
-                ser.bytesize = 8
-                ser.stopbits = 1
-                ser.autoOpen = False
-                logger.info("Wallpad Serial Port: %s", port_path)
-                self.adapters["wallpad"] = SerialAdapter(ser)
-                return True
-            else:
-                logger.error("Serial port is not open: %s", port_path)
-                return False
+            self.adapters["wallpad"] = SerialAdapter(port_path, 9600)
+            logger.info("Wallpad Serial Port: %s", port_path)
+            return True
         except Exception as e:
             logger.error("Failed to connect to serial port (%s): %r", port_path, e)
             return False
@@ -70,12 +63,8 @@ class RS485:
     def _init_wallpad_socket(self) -> bool:
         server = self.config.socket_server
         port = self.config.socket_port
-        soc = socket.socket()
-        soc.settimeout(10)
         try:
-            soc.connect((server, int(port)))
-            soc.settimeout(None)
-            self.adapters["wallpad"] = SocketAdapter(soc)
+            self.adapters["wallpad"] = SocketAdapter(server, port)
             return True
         except Exception as e:
             logger.info("Failed to connect to socket (target: %s:%s, error: %r)", server, port, e)
@@ -89,20 +78,8 @@ class RS485:
         ]:
             if port_path:
                 try:
-                    ser = serial.Serial(port_path, 9600, timeout=None)
-                    if ser.isOpen():
-                        ser.bytesize = 8
-                        ser.stopbits = 1
-                        ser.autoOpen = False
-                        logger.info("Ventilator %s Port: %s", role, port_path)
-                        self.adapters[role] = SerialAdapter(ser)
-                        opened += 1
-                    else:
-                        logger.info(
-                            "Serial port is not open (Ventilator: %s, port: %s)",
-                            role,
-                            port_path,
-                        )
+                    self.adapters[role] = SerialAdapter(port_path, 9600)
+                    opened += 1
                 except Exception as e:
                     logger.error(
                         "Failed to connect to serial port (Ventilator: %s, port: %s, error: %r)",
@@ -110,6 +87,7 @@ class RS485:
                         port_path,
                         e,
                     )
+
         if opened == 0:
             logger.error("No Ventilator serial ports were successfully opened.")
             return False
@@ -118,12 +96,9 @@ class RS485:
     def _init_ventilator_socket(self) -> bool:
         server = self.config.ventilator_socket_server
         port = self.config.ventilator_socket_port
-        soc = socket.socket()
-        soc.settimeout(10)
+
         try:
-            soc.connect((server, int(port)))
-            soc.settimeout(None)
-            self.adapters["ventilator_socket"] = SocketAdapter(soc)
+            self.adapters["ventilator_socket"] = SocketAdapter(server, port)
             return True
         except Exception as e:
             logger.info(
