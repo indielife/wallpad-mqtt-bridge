@@ -106,90 +106,81 @@ class AppConfig:
             json_data = json.load(json_file)
 
         # 1. MQTT Broker 설정
-        mqtt_json = json_data.get("MQTT Broker", {})
+        mqtt_json = json_data.get("mqtt_broker", {})
         self.mqtt_config = MqttConfig(
-            host=os.environ.get("MQTT_HOST") or mqtt_json.get("Server", ""),
-            username=os.environ.get("MQTT_USERNAME") or mqtt_json.get("Username", ""),
-            password=os.environ.get("MQTT_PASSWORD") or mqtt_json.get("Password", ""),
+            host=os.environ.get("MQTT_HOST") or mqtt_json.get("host", ""),
+            username=os.environ.get("MQTT_USERNAME") or mqtt_json.get("username", ""),
+            password=os.environ.get("MQTT_PASSWORD") or mqtt_json.get("password", ""),
         )
 
         # 2. Wallpad 설정
-        wallpad_json = json_data.get("Wallpad", {})
+        wallpad_json = json_data.get("wallpad", {})
         self._wallpad_enabled = wallpad_json.get("enable", True)
-        wp_mfg = wallpad_json.get("Manufacturer", "kocom")
+        wp_mfg = wallpad_json.get("manufacturer", "kocom")
         self.wallpad_manufacturer = wp_mfg.lower() if isinstance(wp_mfg, str) else "kocom"
 
         # 3. RS485 & 하드웨어 통신 설정
-        rs485_type = json_data.get("RS485", {}).get("type", "Serial")
-        self.comm_type = wallpad_json.get("Connection Type", rs485_type).lower()
+        self.comm_type = wallpad_json.get("connection_type", "Serial").lower()
 
-        serial_data = wallpad_json.get("Serial", json_data.get("Serial", {}))
-        self.serial_port = serial_data.get("Port", serial_data.get("port", ""))
+        serial_data = wallpad_json.get("serial", {})
+        self.serial_port = serial_data.get("port", "")
 
-        soc = wallpad_json.get("Socket", json_data.get("Socket", {}))
-        self.socket_host = os.environ.get("WALLPAD_HOST") or soc.get("Server", soc.get("server"))
-        self.socket_port = soc.get("Port", soc.get("port"))
+        soc = wallpad_json.get("socket", {})
+        self.socket_host = os.environ.get("WALLPAD_HOST") or soc.get("host")
+        self.socket_port = soc.get("port")
 
-        # 4. 기기 활성화 설정 (Enabled Devices)
-        self.wp_list = wallpad_json.get("Enabled Devices", {})
+        # 4. 기기 활성화 설정 (enabled_devices)
+        self.wp_list = wallpad_json.get("enabled_devices", {})
 
         # 5. Advanced 세부 제어 설정
-        adv = json_data.get("Advanced", {})
-        self.init_temp = adv.get("INIT_TEMP", self.init_temp)
-        self.scan_interval = adv.get("SCAN_INTERVAL", self.scan_interval)
-        self.packey_delay = adv.get("PACKET_DELAY", self.packey_delay)
-        self.kocom_default_speed = adv.get("DEFAULT_SPEED", self.kocom_default_speed)
-        self.log_level = adv.get("LOGLEVEL", self.log_level).lower()
+        adv = json_data.get("advanced", {})
+        self.init_temp = adv.get("init_temp", self.init_temp)
+        self.scan_interval = adv.get("scan_interval", self.scan_interval)
+        self.packey_delay = adv.get("packet_delay", self.packey_delay)
+        self.kocom_default_speed = adv.get("default_speed", self.kocom_default_speed)
+        self.log_level = adv.get("loglevel", self.log_level).lower()
 
         # 6. Kocom 사이즈 및 방 이름 매핑 설정
-        kocom_light_size_list = json_data.get("KOCOM_LIGHT_SIZE", [])
+        kocom_light_size_list = json_data.get("kocom_light_size", [])
         if kocom_light_size_list:
             self.kocom_light_size = {}
             for i in kocom_light_size_list:
                 self.kocom_light_size[i["name"]] = i["number"]
 
-        kocom_plug_size_list = json_data.get("KOCOM_PLUG_SIZE", [])
+        kocom_plug_size_list = json_data.get("kocom_plug_size", [])
         if kocom_plug_size_list:
             self.kocom_plug_size = {}
             for i in kocom_plug_size_list:
                 self.kocom_plug_size[i["name"]] = i["number"]
 
-        kocom_room_list = json_data.get("KOCOM_ROOM", [])
+        kocom_room_list = json_data.get("kocom_room", [])
         if kocom_room_list:
             self.kocom_room = {}
             for num, i in enumerate(kocom_room_list):
                 self.kocom_room[f"{num:02d}"] = i
 
-        kocom_room_thermostat_list = json_data.get("KOCOM_ROOM_THERMOSTAT", [])
+        kocom_room_thermostat_list = json_data.get("kocom_room_thermostat", [])
         if kocom_room_thermostat_list:
             self.kocom_room_thermostat = {}
             for num, i in enumerate(kocom_room_thermostat_list):
                 self.kocom_room_thermostat[f"{num:02d}"] = i
 
         # 7. Ventilator(전열교환기) 설정
-        vent = json_data.get("Ventilator", {})
+        vent = json_data.get("ventilator", {})
         self._ventilator_enabled = vent.get("enable", False)
-        vent_mfg = vent.get("Manufacturer", vent.get("manufacturer", "none"))
+        vent_mfg = vent.get("manufacturer", "none")
         self.ventilator_manufacturer = vent_mfg.lower() if isinstance(vent_mfg, str) else "none"
-        self.ventilator_connection_type = vent.get(
-            "Connection Type", vent.get("connection_type", "Serial")
-        ).lower()
+        self.ventilator_connection_type = vent.get("connection_type", "Serial").lower()
 
-        vent_socket = vent.get("Socket", {})
-        self.ventilator_socket_host = vent_socket.get("Server", vent_socket.get("server", ""))
-        self.ventilator_socket_port = vent_socket.get("Port", vent_socket.get("port", 8899))
+        vent_socket = vent.get("socket", {})
+        self.ventilator_socket_host = vent_socket.get("host", "")
+        self.ventilator_socket_port = vent_socket.get("port", 8899)
 
-        vent_serial = vent.get("Serial", {})
-        self.ventilator_ctrl_port = vent_serial.get(
-            "Controller Port", vent_serial.get("controller_port", "")
-        )
-        self.ventilator_unit_port = vent_serial.get(
-            "Ventilator Port", vent_serial.get("ventilator_port", "")
-        )
+        vent_serial = vent.get("serial", {})
+        self.ventilator_ctrl_port = vent_serial.get("controller_port", "")
+        self.ventilator_unit_port = vent_serial.get("ventilator_port", "")
 
-        self.ventilator_default_speed = vent.get(
-            "Default Speed", vent.get("default_speed", self.ventilator_default_speed)
-        )
+        self.ventilator_default_speed = vent.get("default_speed", self.ventilator_default_speed)
 
     @property
     def ventilator(self) -> str:

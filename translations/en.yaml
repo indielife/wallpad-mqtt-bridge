@@ -1,0 +1,128 @@
+configuration:
+  mqtt_broker:
+    name: MQTT Broker
+    description: MQTT broker connection settings
+  mqtt_broker.host:
+    name: Host
+    description: MQTT broker hostname or IP address
+  mqtt_broker.username:
+    name: Username
+    description: MQTT broker username
+  mqtt_broker.password:
+    name: Password
+    description: MQTT broker password
+
+  wallpad:
+    name: Wallpad
+    description: Wallpad RS485 gateway settings
+  wallpad.enable:
+    name: Enable
+    description: Enable wallpad integration
+  wallpad.manufacturer:
+    name: Manufacturer
+    description: Wallpad manufacturer (e.g. kocom)
+  wallpad.connection_type:
+    name: Connection Type
+    description: RS485 connection method
+  wallpad.socket:
+    name: Socket
+    description: TCP socket connection settings
+  wallpad.socket.host:
+    name: Host
+    description: TCP socket server hostname or IP address
+  wallpad.socket.port:
+    name: Port
+    description: TCP socket server port
+  wallpad.serial:
+    name: Serial
+    description: Serial port connection settings
+  wallpad.serial.port:
+    name: Port
+    description: Serial device path (e.g. /dev/ttyUSB0)
+  wallpad.enabled_devices:
+    name: Enabled Devices
+    description: Select which wallpad devices to expose to Home Assistant
+  wallpad.enabled_devices.light:
+    name: Light
+    description: Enable light control
+  wallpad.enabled_devices.plug:
+    name: Plug
+    description: Enable smart plug control
+  wallpad.enabled_devices.thermostat:
+    name: Thermostat
+    description: Enable thermostat control
+  wallpad.enabled_devices.fan:
+    name: Fan
+    description: Enable fan control
+  wallpad.enabled_devices.gas:
+    name: Gas
+    description: Enable gas valve sensor
+  wallpad.enabled_devices.elevator:
+    name: Elevator
+    description: Enable elevator call button
+
+  advanced:
+    name: Advanced
+    description: Advanced control settings
+  advanced.init_temp:
+    name: Initial Temperature
+    description: Default thermostat temperature on startup (°C)
+  advanced.scan_interval:
+    name: Scan Interval
+    description: Device state polling interval in seconds
+  advanced.packet_delay:
+    name: Packet Delay
+    description: Delay between RS485 packet transmissions in seconds
+  advanced.default_speed:
+    name: Default Speed
+    description: Default ventilator fan speed (low/medium/high)
+  advanced.loglevel:
+    name: Log Level
+    description: Logging verbosity (debug, info, warn, error, critical)
+
+  kocom_light_size:
+    name: Light Count per Room
+    description: Number of light switches in each room
+  kocom_plug_size:
+    name: Plug Count per Room
+    description: Number of smart plugs in each room
+  kocom_room:
+    name: Room List
+    description: List of all rooms in the home
+  kocom_room_thermostat:
+    name: Thermostat Rooms
+    description: Rooms that have a thermostat installed
+
+  ventilator:
+    name: Ventilator
+    description: Heat recovery ventilator (HRV) settings
+  ventilator.enable:
+    name: Enable
+    description: Enable ventilator integration
+  ventilator.manufacturer:
+    name: Manufacturer
+    description: Ventilator manufacturer (e.g. grex)
+  ventilator.connection_type:
+    name: Connection Type
+    description: RS485 connection method
+  ventilator.socket:
+    name: Socket
+    description: TCP socket connection settings
+  ventilator.socket.host:
+    name: Host
+    description: TCP socket server hostname or IP address
+  ventilator.socket.port:
+    name: Port
+    description: TCP socket server port
+  ventilator.serial:
+    name: Serial
+    description: Serial port connection settings
+  ventilator.serial.controller_port:
+    name: Controller Port
+    description: Serial device path for the RS485 controller
+  ventilator.serial.ventilator_port:
+    name: Ventilator Port
+    description: Serial device path for the ventilator unit
+  ventilator.default_speed:
+    name: Default Speed
+    description: Default fan speed on startup (low/medium/high)

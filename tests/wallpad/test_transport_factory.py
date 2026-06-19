@@ -12,48 +12,48 @@ from wallpad.transport.serial import SerialAdapter
 from wallpad.transport.socket import SocketAdapter
 
 SERIAL_OPTIONS_JSON = {
-    "RS485": {"type": "Serial"},
-    "Serial": {"Port": "/dev/ttyUSB0"},
-    "SerialDevice": {"port1": "kocom"},
-    "Ventilator": {
-        "enable": True,
-        "Manufacturer": "Grex",
-        "Connection Type": "Serial",
-        "Serial": {"Ventilator Port": "/dev/ttyUSB1", "Controller Port": "/dev/ttyUSB2"},
-    },
-    "MQTT": {
-        "server": "192.168.1.50",
+    "mqtt_broker": {
+        "host": "192.168.1.50",
         "username": "my_user",
         "password": "my_pass",
     },
-    "Wallpad": {
+    "wallpad": {
         "enable": True,
-        "Connection Type": "Serial",
-        "light": True,
-        "fan": False,
-        "thermostat": True,
-        "plug": False,
-        "gas": True,
-        "elevator": False,
+        "connection_type": "Serial",
+        "serial": {"port": "/dev/ttyUSB0"},
+        "enabled_devices": {
+            "light": True,
+            "fan": False,
+            "thermostat": True,
+            "plug": False,
+            "gas": True,
+            "elevator": False,
+        },
+    },
+    "ventilator": {
+        "enable": True,
+        "manufacturer": "Grex",
+        "connection_type": "Serial",
+        "serial": {"ventilator_port": "/dev/ttyUSB1", "controller_port": "/dev/ttyUSB2"},
     },
 }
 
 SOCKET_OPTIONS_JSON = {
-    "RS485": {"type": "Socket"},
-    "Socket": {"Server": "192.168.1.200", "Port": 8899},
-    "SocketDevice": {"device": "kocom"},
-    "MQTT": {
-        "server": "192.168.1.100",
+    "mqtt_broker": {
+        "host": "192.168.1.100",
     },
-    "Wallpad": {
+    "wallpad": {
         "enable": True,
-        "Connection Type": "Socket",
-        "light": False,
-        "fan": True,
-        "thermostat": False,
-        "plug": True,
-        "gas": False,
-        "elevator": True,
+        "connection_type": "Socket",
+        "socket": {"host": "192.168.1.200", "port": 8899},
+        "enabled_devices": {
+            "light": False,
+            "fan": True,
+            "thermostat": False,
+            "plug": True,
+            "gas": False,
+            "elevator": True,
+        },
     },
 }
 
@@ -118,8 +118,8 @@ def test_create_ventilator_adapters_serial(tmp_path, mock_serial):
 def test_create_wallpad_adapter_invalid_type(tmp_path):
     """잘못된 wallpad 연결 타입 설정 시 ValueError를 발생하는지 검증합니다."""
     invalid_options = SOCKET_OPTIONS_JSON.copy()
-    invalid_options["Wallpad"] = invalid_options["Wallpad"].copy()
-    invalid_options["Wallpad"]["Connection Type"] = "unknown"
+    invalid_options["wallpad"] = invalid_options["wallpad"].copy()
+    invalid_options["wallpad"]["connection_type"] = "unknown"
 
     options_file = tmp_path / "options.json"
     options_file.write_text(json.dumps(invalid_options))

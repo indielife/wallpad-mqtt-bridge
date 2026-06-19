@@ -31,23 +31,24 @@ map:
 # ==============================================================================
 # 사용자 설정 기본값 (options)
 # HA UI에서 사용자가 변경할 수 있는 설정의 기본값입니다.
+# UI 표시 텍스트는 translations/{lang}.yaml 에서 정의합니다.
 # ==============================================================================
 options:
-  MQTT Broker:
-    Server: ""
-    Username: ""
-    Password: ""
+  mqtt_broker:
+    host: ""
+    username: ""
+    password: ""
 
-  Wallpad:
+  wallpad:
     enable: true
-    Manufacturer: kocom
-    Connection Type: Socket
-    Socket:
-      Server: ""
-      Port: 8899
-    Serial:
-      Port: "/dev/ttyUSB0"
-    Enabled Devices:
+    manufacturer: kocom
+    connection_type: Socket
+    socket:
+      host: ""
+      port: 8899
+    serial:
+      port: "/dev/ttyUSB0"
+    enabled_devices:
       light: true
       plug: false
       thermostat: false
@@ -55,15 +56,15 @@ options:
       gas: false
       elevator: false
 
-  Advanced:
-    INIT_TEMP: 22          # 초기 온도 설정값 (°C)
-    SCAN_INTERVAL: 300     # 상태 조회 주기 (초)
-    PACKET_DELAY: 0.8      # 패킷 전송 간격 (초)
-    DEFAULT_SPEED: low     # 환풍기 기본 풍속
-    LOGLEVEL: info         # 로그 레벨 (debug, info, warn, error, critical)
+  advanced:
+    init_temp: 22
+    scan_interval: 300
+    packet_delay: 0.8
+    default_speed: low
+    loglevel: info
 
   # 방별 조명 개수 설정
-  KOCOM_LIGHT_SIZE:
+  kocom_light_size:
     - name: livingroom
       number: 3
     - name: bedroom
@@ -76,7 +77,7 @@ options:
       number: 3
 
   # 방별 콘센트 개수 설정
-  KOCOM_PLUG_SIZE:
+  kocom_plug_size:
     - name: livingroom
       number: 3
     - name: bedroom
@@ -89,7 +90,7 @@ options:
       number: 3
 
   # 전체 방 목록
-  KOCOM_ROOM:
+  kocom_room:
     - livingroom
     - bedroom
     - room1
@@ -97,24 +98,24 @@ options:
     - kitchen
 
   # 온도조절기가 설치된 방 목록
-  KOCOM_ROOM_THERMOSTAT:
+  kocom_room_thermostat:
     - livingroom
     - bedroom
     - room1
     - room2
 
   # 환기장치(전열교환기) 설정
-  Ventilator:
+  ventilator:
     enable: false
-    Manufacturer: none
-    Connection Type: Serial
-    Socket:
-      Server: ""
-      Port: 8899
-    Serial:
-      Controller Port: "/dev/ttyUSB1"
-      Ventilator Port: "/dev/ttyUSB2"
-    Default Speed: low
+    manufacturer: none
+    connection_type: Serial
+    socket:
+      host: ""
+      port: 8899
+    serial:
+      controller_port: "/dev/ttyUSB1"
+      ventilator_port: "/dev/ttyUSB2"
+    default_speed: low
 
 # ==============================================================================
 # 설정 스키마 (schema)
@@ -122,21 +123,21 @@ options:
 # '?' 접미사는 선택 입력 필드를 의미합니다.
 # ==============================================================================
 schema:
-  MQTT Broker:
-    Server: str
-    Username: str
-    Password: password
+  mqtt_broker:
+    host: str
+    username: str
+    password: password
 
-  Wallpad:
+  wallpad:
     enable: bool
-    Manufacturer: str
-    Connection Type: "list(Socket|Serial)"
-    Socket:
-      Server: str?
-      Port: int?
-    Serial:
-      Port: str?
-    Enabled Devices:
+    manufacturer: str
+    connection_type: "list(Socket|Serial)"
+    socket:
+      host: str?
+      port: int?
+    serial:
+      port: str?
+    enabled_devices:
       light: bool
       plug: bool
       thermostat: bool
@@ -144,35 +145,35 @@ schema:
       gas: bool
       elevator: bool
 
-  Advanced:
-    INIT_TEMP: "int(10,30)"
-    SCAN_INTERVAL: "int(100,1000)"
-    PACKET_DELAY: float
-    DEFAULT_SPEED: str
-    LOGLEVEL: str
+  advanced:
+    init_temp: "int(10,30)"
+    scan_interval: "int(100,1000)"
+    packet_delay: float
+    default_speed: str
+    loglevel: str
 
-  KOCOM_LIGHT_SIZE:
+  kocom_light_size:
     - name: str?
       number: int?
 
-  KOCOM_PLUG_SIZE:
+  kocom_plug_size:
     - name: str?
       number: int?
 
-  KOCOM_ROOM:
+  kocom_room:
     - str?
 
-  KOCOM_ROOM_THERMOSTAT:
+  kocom_room_thermostat:
     - str?
 
-  Ventilator:
+  ventilator:
     enable: bool
-    Manufacturer: str
-    Connection Type: "list(Socket|Serial)"
-    Socket:
-      Server: str?
-      Port: int?
-    Serial:
-      Controller Port: str?
-      Ventilator Port: str?
-    Default Speed: str
+    manufacturer: str
+    connection_type: "list(Socket|Serial)"
+    socket:
+      host: str?
+      port: int?
+    serial:
+      controller_port: str?
+      ventilator_port: str?
+    default_speed: str
