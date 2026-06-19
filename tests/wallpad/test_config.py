@@ -5,18 +5,18 @@ from unittest.mock import mock_open, patch
 from wallpad.config import AppConfig
 
 SAMPLE_OPTIONS_JSON = {
-    "MQTT Broker": {
-        "Server": "192.168.1.200",
-        "Username": "test_user",
-        "Password": "test_password",
+    "mqtt_broker": {
+        "host": "192.168.1.200",
+        "username": "test_user",
+        "password": "test_password",
     },
-    "Wallpad": {
+    "wallpad": {
         "enable": True,
-        "Manufacturer": "kocom",
-        "Connection Type": "Serial",
-        "Socket": {"Server": "192.168.1.100", "Port": 8899},
-        "Serial": {"Port": "/dev/ttyUSB0"},
-        "Enabled Devices": {
+        "manufacturer": "kocom",
+        "connection_type": "Serial",
+        "socket": {"host": "192.168.1.100", "port": 8899},
+        "serial": {"port": "/dev/ttyUSB0"},
+        "enabled_devices": {
             "light": True,
             "plug": False,
             "thermostat": True,
@@ -25,24 +25,24 @@ SAMPLE_OPTIONS_JSON = {
             "elevator": False,
         },
     },
-    "Advanced": {
-        "INIT_TEMP": 24,
-        "SCAN_INTERVAL": 500,
-        "PACKET_DELAY": 1.5,
-        "DEFAULT_SPEED": "high",
-        "LOGLEVEL": "debug",
+    "advanced": {
+        "init_temp": 24,
+        "scan_interval": 500,
+        "packet_delay": 1.5,
+        "default_speed": "high",
+        "loglevel": "debug",
     },
-    "KOCOM_LIGHT_SIZE": [{"name": "livingroom", "number": 3}, {"name": "bedroom", "number": 2}],
-    "KOCOM_PLUG_SIZE": [{"name": "livingroom", "number": 2}],
-    "KOCOM_ROOM": ["livingroom", "bedroom"],
-    "KOCOM_ROOM_THERMOSTAT": ["livingroom"],
-    "Ventilator": {
+    "kocom_light_size": [{"name": "livingroom", "number": 3}, {"name": "bedroom", "number": 2}],
+    "kocom_plug_size": [{"name": "livingroom", "number": 2}],
+    "kocom_room": ["livingroom", "bedroom"],
+    "kocom_room_thermostat": ["livingroom"],
+    "ventilator": {
         "enable": False,
-        "Manufacturer": "Grex",
-        "Connection Type": "Serial",
-        "Serial": {"Ventilator Port": "/dev/ttyUSB1", "Controller Port": "/dev/ttyUSB2"},
-        "Socket": {"Server": "192.168.1.101", "Port": 8899},
-        "Default Speed": "low",
+        "manufacturer": "Grex",
+        "connection_type": "Serial",
+        "serial": {"ventilator_port": "/dev/ttyUSB1", "controller_port": "/dev/ttyUSB2"},
+        "socket": {"host": "192.168.1.101", "port": 8899},
+        "default_speed": "low",
     },
 }
 

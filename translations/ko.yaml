@@ -1,0 +1,128 @@
+configuration:
+  mqtt_broker:
+    name: MQTT 브로커
+    description: MQTT 브로커 연결 설정
+  mqtt_broker.host:
+    name: 호스트
+    description: MQTT 브로커 호스트명 또는 IP 주소
+  mqtt_broker.username:
+    name: 사용자 이름
+    description: MQTT 브로커 사용자 이름
+  mqtt_broker.password:
+    name: 비밀번호
+    description: MQTT 브로커 비밀번호
+
+  wallpad:
+    name: 월패드
+    description: 월패드 RS485 게이트웨이 설정
+  wallpad.enable:
+    name: 활성화
+    description: 월패드 연동 활성화
+  wallpad.manufacturer:
+    name: 제조사
+    description: "월패드 제조사 (예: kocom)"
+  wallpad.connection_type:
+    name: 연결 방식
+    description: RS485 연결 방법
+  wallpad.socket:
+    name: 소켓
+    description: TCP 소켓 연결 설정
+  wallpad.socket.host:
+    name: 호스트
+    description: TCP 소켓 서버 호스트명 또는 IP 주소
+  wallpad.socket.port:
+    name: 포트
+    description: TCP 소켓 서버 포트
+  wallpad.serial:
+    name: 시리얼
+    description: 시리얼 포트 연결 설정
+  wallpad.serial.port:
+    name: 포트
+    description: "시리얼 디바이스 경로 (예: /dev/ttyUSB0)"
+  wallpad.enabled_devices:
+    name: 활성화 기기
+    description: Home Assistant에 노출할 월패드 기기를 선택합니다
+  wallpad.enabled_devices.light:
+    name: 조명
+    description: 조명 제어 활성화
+  wallpad.enabled_devices.plug:
+    name: 콘센트
+    description: 스마트 콘센트 제어 활성화
+  wallpad.enabled_devices.thermostat:
+    name: 난방기
+    description: 난방기 제어 활성화
+  wallpad.enabled_devices.fan:
+    name: 팬
+    description: 팬 제어 활성화
+  wallpad.enabled_devices.gas:
+    name: 가스
+    description: 가스 밸브 센서 활성화
+  wallpad.enabled_devices.elevator:
+    name: 엘리베이터
+    description: 엘리베이터 호출 버튼 활성화
+
+  advanced:
+    name: 고급 설정
+    description: 세부 제어 설정
+  advanced.init_temp:
+    name: 초기 온도
+    description: 시작 시 기본 난방기 온도 설정값 (°C)
+  advanced.scan_interval:
+    name: 상태 조회 주기
+    description: 기기 상태 조회 간격 (초)
+  advanced.packet_delay:
+    name: 패킷 전송 간격
+    description: RS485 패킷 전송 간격 (초)
+  advanced.default_speed:
+    name: 기본 풍속
+    description: 기본 환풍기 풍속 (low/medium/high)
+  advanced.loglevel:
+    name: 로그 레벨
+    description: 로그 출력 수준 (debug, info, warn, error, critical)
+
+  kocom_light_size:
+    name: 방별 조명 개수
+    description: 각 방의 조명 스위치 개수
+  kocom_plug_size:
+    name: 방별 콘센트 개수
+    description: 각 방의 스마트 콘센트 개수
+  kocom_room:
+    name: 방 목록
+    description: 집 전체 방 목록
+  kocom_room_thermostat:
+    name: 난방기 설치 방
+    description: 난방기가 설치된 방 목록
+
+  ventilator:
+    name: 전열교환기
+    description: 전열교환기(환기장치) 설정
+  ventilator.enable:
+    name: 활성화
+    description: 전열교환기 연동 활성화
+  ventilator.manufacturer:
+    name: 제조사
+    description: "전열교환기 제조사 (예: grex)"
+  ventilator.connection_type:
+    name: 연결 방식
+    description: RS485 연결 방법
+  ventilator.socket:
+    name: 소켓
+    description: TCP 소켓 연결 설정
+  ventilator.socket.host:
+    name: 호스트
+    description: TCP 소켓 서버 호스트명 또는 IP 주소
+  ventilator.socket.port:
+    name: 포트
+    description: TCP 소켓 서버 포트
+  ventilator.serial:
+    name: 시리얼
+    description: 시리얼 포트 연결 설정
+  ventilator.serial.controller_port:
+    name: 컨트롤러 포트
+    description: RS485 컨트롤러용 시리얼 디바이스 경로
+  ventilator.serial.ventilator_port:
+    name: 환기장치 포트
+    description: 전열교환기 본체용 시리얼 디바이스 경로
+  ventilator.default_speed:
+    name: 기본 풍속
+    description: 시작 시 기본 풍속 (low/medium/high)
