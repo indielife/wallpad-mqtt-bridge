@@ -1,9 +1,11 @@
 ---
 name: Feature
-about: Propose a new feature for KOCOM Wallpad HA Addon
+about: Propose a new feature for wallpad-mqtt-bridge
 title: "[feat] "
 labels: ["type:feat"]
 ---
+
+<!-- [GUIDELINE] 이슈 생성 시 assignee를 지정하지 말 것. -->
 
 > [!IMPORTANT]
 > **작업 시작 전 필수 가이드라인**:
@@ -40,9 +42,9 @@ labels: ["type:feat"]
 
 ## Done when
 
-- [ ] Behavior verified end-to-end
-- [ ] Unit tests added (`pytest`)
-- [ ] Documentation updated
+- [ ] end-to-end 동작 검증 완료
+- [ ] 단위 테스트 추가 (`pytest`)
+- [ ] 문서 업데이트
 - [ ] `ruff check` / `ruff format` clean
 
 ## Sequence position

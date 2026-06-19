@@ -5,6 +5,8 @@ title: "[fix] "
 labels: ["type:fix"]
 ---
 
+<!-- [GUIDELINE] 이슈 생성 시 assignee를 지정하지 말 것. -->
+
 > [!IMPORTANT]
 > **작업 시작 전 필수 가이드라인**:
 > 1. **계획 수립 전 협의**: 상세 구현 계획(Implementation Plan)을 작성하기 전에, 먼저 사용자(USER)와 구현 방향 및 세부 접근 방식에 대해 대화를 나누고 얼라인을 맞추세요.
@@ -31,9 +33,8 @@ labels: ["type:fix"]
 
 ### Environment
 
-- HA version:
-- Supervisor version:
-- Addon version:
+- wallpad-mqtt-bridge version:
+- 실행 환경: (Docker / native)
 - Commit:
 
 ### Logs / screenshots
@@ -61,13 +62,13 @@ labels: ["type:fix"]
 
 ## Done when
 
-- [ ] Reproduction no longer fails
-- [ ] Regression test added (`pytest`)
+- [ ] 버그 재현 불가 확인
+- [ ] 회귀 테스트 추가 (`pytest`)
 - [ ] `ruff check` / `ruff format` clean
 
 ## Sequence position
 
-<!-- 선택 사항 -->
+<!-- 선택 사항. 이 이슈가 다른 이슈에 의존하거나 다른 이슈를 차단할 때만 사용. -->
 
 - Depends on:
 - Blocks:
