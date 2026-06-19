@@ -217,7 +217,11 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Developments & Local
+# AI Tools
 .cursor/
 .cursorrules/
+.cursorrules
+CLAUDE.md
+
+# Developments & Local
 scripts/options.json
