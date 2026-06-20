@@ -72,8 +72,9 @@ def test_create_wallpad_transport_serial(tmp_path):
     assert transport._transport.port == "/dev/ttyUSB0"
 
 
-def test_create_wallpad_transport_socket(tmp_path):
+def test_create_wallpad_transport_socket(tmp_path, monkeypatch):
     """Socket 설정 시 ReconnectingTransport(SocketTransport)를 반환하는지 검증합니다."""
+    monkeypatch.delenv("WALLPAD_HOST", raising=False)
     options_file = tmp_path / "options.json"
     options_file.write_text(json.dumps(SOCKET_OPTIONS_JSON))
     config = AppConfig(options_path=str(options_file))
