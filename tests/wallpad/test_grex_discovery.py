@@ -45,9 +45,9 @@ def grex_factory():
 
             grex = Grex(
                 mock_config,
+                mock_mqtt_client,
                 mock_cont_adapter,
                 mock_vent_adapter,
-                mqtt_client=mock_mqtt_client,
             )
             return grex, mock_mqtt_instance
 

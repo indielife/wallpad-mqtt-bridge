@@ -25,12 +25,12 @@ class Grex:
     def __init__(
         self,
         config: AppConfig,
+        mqtt_client: MqttClient,
         controller_adapter: ConnectionAdapter,
         ventilator_adapter: ConnectionAdapter,
-        mqtt_client: MqttClient,
     ):
         self.config = config
-        self._name = "grex"
+        self.name = "grex"
         self.controller_adapter = controller_adapter
         self.ventilator_adapter = ventilator_adapter
         self.mqtt_client = mqtt_client
@@ -50,11 +50,12 @@ class Grex:
         self.mqtt_client.register_message_callback(self.on_message)
         self.packet_builder = GrexPacketBuilder()
         self.device = GrexVentilator(
-            name_prefix=self._name,
+            name_prefix=self.name,
             sw_version=self.config.sw_version,
             packet_builder=self.packet_builder,
         )
 
+    async def start(self):
         _t4 = threading.Thread(
             target=self.get_serial,
             args=(

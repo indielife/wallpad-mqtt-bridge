@@ -55,7 +55,7 @@ def setup_logging(path: str, level: str = "info"):
     )
 
 
-def run_wallpad(config: AppConfig, mqtt_client: MqttClient) -> bool:
+async def run_wallpad(config: AppConfig, mqtt_client: MqttClient) -> bool:
     """Wallpad 연결 및 Kocom 초기화를 수행합니다. 연결 실패 시 False를 반환합니다."""
     if not config.wallpad_enabled:
         return True
@@ -63,14 +63,15 @@ def run_wallpad(config: AppConfig, mqtt_client: MqttClient) -> bool:
     try:
         logger.info("Initializing Wallpad %s", config.wallpad_manufacturer)
         transport = create_wallpad_adapter(config)
-        Kocom(config, transport, config.wallpad_manufacturer, 42, mqtt_client)
+        kocom = Kocom(config, mqtt_client, transport)
+        await kocom.start()
         return True
     except Exception as e:
         logger.error("Failed to initialize Wallpad %s: %r", config.wallpad_manufacturer, e)
         return False
 
 
-def run_ventilator(config: AppConfig, mqtt_client: MqttClient) -> bool:
+async def run_ventilator(config: AppConfig, mqtt_client: MqttClient) -> bool:
     """Ventilator 연결 및 Grex 초기화를 수행합니다."""
     if not config.ventilator_enabled:
         return True
@@ -86,7 +87,8 @@ def run_ventilator(config: AppConfig, mqtt_client: MqttClient) -> bool:
     try:
         logger.info("Initializing Grex (Serial)")
         ctrl_transport, unit_transport = create_ventilator_adapters(config)
-        Grex(config, ctrl_transport, unit_transport, mqtt_client)
+        grex = Grex(config, mqtt_client, ctrl_transport, unit_transport)
+        await grex.start()
         return True
     except Exception as e:
         logger.error("Failed to initialize Grex: %r", e)
@@ -111,8 +113,8 @@ async def main():
     mqtt_client = MqttClient(config.mqtt_config)
     mqtt_client.connect()
 
-    run_wallpad(config, mqtt_client)
-    run_ventilator(config, mqtt_client)
+    await run_wallpad(config, mqtt_client)
+    await run_ventilator(config, mqtt_client)
 
 
 if __name__ == "__main__":

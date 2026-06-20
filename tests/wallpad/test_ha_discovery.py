@@ -18,6 +18,7 @@ def mock_config():
     """테스트용 가짜 AppConfig 설정을 생성하는 픽스처"""
     config = MagicMock()
     config.sw_version = "RS485 Compilation 0.1.0"
+    config.wallpad_manufacturer = "test_name"
 
     # 4. Advanced 세부 제어 설정
     config.init_temp = 22
@@ -81,10 +82,8 @@ def kocom_factory(mock_config):
 
             wallpad = Kocom(
                 mock_config,
+                mock_mqtt_client,
                 mock_adapter,
-                name="test_name",
-                packet_len=10,
-                mqtt_client=mock_mqtt_client,
             )
 
             return wallpad, mock_mqtt_instance

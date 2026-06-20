@@ -50,14 +50,12 @@ class Kocom:
     def __init__(  # noqa: C901
         self,
         config: AppConfig,
-        adapter: ConnectionAdapter,
-        name,
-        packet_len,
         mqtt_client: MqttClient,
+        adapter: ConnectionAdapter,
     ):
         self.config = config
         self.adapter = adapter
-        self._name = name
+        self.name = config.wallpad_manufacturer
         self.mqtt_client = mqtt_client
 
         self.default_speed = config.kocom_default_speed
@@ -87,7 +85,7 @@ class Kocom:
         if self.wp_elevator:
             self.devices.append(
                 Elevator(
-                    name_prefix=self._name,
+                    name_prefix=self.name,
                     sw_version=self.config.sw_version,
                     packet_builder=self.packet_builder,
                 )
@@ -95,7 +93,7 @@ class Kocom:
         if self.wp_gas:
             self.devices.append(
                 Gas(
-                    name_prefix=self._name,
+                    name_prefix=self.name,
                     sw_version=self.config.sw_version,
                     packet_builder=self.packet_builder,
                 )
@@ -103,7 +101,7 @@ class Kocom:
         if self.wp_fan:
             self.devices.append(
                 Fan(
-                    name_prefix=self._name,
+                    name_prefix=self.name,
                     sw_version=self.config.sw_version,
                     packet_builder=self.packet_builder,
                 )
@@ -148,7 +146,7 @@ class Kocom:
                         if sub_device != "scan":
                             self.devices.append(
                                 Light(
-                                    name_prefix=self._name,
+                                    name_prefix=self.name,
                                     room=room,
                                     sub_device=sub_device,
                                     sw_version=self.config.sw_version,
@@ -163,7 +161,7 @@ class Kocom:
                         if sub_device != "scan":
                             self.devices.append(
                                 Plug(
-                                    name_prefix=self._name,
+                                    name_prefix=self.name,
                                     room=room,
                                     sub_device=sub_device,
                                     sw_version=self.config.sw_version,
@@ -175,7 +173,7 @@ class Kocom:
             for room in self.wp_list.get(DEVICE_THERMOSTAT, {}):
                 self.devices.append(
                     Thermostat(
-                        name_prefix=self._name,
+                        name_prefix=self.name,
                         room=room,
                         sw_version=self.config.sw_version,
                         packet_builder=self.packet_builder,
@@ -185,7 +183,9 @@ class Kocom:
         self.mqtt_client.register_connect_callback(self.on_connect)
         self.mqtt_client.register_message_callback(self.on_message)
 
-        self._t1 = threading.Thread(target=self.get_serial, args=(name, packet_len))
+    async def start(self):
+        packet_len = 42
+        self._t1 = threading.Thread(target=self.get_serial, args=(self.name, packet_len))
         self._t1.start()
         self._t2 = threading.Thread(target=self.scan_list)
         self._t2.start()
@@ -681,9 +681,9 @@ class Kocom:
             return
 
         if cmd == "상태":
-            logger.info("[To %s]%s/%s/%s -> %s", self._name, device, room, target, value)
+            logger.info("[To %s]%s/%s/%s -> %s", self.name, device, room, target, value)
         elif cmd == "조회":
-            logger.info("[To %s]%s/%s -> 조회", self._name, device, room)
+            logger.info("[To %s]%s/%s -> 조회", self.name, device, room)
 
         packet = (
             self.make_packet(device, room, "상태", target, value)
@@ -696,11 +696,11 @@ class Kocom:
 
         v = self.value_packet(self.parse_packet(packet))
 
-        logger.debug("[To %s]%s", self._name, packet)
+        logger.debug("[To %s]%s", self.name, packet)
         if v["command"] == "조회" and v["src_device"] == DEVICE_WALLPAD:
             logger.debug(
                 "[To %s]%s(%s) %s(%s) -> %s(%s)",
-                self._name,
+                self.name,
                 v["type"],
                 v["command"],
                 v["src_device"],
@@ -711,7 +711,7 @@ class Kocom:
         else:
             logger.debug(
                 "[To %s]%s(%s) %s(%s) -> %s(%s) = %s",
-                self._name,
+                self.name,
                 v["type"],
                 v["command"],
                 v["src_device"],
