@@ -1,7 +1,7 @@
 import time
 from typing import Any
 
-from wallpad.kocom.constants import (
+from wallpad.protocol.kocom.constants import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
     DEVICE_GAS,

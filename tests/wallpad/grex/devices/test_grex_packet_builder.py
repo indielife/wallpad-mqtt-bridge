@@ -1,4 +1,4 @@
-from wallpad.grex.devices.grex_packet_builder import GrexPacketBuilder
+from wallpad.protocol.grex.packet_builder import GrexPacketBuilder
 
 
 def test_grex_packet_builder_build_control():

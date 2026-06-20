@@ -4,14 +4,15 @@ import logging
 from typing import ClassVar
 
 from wallpad.config import AppConfig
-from wallpad.grex.constants import DEVICE_FAN, MODE, SPEED
-from wallpad.grex.devices import GrexPacketBuilder, GrexVentilator
+from wallpad.grex.devices import GrexVentilator
 from wallpad.mqtt import (
     HA_FAN,
     HA_PREFIX,
     HA_SENSOR,
     MqttClient,
 )
+from wallpad.protocol.grex.constants import DEVICE_FAN, MODE, SPEED
+from wallpad.protocol.grex.packet_builder import GrexPacketBuilder
 from wallpad.transport import BaseTransport
 
 logger = logging.getLogger(__name__)
