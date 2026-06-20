@@ -1,21 +1,21 @@
 {
-  "MQTT Broker": {
-    "Server": "192.168.0.x",
-    "Username": "mqtt_user",
-    "Password": "mqtt_password"
+  "mqtt_broker": {
+    "host": "192.168.0.x",
+    "username": "mqtt_user",
+    "password": "mqtt_password"
   },
-  "Wallpad": {
+  "wallpad": {
     "enable": true,
-    "Manufacturer": "kocom",
-    "Connection Type": "Socket",
-    "Socket": {
-      "Server": "192.168.0.x",
-      "Port": 8899
+    "manufacturer": "kocom",
+    "connection_type": "Socket",
+    "socket": {
+      "host": "192.168.0.x",
+      "port": 8899
     },
-    "Serial": {
-      "Port": "/dev/ttyUSB0"
+    "serial": {
+      "port": "/dev/ttyUSB0"
     },
-    "Enabled Devices": {
+    "enabled_devices": {
       "light": true,
       "plug": false,
       "thermostat": false,
@@ -24,41 +24,41 @@
       "elevator": false
     }
   },
-  "Advanced": {
-    "INIT_TEMP": 22,
-    "SCAN_INTERVAL": 300,
-    "PACKET_DELAY": 0.8,
-    "DEFAULT_SPEED": "low",
-    "LOGLEVEL": "debug"
+  "advanced": {
+    "init_temp": 22,
+    "scan_interval": 300,
+    "packet_delay": 0.8,
+    "default_speed": "low",
+    "loglevel": "info"
   },
-  "KOCOM_LIGHT_SIZE": [
+  "kocom_light_size": [
     {"name": "livingroom", "number": 3},
     {"name": "bedroom", "number": 2},
     {"name": "room1", "number": 2},
     {"name": "room2", "number": 2},
     {"name": "kitchen", "number": 3}
   ],
-  "KOCOM_PLUG_SIZE": [
+  "kocom_plug_size": [
     {"name": "livingroom", "number": 3},
     {"name": "bedroom", "number": 2},
     {"name": "room1", "number": 2},
     {"name": "room2", "number": 2},
     {"name": "kitchen", "number": 3}
   ],
-  "KOCOM_ROOM": ["livingroom", "bedroom", "room1", "room2", "kitchen"],
-  "KOCOM_ROOM_THERMOSTAT": ["livingroom", "bedroom", "room1", "room2"],
-  "Ventilator": {
+  "kocom_room": ["livingroom", "bedroom", "room1", "room2", "kitchen"],
+  "kocom_room_thermostat": ["livingroom", "bedroom", "room1", "room2"],
+  "ventilator": {
     "enable": false,
-    "Manufacturer": "none",
-    "Connection Type": "Serial",
-    "Socket": {
-      "Server": "",
-      "Port": 8899
+    "manufacturer": "none",
+    "connection_type": "Serial",
+    "socket": {
+      "host": "",
+      "port": 8899
     },
-    "Serial": {
-      "Controller Port": "/dev/ttyUSB1",
-      "Ventilator Port": "/dev/ttyUSB2"
+    "serial": {
+      "controller_port": "/dev/ttyUSB1",
+      "ventilator_port": "/dev/ttyUSB2"
     },
-    "Default Speed": "low"
+    "default_speed": "low"
   }
 }
