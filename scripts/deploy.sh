@@ -6,6 +6,7 @@ fi
 
 rsync -avz \
   --exclude '/.*' \
+  --exclude 'CLAUDE.md' \
   --exclude '/docs/' \
   --exclude '/scripts/' \
   --exclude '/tests/' \
