@@ -1,9 +1,6 @@
-import asyncio
-
-import serial
 import serial_asyncio_fast as serial_asyncio
 
-from .base import BaseTransport, ConnectionAdapter
+from .base import BaseTransport
 
 
 class SerialTransport(BaseTransport):
@@ -27,25 +24,3 @@ class SerialTransport(BaseTransport):
 
     async def close(self):
         self._writer.close()
-
-
-class SerialAdapter(ConnectionAdapter):
-    """ConnectionAdapter implementation for serial communication."""
-
-    def __init__(self, port: str, baud_rate: int):
-        try:
-            ser = serial.Serial(port, baud_rate, timeout=None)
-            ser.bytesize = 8
-            ser.stopbits = 1
-            ser.autoOpen = False
-            self._connection = ser
-        except Exception as e:
-            raise ConnectionError(f"Failed to connect to serial port: {port}") from e
-
-    def read(self) -> bytes:
-        if not self._connection.readable():
-            return b""
-        return self._connection.read()
-
-    def write(self, data: bytes) -> int:
-        return self._connection.write(data)

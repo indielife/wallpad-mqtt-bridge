@@ -1,5 +1,5 @@
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -46,49 +46,38 @@ def kocom_factory(mock_config):
     Kocom 인스턴스와 mock_mqtt_instance를 생성해주는 팩토리 픽스처.
     활성화할 디바이스 이름을 전달받아 해당 디바이스만 True로 설정합니다.
     """
-    with (
-        patch("wallpad.kocom.kocom.threading.Thread"),
-        patch("wallpad.kocom.kocom.Kocom.get_serial"),
-        patch("wallpad.kocom.kocom.Kocom.scan_list"),
-    ):
-        mock_mqtt_instance = MagicMock()
-        mock_mqtt_client = MagicMock()
-        mock_mqtt_client.client = mock_mqtt_instance
-        mock_mqtt_client.publish.side_effect = mock_mqtt_instance.publish
-        mock_mqtt_client.publish_json.side_effect = lambda topic, payload, retain=True: (
-            mock_mqtt_instance.publish(
-                topic, json.dumps(payload, ensure_ascii=False), retain=retain
-            )
+    mock_mqtt_instance = MagicMock()
+    mock_mqtt_client = MagicMock()
+    mock_mqtt_client.client = mock_mqtt_instance
+    mock_mqtt_client.publish.side_effect = mock_mqtt_instance.publish
+    mock_mqtt_client.publish_json.side_effect = lambda topic, payload, retain=True: (
+        mock_mqtt_instance.publish(topic, json.dumps(payload, ensure_ascii=False), retain=retain)
+    )
+    mock_mqtt_client.subscribe.side_effect = mock_mqtt_instance.subscribe
+
+    def _create(active_device: str):
+        mock_config.mqtt_config = {
+            "server": "test",
+            "username": "",
+            "password": "",
+        }
+
+        mock_config.wp_light = active_device == "light"
+        mock_config.wp_fan = active_device == "fan"
+        mock_config.wp_plug = active_device == "plug"
+        mock_config.wp_gas = active_device == "gas"
+        mock_config.wp_elevator = active_device == "elevator"
+        mock_config.wp_thermostat = active_device == "thermostat"
+
+        wallpad = Kocom(
+            mock_config,
+            mock_mqtt_client,
+            MagicMock(),
         )
-        mock_mqtt_client.subscribe.side_effect = mock_mqtt_instance.subscribe
 
-        def _create(active_device: str):
-            # 1. MQTT 설정
-            mock_config.mqtt_config = {
-                "server": "test",
-                "username": "",
-                "password": "",
-            }
+        return wallpad, mock_mqtt_instance
 
-            # 3. Wallpad 활성화 정보
-            mock_config.wp_light = active_device == "light"
-            mock_config.wp_fan = active_device == "fan"
-            mock_config.wp_plug = active_device == "plug"
-            mock_config.wp_gas = active_device == "gas"
-            mock_config.wp_elevator = active_device == "elevator"
-            mock_config.wp_thermostat = active_device == "thermostat"
-
-            mock_adapter = MagicMock()
-
-            wallpad = Kocom(
-                mock_config,
-                mock_mqtt_client,
-                mock_adapter,
-            )
-
-            return wallpad, mock_mqtt_instance
-
-        yield _create
+    yield _create
 
 
 @pytest.mark.parametrize(

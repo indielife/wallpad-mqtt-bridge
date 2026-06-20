@@ -1,5 +1,5 @@
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -17,41 +17,29 @@ def grex_factory():
     """
     Grex 인스턴스와 mock_mqtt_instance를 생성해주는 팩토리 픽스처.
     """
-    with patch("wallpad.grex.grex.threading.Thread"):
-        mock_mqtt_instance = MagicMock()
-        mock_mqtt_client = MagicMock()
-        mock_mqtt_client.client = mock_mqtt_instance
-        mock_mqtt_client.publish.side_effect = mock_mqtt_instance.publish
-        mock_mqtt_client.publish_json.side_effect = lambda topic, payload, retain=True: (
-            mock_mqtt_instance.publish(
-                topic, json.dumps(payload, ensure_ascii=False), retain=retain
-            )
+    mock_mqtt_instance = MagicMock()
+    mock_mqtt_client = MagicMock()
+    mock_mqtt_client.client = mock_mqtt_instance
+    mock_mqtt_client.publish.side_effect = mock_mqtt_instance.publish
+    mock_mqtt_client.publish_json.side_effect = lambda topic, payload, retain=True: (
+        mock_mqtt_instance.publish(topic, json.dumps(payload, ensure_ascii=False), retain=retain)
+    )
+    mock_mqtt_client.subscribe.side_effect = mock_mqtt_instance.subscribe
+
+    def _create():
+        mock_config = MagicMock()
+        mock_config.sw_version = "RS485 Compilation 0.1.0"
+        mock_config.ventilator_default_speed = "low"
+
+        grex = Grex(
+            mock_config,
+            mock_mqtt_client,
+            MagicMock(),
+            MagicMock(),
         )
-        mock_mqtt_client.subscribe.side_effect = mock_mqtt_instance.subscribe
+        return grex, mock_mqtt_instance
 
-        def _create():
-            mock_config = MagicMock()
-            mock_config.sw_version = "RS485 Compilation 0.1.0"
-            mock_config.ventilator_default_speed = "low"
-            mock_client = MagicMock()
-            mock_client._mqtt = {
-                "server": "test",
-                "username": "",
-                "password": "",
-            }
-
-            mock_cont_adapter = MagicMock()
-            mock_vent_adapter = MagicMock()
-
-            grex = Grex(
-                mock_config,
-                mock_mqtt_client,
-                mock_cont_adapter,
-                mock_vent_adapter,
-            )
-            return grex, mock_mqtt_instance
-
-        yield _create
+    yield _create
 
 
 @pytest.mark.parametrize(
