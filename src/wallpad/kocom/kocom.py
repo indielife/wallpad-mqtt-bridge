@@ -199,27 +199,26 @@ class Kocom:
         return [self._task_read, self._task_scan]
 
     def on_connect(self, *_):
-        self.publish_ha_discovery(initial=True)
+        self._subscribe_ha_topics()
+        self._publish_ha_discovery()
 
-    def publish_ha_discovery(self, initial=False, remove=False):
-        subscribe_list = []
-        subscribe_list.append(("rs485/bridge/#", 0))
+    def _subscribe_ha_topics(self):
+        subscribe_list = [("wallpad/bridge/#", 0)]
+        for device in self.devices:
+            for topic in device.get_subscribe_topics():
+                subscribe_list.append((topic, 0))
+        self.mqtt_client.subscribe(subscribe_list)
+
+    def _publish_ha_discovery(self, remove=False):
         publish_list = []
-
         self.ha_registry = False
         self.kocom_scan = True
-        ha_topic = False  # 초기화 보장
+        ha_topic = False
 
-        # 분리된 기기(Elevator, Gas, Fan) 객체들의 디스커버리 페이로드 생성
         for device in self.devices:
             for topic, payload in device.get_discovery_payloads(remove=remove):
                 publish_list.append({topic: payload})
                 ha_topic = topic
-            for topic in device.get_subscribe_topics():
-                subscribe_list.append((topic, 0))
-
-        if initial:
-            self.mqtt_client.subscribe(subscribe_list)
 
         for ha in publish_list:
             for topic, payload in ha.items():
@@ -233,7 +232,7 @@ class Kocom:
 
         if (
             "config" in _topic
-            and _topic[0] == "rs485"
+            and _topic[0] == "wallpad"
             and _topic[1] == "bridge"
             and _topic[2] == "config"
         ):
@@ -247,11 +246,11 @@ class Kocom:
                 logger.info("[From HA]Set Loglevel to %s", _payload)
                 return
             elif _topic[3] == "restart":
-                self.publish_ha_discovery()
+                self._publish_ha_discovery()
                 logger.info("[From HA]HomeAssistant Restart")
                 return
             elif _topic[3] == "remove":
-                self.publish_ha_discovery(remove=True)
+                self._publish_ha_discovery(remove=True)
                 logger.info("[From HA]HomeAssistant Remove")
                 return
             elif _topic[3] == "scan":

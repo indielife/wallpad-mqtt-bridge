@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: test_publish_ha_discovery[False-False-elevator-expected_topics0][elevator_publish_payload_switch_wallpad_elevator]
+# name: test_publish_ha_discovery[False-elevator-expected_topics0][elevator_publish_payload_switch_wallpad_elevator]
   dict({
     'cmd_t': 'homeassistant/switch/wallpad_elevator/set',
     'device': dict({
@@ -18,7 +18,7 @@
     'val_tpl': '{{ value_json.elevator }}',
   })
 # ---
-# name: test_publish_ha_discovery[False-False-fan-expected_topics2][fan_publish_payload_fan_wallpad_fan]
+# name: test_publish_ha_discovery[False-fan-expected_topics2][fan_publish_payload_fan_wallpad_fan]
   dict({
     'cmd_t': 'homeassistant/fan/wallpad/mode',
     'device': dict({
@@ -45,7 +45,7 @@
     'uniq_id': 'test_name_wallpad_fan',
   })
 # ---
-# name: test_publish_ha_discovery[False-False-gas-expected_topics1][gas_publish_payload_sensor_wallpad_gas]
+# name: test_publish_ha_discovery[False-gas-expected_topics1][gas_publish_payload_sensor_wallpad_gas]
   dict({
     'device': dict({
       'ids': 'kocom_wallpad',
@@ -61,7 +61,7 @@
     'val_tpl': '{{ value_json.gas }}',
   })
 # ---
-# name: test_publish_ha_discovery[False-False-gas-expected_topics1][gas_publish_payload_switch_wallpad_gas]
+# name: test_publish_ha_discovery[False-gas-expected_topics1][gas_publish_payload_switch_wallpad_gas]
   dict({
     'cmd_t': 'homeassistant/switch/wallpad_gas/set',
     'device': dict({
@@ -80,7 +80,7 @@
     'val_tpl': '{{ value_json.gas }}',
   })
 # ---
-# name: test_publish_ha_discovery[False-False-light-expected_topics3][light_publish_payload_light_room1_light0]
+# name: test_publish_ha_discovery[False-light-expected_topics3][light_publish_payload_light_room1_light0]
   dict({
     'cmd_t': 'homeassistant/light/room1_light0/set',
     'device': dict({
@@ -98,7 +98,7 @@
     'val_tpl': '{{ value_json.light0 }}',
   })
 # ---
-# name: test_publish_ha_discovery[False-False-light-expected_topics3][light_publish_payload_light_room1_light1]
+# name: test_publish_ha_discovery[False-light-expected_topics3][light_publish_payload_light_room1_light1]
   dict({
     'cmd_t': 'homeassistant/light/room1_light1/set',
     'device': dict({
@@ -116,7 +116,7 @@
     'val_tpl': '{{ value_json.light1 }}',
   })
 # ---
-# name: test_publish_ha_discovery[False-False-plug-expected_topics4][plug_publish_payload_switch_room1_plug0]
+# name: test_publish_ha_discovery[False-plug-expected_topics4][plug_publish_payload_switch_room1_plug0]
   dict({
     'cmd_t': 'homeassistant/switch/room1_plug0/set',
     'device': dict({
@@ -135,7 +135,7 @@
     'val_tpl': '{{ value_json.plug0 }}',
   })
 # ---
-# name: test_publish_ha_discovery[False-False-plug-expected_topics4][plug_publish_payload_switch_room1_plug1]
+# name: test_publish_ha_discovery[False-plug-expected_topics4][plug_publish_payload_switch_room1_plug1]
   dict({
     'cmd_t': 'homeassistant/switch/room1_plug1/set',
     'device': dict({
@@ -154,7 +154,7 @@
     'val_tpl': '{{ value_json.plug1 }}',
   })
 # ---
-# name: test_publish_ha_discovery[False-False-thermostat-expected_topics5][thermostat_publish_payload_climate_room1]
+# name: test_publish_ha_discovery[False-thermostat-expected_topics5][thermostat_publish_payload_climate_room1]
   dict({
     'curr_temp_t': 'homeassistant/climate/room1/state',
     'curr_temp_tpl': '{{ value_json.current_temp }}',
@@ -183,29 +183,10 @@
     'uniq_id': 'test_name_room1_thermostat',
   })
 # ---
-# name: test_publish_ha_discovery[True-False-elevator-expected_topics0][elevator_publish_payload_switch_wallpad_elevator]
-  dict({
-    'cmd_t': 'homeassistant/switch/wallpad_elevator/set',
-    'device': dict({
-      'ids': 'kocom_wallpad',
-      'mdl': 'Wallpad',
-      'mf': 'KOCOM',
-      'name': 'Kocom wallpad',
-      'sw': 'RS485 Compilation 0.1.0',
-    }),
-    'ic': 'mdi:elevator',
-    'name': 'test_name_wallpad_elevator',
-    'pl_off': 'off',
-    'pl_on': 'on',
-    'stat_t': 'homeassistant/switch/wallpad/state',
-    'uniq_id': 'test_name_wallpad_elevator',
-    'val_tpl': '{{ value_json.elevator }}',
-  })
-# ---
-# name: test_publish_ha_discovery[True-False-elevator-expected_topics0][elevator_subscribe_topics]
+# name: test_subscribe_ha_topics[elevator][elevator_subscribe_topics]
   list([
     tuple(
-      'rs485/bridge/#',
+      'wallpad/bridge/#',
       0,
     ),
     tuple(
@@ -218,37 +199,10 @@
     ),
   ])
 # ---
-# name: test_publish_ha_discovery[True-False-fan-expected_topics2][fan_publish_payload_fan_wallpad_fan]
-  dict({
-    'cmd_t': 'homeassistant/fan/wallpad/mode',
-    'device': dict({
-      'ids': 'kocom_wallpad',
-      'mdl': 'Wallpad',
-      'mf': 'KOCOM',
-      'name': 'Kocom wallpad',
-      'sw': 'RS485 Compilation 0.1.0',
-    }),
-    'name': 'test_name_wallpad_fan',
-    'pl_off': 'off',
-    'pl_on': 'on',
-    'spd_cmd_t': 'homeassistant/fan/wallpad/speed',
-    'spd_stat_t': 'homeassistant/fan/wallpad/state',
-    'spd_val_tpl': '{{ value_json.speed }}',
-    'spds': list([
-      'low',
-      'medium',
-      'high',
-      'off',
-    ]),
-    'stat_t': 'homeassistant/fan/wallpad/state',
-    'stat_val_tpl': '{{ value_json.mode }}',
-    'uniq_id': 'test_name_wallpad_fan',
-  })
-# ---
-# name: test_publish_ha_discovery[True-False-fan-expected_topics2][fan_subscribe_topics]
+# name: test_subscribe_ha_topics[fan][fan_subscribe_topics]
   list([
     tuple(
-      'rs485/bridge/#',
+      'wallpad/bridge/#',
       0,
     ),
     tuple(
@@ -265,45 +219,10 @@
     ),
   ])
 # ---
-# name: test_publish_ha_discovery[True-False-gas-expected_topics1][gas_publish_payload_sensor_wallpad_gas]
-  dict({
-    'device': dict({
-      'ids': 'kocom_wallpad',
-      'mdl': 'Wallpad',
-      'mf': 'KOCOM',
-      'name': 'Kocom wallpad',
-      'sw': 'RS485 Compilation 0.1.0',
-    }),
-    'ic': 'mdi:gas-cylinder',
-    'name': 'test_name_wallpad_gas',
-    'stat_t': 'homeassistant/sensor/wallpad_gas/state',
-    'uniq_id': 'test_name_wallpad_gas',
-    'val_tpl': '{{ value_json.gas }}',
-  })
-# ---
-# name: test_publish_ha_discovery[True-False-gas-expected_topics1][gas_publish_payload_switch_wallpad_gas]
-  dict({
-    'cmd_t': 'homeassistant/switch/wallpad_gas/set',
-    'device': dict({
-      'ids': 'kocom_wallpad',
-      'mdl': 'Wallpad',
-      'mf': 'KOCOM',
-      'name': 'Kocom wallpad',
-      'sw': 'RS485 Compilation 0.1.0',
-    }),
-    'ic': 'mdi:gas-cylinder',
-    'name': 'test_name_wallpad_gas',
-    'pl_off': 'off',
-    'pl_on': 'on',
-    'stat_t': 'homeassistant/switch/wallpad_gas/state',
-    'uniq_id': 'test_name_wallpad_gas',
-    'val_tpl': '{{ value_json.gas }}',
-  })
-# ---
-# name: test_publish_ha_discovery[True-False-gas-expected_topics1][gas_subscribe_topics]
+# name: test_subscribe_ha_topics[gas][gas_subscribe_topics]
   list([
     tuple(
-      'rs485/bridge/#',
+      'wallpad/bridge/#',
       0,
     ),
     tuple(
@@ -320,46 +239,10 @@
     ),
   ])
 # ---
-# name: test_publish_ha_discovery[True-False-light-expected_topics3][light_publish_payload_light_room1_light0]
-  dict({
-    'cmd_t': 'homeassistant/light/room1_light0/set',
-    'device': dict({
-      'ids': 'kocom_room1',
-      'mdl': 'Wallpad',
-      'mf': 'KOCOM',
-      'name': 'Kocom room1',
-      'sw': 'RS485 Compilation 0.1.0',
-    }),
-    'name': 'test_name_room1_light0',
-    'pl_off': 'off',
-    'pl_on': 'on',
-    'stat_t': 'homeassistant/light/room1/state',
-    'uniq_id': 'test_name_room1_light0',
-    'val_tpl': '{{ value_json.light0 }}',
-  })
-# ---
-# name: test_publish_ha_discovery[True-False-light-expected_topics3][light_publish_payload_light_room1_light1]
-  dict({
-    'cmd_t': 'homeassistant/light/room1_light1/set',
-    'device': dict({
-      'ids': 'kocom_room1',
-      'mdl': 'Wallpad',
-      'mf': 'KOCOM',
-      'name': 'Kocom room1',
-      'sw': 'RS485 Compilation 0.1.0',
-    }),
-    'name': 'test_name_room1_light1',
-    'pl_off': 'off',
-    'pl_on': 'on',
-    'stat_t': 'homeassistant/light/room1/state',
-    'uniq_id': 'test_name_room1_light1',
-    'val_tpl': '{{ value_json.light1 }}',
-  })
-# ---
-# name: test_publish_ha_discovery[True-False-light-expected_topics3][light_subscribe_topics]
+# name: test_subscribe_ha_topics[light][light_subscribe_topics]
   list([
     tuple(
-      'rs485/bridge/#',
+      'wallpad/bridge/#',
       0,
     ),
     tuple(
@@ -380,48 +263,10 @@
     ),
   ])
 # ---
-# name: test_publish_ha_discovery[True-False-plug-expected_topics4][plug_publish_payload_switch_room1_plug0]
-  dict({
-    'cmd_t': 'homeassistant/switch/room1_plug0/set',
-    'device': dict({
-      'ids': 'kocom_room1',
-      'mdl': 'Wallpad',
-      'mf': 'KOCOM',
-      'name': 'Kocom room1',
-      'sw': 'RS485 Compilation 0.1.0',
-    }),
-    'ic': 'mdi:power-socket-eu',
-    'name': 'test_name_room1_plug0',
-    'pl_off': 'off',
-    'pl_on': 'on',
-    'stat_t': 'homeassistant/switch/room1/state',
-    'uniq_id': 'test_name_room1_plug0',
-    'val_tpl': '{{ value_json.plug0 }}',
-  })
-# ---
-# name: test_publish_ha_discovery[True-False-plug-expected_topics4][plug_publish_payload_switch_room1_plug1]
-  dict({
-    'cmd_t': 'homeassistant/switch/room1_plug1/set',
-    'device': dict({
-      'ids': 'kocom_room1',
-      'mdl': 'Wallpad',
-      'mf': 'KOCOM',
-      'name': 'Kocom room1',
-      'sw': 'RS485 Compilation 0.1.0',
-    }),
-    'ic': 'mdi:power-socket-eu',
-    'name': 'test_name_room1_plug1',
-    'pl_off': 'off',
-    'pl_on': 'on',
-    'stat_t': 'homeassistant/switch/room1/state',
-    'uniq_id': 'test_name_room1_plug1',
-    'val_tpl': '{{ value_json.plug1 }}',
-  })
-# ---
-# name: test_publish_ha_discovery[True-False-plug-expected_topics4][plug_subscribe_topics]
+# name: test_subscribe_ha_topics[plug][plug_subscribe_topics]
   list([
     tuple(
-      'rs485/bridge/#',
+      'wallpad/bridge/#',
       0,
     ),
     tuple(
@@ -442,39 +287,10 @@
     ),
   ])
 # ---
-# name: test_publish_ha_discovery[True-False-thermostat-expected_topics5][thermostat_publish_payload_climate_room1]
-  dict({
-    'curr_temp_t': 'homeassistant/climate/room1/state',
-    'curr_temp_tpl': '{{ value_json.current_temp }}',
-    'device': dict({
-      'ids': 'kocom_room1',
-      'mdl': 'Wallpad',
-      'mf': 'KOCOM',
-      'name': 'Kocom room1',
-      'sw': 'RS485 Compilation 0.1.0',
-    }),
-    'max_temp': 40,
-    'min_temp': 5,
-    'mode_cmd_t': 'homeassistant/climate/room1/mode',
-    'mode_stat_t': 'homeassistant/climate/room1/state',
-    'mode_stat_tpl': '{{ value_json.mode }}',
-    'modes': list([
-      'off',
-      'heat',
-      'fan_only',
-    ]),
-    'name': 'test_name_room1_thermostat',
-    'temp_cmd_t': 'homeassistant/climate/room1/target_temp',
-    'temp_stat_t': 'homeassistant/climate/room1/state',
-    'temp_stat_tpl': '{{ value_json.target_temp }}',
-    'temp_step': 1,
-    'uniq_id': 'test_name_room1_thermostat',
-  })
-# ---
-# name: test_publish_ha_discovery[True-False-thermostat-expected_topics5][thermostat_subscribe_topics]
+# name: test_subscribe_ha_topics[thermostat][thermostat_subscribe_topics]
   list([
     tuple(
-      'rs485/bridge/#',
+      'wallpad/bridge/#',
       0,
     ),
     tuple(

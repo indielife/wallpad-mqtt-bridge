@@ -120,21 +120,18 @@ def kocom_factory(mock_config):
     ],
 )
 @pytest.mark.parametrize(
-    "initial, remove",
+    "remove",
     [
-        (False, False),  # 기본 등록 검증
-        (False, True),  # 삭제 검증
-        (True, False),  # 초기 구동 검증 (Subscribe 추가)
+        False,  # 기본 등록 검증
+        True,  # 삭제 검증
     ],
 )
-def test_publish_ha_discovery(
-    snapshot, active_device, expected_topics, initial, remove, kocom_factory
-):
+def test_publish_ha_discovery(snapshot, active_device, expected_topics, remove, kocom_factory):
     # 1. 의존성 팩토리로 Kocom 인스턴스 생성
     wallpad, mock_mqtt_instance = kocom_factory(active_device)
 
     # 2. 테스트할 메서드 실행
-    wallpad.publish_ha_discovery(initial=initial, remove=remove)
+    wallpad._publish_ha_discovery(remove=remove)
 
     # 3. Publish 검증
     publish_calls = mock_mqtt_instance.publish.call_args_list
@@ -163,12 +160,19 @@ def test_publish_ha_discovery(
             payload_dict = json.loads(payload)
             assert payload_dict == snapshot(name=snapshot_name)
 
-    # 4. Subscribe 검증
-    if initial:
-        subscribe_calls = mock_mqtt_instance.subscribe.call_args_list
-        assert len(subscribe_calls) > 0
+    mock_mqtt_instance.subscribe.assert_not_called()
 
-        subscribe_list = subscribe_calls[0][0][0]
-        assert subscribe_list == snapshot(name=f"{active_device}_subscribe_topics")
-    else:
-        mock_mqtt_instance.subscribe.assert_not_called()
+
+@pytest.mark.parametrize(
+    "active_device",
+    ["elevator", "gas", "fan", "light", "plug", "thermostat"],
+)
+def test_subscribe_ha_topics(snapshot, active_device, kocom_factory):
+    wallpad, mock_mqtt_instance = kocom_factory(active_device)
+
+    wallpad._subscribe_ha_topics()
+
+    subscribe_calls = mock_mqtt_instance.subscribe.call_args_list
+    assert len(subscribe_calls) > 0
+    subscribe_list = subscribe_calls[0][0][0]
+    assert subscribe_list == snapshot(name=f"{active_device}_subscribe_topics")
