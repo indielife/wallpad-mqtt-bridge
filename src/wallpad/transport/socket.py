@@ -20,7 +20,7 @@ class SocketTransport(BaseTransport):
     async def connect(self):
         self._reader, self._writer = await asyncio.open_connection(self.host, self.port)
 
-    async def read(self, size: int = 1) -> bytes:
+    async def read(self, size: int) -> bytes:
         return await self._reader.read(size)
 
     async def write(self, data: bytes):

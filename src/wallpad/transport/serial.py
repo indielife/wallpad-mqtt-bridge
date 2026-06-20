@@ -18,11 +18,12 @@ class SerialTransport(BaseTransport):
             url=self.port, baudrate=self.baud_rate
         )
 
-    async def read(self, size: int = 1) -> bytes:
+    async def read(self, size: int) -> bytes:
         return await self._reader.read(size)
 
     async def write(self, data: bytes):
         self._writer.write(data)
+        await self._writer.drain()
 
     async def close(self):
         self._writer.close()
