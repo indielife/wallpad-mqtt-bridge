@@ -67,13 +67,27 @@ class Grex:
         )
         return [self._task_ctrl, self._task_vent]
 
+    def on_connect(self, *_):
+        self._subscribe_ha_topics()
+        self._publish_ha_discovery()
+
+    def _subscribe_ha_topics(self):
+        subscribe_list = [("wallpad/bridge/#", 0)]
+        for topic in self.device.get_subscribe_topics():
+            subscribe_list.append((topic, 0))
+        self.mqtt_client.subscribe(subscribe_list)
+
+    def _publish_ha_discovery(self, remove=False):
+        for topic, payload in self.device.get_discovery_payloads(remove=remove):
+            self.mqtt_client.publish(topic, payload, retain=True)
+
     def on_message(self, client, obj, msg):
         _topic = msg.topic.split("/")
         _payload = msg.payload.decode()
 
         if "config" in _topic:
-            if _topic[0] == "rs485" and _topic[3] == "restart":
-                self.publish_ha_discovery()
+            if _topic[0] == "wallpad" and _topic[3] == "restart":
+                self._publish_ha_discovery()
                 return
         elif _topic[0] == HA_PREFIX and _topic[1] == HA_FAN and _topic[2] == "grex":
             logger.info("Message Fan: %s = %s", msg.topic, _payload)
@@ -89,39 +103,6 @@ class Grex:
 
                 if self.mqtt_cont["mode"] == "off" and self.mqtt_cont["speed"] == "off":
                     self.publish_state_to_ha(HA_FAN, self.mqtt_cont)
-
-    def on_connect(self, client, userdata, flags, rc):
-        if int(rc) == 0:
-            logger.info("MQTT connected OK")
-            self.publish_ha_discovery(initial=True)
-        elif int(rc) == 1:
-            logger.info("1: Connection refused - incorrect protocol version")
-        elif int(rc) == 2:
-            logger.info("2: Connection refused - invalid client identifier")
-        elif int(rc) == 3:
-            logger.info("3: Connection refused - server unavailable")
-        elif int(rc) == 4:
-            logger.info("4: Connection refused - bad username or password")
-        elif int(rc) == 5:
-            logger.info("5: Connection refused - not authorised")
-        else:
-            logger.info(rc, ": Connection refused")
-
-    def publish_ha_discovery(self, initial=False, remove=False):
-        subscribe_list = []
-        publish_list = []
-        subscribe_list.append(("rs485/bridge/#", 0))
-
-        for topic, payload in self.device.get_discovery_payloads(remove=remove):
-            publish_list.append({topic: payload})
-        for topic in self.device.get_subscribe_topics():
-            subscribe_list.append((topic, 0))
-
-        if initial:
-            self.mqtt_client.subscribe(subscribe_list)
-        for ha in publish_list:
-            for topic, payload in ha.items():
-                self.mqtt_client.publish(topic, payload, retain=True)
 
     def publish_state_to_ha(self, target, value):
         if target == HA_FAN:

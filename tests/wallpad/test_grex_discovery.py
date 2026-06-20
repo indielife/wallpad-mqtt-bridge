@@ -42,21 +42,11 @@ def grex_factory():
     yield _create
 
 
-@pytest.mark.parametrize(
-    "initial",
-    [
-        False,  # 기본 등록 검증
-        True,  # 초기 구동 검증 (Subscribe 추가)
-    ],
-)
-def test_grex_publish_ha_discovery(snapshot, initial, grex_factory):
-    # 1. 의존성 팩토리로 Grex 인스턴스 생성
+def test_grex_publish_ha_discovery(snapshot, grex_factory):
     grex, mock_mqtt_instance = grex_factory()
 
-    # 2. 테스트할 메서드 실행
-    grex.publish_ha_discovery(initial=initial)
+    grex._publish_ha_discovery()
 
-    # 3. Publish 검증
     publish_calls = mock_mqtt_instance.publish.call_args_list
     assert len(publish_calls) > 0
 
@@ -66,7 +56,6 @@ def test_grex_publish_ha_discovery(snapshot, initial, grex_factory):
         f"{HA_PREFIX}/{HA_SENSOR}/grex_{DEVICE_FAN}_speed/config",
     ]
 
-    # 발행된 모든 토픽과 페이로드를 딕셔너리로 수집
     published_data = {}
     for call in publish_calls:
         args, _ = call
@@ -74,7 +63,6 @@ def test_grex_publish_ha_discovery(snapshot, initial, grex_factory):
         payload = args[1]
         published_data[topic] = payload
 
-    # 예상한 토픽들이 정상적으로 발행되었고, 페이로드도 올바른지 검증
     for topic in expected_topics:
         assert topic in published_data, f"{topic} 토픽으로 발행되지 않았습니다."
 
@@ -85,12 +73,15 @@ def test_grex_publish_ha_discovery(snapshot, initial, grex_factory):
         payload_dict = json.loads(payload)
         assert payload_dict == snapshot(name=snapshot_name)
 
-    # 4. Subscribe 검증
-    if initial:
-        subscribe_calls = mock_mqtt_instance.subscribe.call_args_list
-        assert len(subscribe_calls) > 0
+    mock_mqtt_instance.subscribe.assert_not_called()
 
-        subscribe_list = subscribe_calls[0][0][0]
-        assert subscribe_list == snapshot(name="grex_subscribe_topics")
-    else:
-        mock_mqtt_instance.subscribe.assert_not_called()
+
+def test_grex_subscribe_ha_topics(snapshot, grex_factory):
+    grex, mock_mqtt_instance = grex_factory()
+
+    grex._subscribe_ha_topics()
+
+    subscribe_calls = mock_mqtt_instance.subscribe.call_args_list
+    assert len(subscribe_calls) > 0
+    subscribe_list = subscribe_calls[0][0][0]
+    assert subscribe_list == snapshot(name="grex_subscribe_topics")

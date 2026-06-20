@@ -91,10 +91,10 @@ def test_mqtt_client_callbacks():
         assert mqtt_client._connected is True
         connect_cb.assert_called_once_with(mqtt_client.client, None, {}, 0)
 
-        # Test on_connect failure code
+        # rc != 0이면 콜백 호출 없음
         connect_cb.reset_mock()
         mqtt_client._on_connect(mqtt_client.client, None, {}, 5)
-        connect_cb.assert_called_once_with(mqtt_client.client, None, {}, 5)
+        connect_cb.assert_not_called()
 
         # Test on_message
         msg = MagicMock()
@@ -104,6 +104,27 @@ def test_mqtt_client_callbacks():
         # Test on_subscribe
         mqtt_client._on_subscribe(mqtt_client.client, None, 1, [0])
         subscribe_cb.assert_called_once_with(mqtt_client.client, None, 1, [0])
+
+
+@pytest.mark.parametrize(
+    ("rc", "expected_fragment"),
+    [
+        (1, "incorrect protocol version"),
+        (2, "invalid client identifier"),
+        (3, "server unavailable"),
+        (4, "bad username or password"),
+        (5, "not authorised"),
+        (9, "Connection refused"),
+    ],
+)
+def test_mqtt_client_on_connect_failure_logging(rc, expected_fragment, caplog):
+    config = MqttConfig(host="127.0.0.1", username="user", password="pwd")
+    with patch("wallpad.mqtt.client.mqtt.Client"):
+        mqtt_client = MqttClient(config)
+        with caplog.at_level(logging.ERROR):
+            mqtt_client._on_connect(mqtt_client.client, None, {}, rc)
+        assert expected_fragment in caplog.text
+        assert mqtt_client._connected is False
 
 
 def test_mqtt_client_callback_exceptions(caplog):

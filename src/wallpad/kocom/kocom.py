@@ -198,12 +198,33 @@ class Kocom:
         self._task_scan = asyncio.create_task(self.scan_list())
         return [self._task_read, self._task_scan]
 
-    def _schedule_write(self, data: str) -> None:
-        if data and self._loop:
-            asyncio.run_coroutine_threadsafe(
-                self.transport.write(bytearray.fromhex(data)), self._loop
-            )
-            self.tick = time.time()
+    def on_connect(self, *_):
+        self._subscribe_ha_topics()
+        self._publish_ha_discovery()
+
+    def _subscribe_ha_topics(self):
+        subscribe_list = [("wallpad/bridge/#", 0)]
+        for device in self.devices:
+            for topic in device.get_subscribe_topics():
+                subscribe_list.append((topic, 0))
+        self.mqtt_client.subscribe(subscribe_list)
+
+    def _publish_ha_discovery(self, remove=False):
+        publish_list = []
+        self.ha_registry = False
+        self.kocom_scan = True
+        ha_topic = False
+
+        for device in self.devices:
+            for topic, payload in device.get_discovery_payloads(remove=remove):
+                publish_list.append({topic: payload})
+                ha_topic = topic
+
+        for ha in publish_list:
+            for topic, payload in ha.items():
+                self.mqtt_client.publish(topic, payload, retain=True)
+
+        self.ha_registry = ha_topic
 
     def on_message(self, client, obj, msg):  # noqa: C901
         _topic = msg.topic.split("/")
@@ -211,7 +232,7 @@ class Kocom:
 
         if (
             "config" in _topic
-            and _topic[0] == "rs485"
+            and _topic[0] == "wallpad"
             and _topic[1] == "bridge"
             and _topic[2] == "config"
         ):
@@ -225,11 +246,11 @@ class Kocom:
                 logger.info("[From HA]Set Loglevel to %s", _payload)
                 return
             elif _topic[3] == "restart":
-                self.publish_ha_discovery()
+                self._publish_ha_discovery()
                 logger.info("[From HA]HomeAssistant Restart")
                 return
             elif _topic[3] == "remove":
-                self.publish_ha_discovery(remove=True)
+                self._publish_ha_discovery(remove=True)
                 logger.info("[From HA]HomeAssistant Remove")
                 return
             elif _topic[3] == "scan":
@@ -339,50 +360,6 @@ class Kocom:
                 self.publish_state_to_ha(device, room, ha_payload)
             except Exception as e:
                 logger.error("[From HA] %s = %s, %r", topic, payload, e)
-
-    def on_connect(self, client, userdata, flags, reason_code):
-        if int(reason_code) == 0:
-            logger.info("[MQTT] connected OK")
-            client.subscribe("homeassistant/status")
-            self.publish_ha_discovery(initial=True)
-        elif int(reason_code) == 1:
-            logger.info("[MQTT] 1: Connection refused - incorrect protocol version")
-        elif int(reason_code) == 2:
-            logger.info("[MQTT] 2: Connection refused - invalid client identifier")
-        elif int(reason_code) == 3:
-            logger.info("[MQTT] 3: Connection refused - server unavailable")
-        elif int(reason_code) == 4:
-            logger.info("[MQTT] 4: Connection refused - bad username or password")
-        elif int(reason_code) == 5:
-            logger.info("[MQTT] 5: Connection refused - not authorised")
-        else:
-            logger.info("[MQTT] %s : Connection refused", reason_code)
-
-    def publish_ha_discovery(self, initial=False, remove=False):
-        subscribe_list = []
-        subscribe_list.append(("rs485/bridge/#", 0))
-        publish_list = []
-
-        self.ha_registry = False
-        self.kocom_scan = True
-        ha_topic = False  # 초기화 보장
-
-        # 분리된 기기(Elevator, Gas, Fan) 객체들의 디스커버리 페이로드 생성
-        for device in self.devices:
-            for topic, payload in device.get_discovery_payloads(remove=remove):
-                publish_list.append({topic: payload})
-                ha_topic = topic
-            for topic in device.get_subscribe_topics():
-                subscribe_list.append((topic, 0))
-
-        if initial:
-            self.mqtt_client.subscribe(subscribe_list)
-
-        for ha in publish_list:
-            for topic, payload in ha.items():
-                self.mqtt_client.publish(topic, payload, retain=True)
-
-        self.ha_registry = ha_topic
 
     def _find_device(self, device_type: str, room: str):
         cls = _DEVICE_TYPE_MAP.get(device_type)
@@ -497,6 +474,13 @@ class Kocom:
         except Exception as e:
             logger.error("Failed to parse value from packet %r: %r", p, e)
             return False
+
+    def _schedule_write(self, data: str) -> None:
+        if data and self._loop:
+            asyncio.run_coroutine_threadsafe(
+                self.transport.write(bytearray.fromhex(data)), self._loop
+            )
+            self.tick = time.time()
 
     def packet_parsing(self, packet, name="kocom", from_to="From"):
         p = self.parse_packet(packet)
