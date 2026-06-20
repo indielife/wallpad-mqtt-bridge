@@ -39,6 +39,9 @@ class Light(BaseDevice):
         }
         return [(topic, json.dumps(payload))]
 
+    def get_ha_state_messages(self, value) -> list[tuple[str, dict]]:
+        return [(f"{HA_PREFIX}/{HA_LIGHT}/{self.room}/state", value)]
+
     def get_subscribe_topics(self) -> list[str]:
         topic = f"{HA_PREFIX}/{HA_LIGHT}/{self.room}_{self.sub_device}/config"
         cmd_t = f"{HA_PREFIX}/{HA_LIGHT}/{self.room}_{self.sub_device}/set"

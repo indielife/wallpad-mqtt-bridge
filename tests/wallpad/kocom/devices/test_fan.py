@@ -51,6 +51,13 @@ def test_fan_get_discovery_payloads_remove(fan_device):
     assert payloads[0] == (f"{HA_PREFIX}/{HA_FAN}/wallpad_fan/config", "")
 
 
+def test_fan_get_ha_state_messages(fan_device):
+    """room 단위 state 토픽과 value를 그대로 반환하는지 검증합니다."""
+    value = {"mode": "on", "speed": "low"}
+    messages = fan_device.get_ha_state_messages(value)
+    assert messages == [(f"{HA_PREFIX}/{HA_FAN}/wallpad/state", value)]
+
+
 def test_fan_get_subscribe_topics(fan_device):
     """구독해야 할 토픽 리스트가 정상적으로 반환되는지 검증합니다."""
     topics = fan_device.get_subscribe_topics()

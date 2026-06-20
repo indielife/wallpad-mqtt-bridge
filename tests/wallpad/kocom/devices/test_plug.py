@@ -42,6 +42,13 @@ def test_plug_get_discovery_payloads_add(plug_device):
     assert json.loads(payload_str) == expected_payload
 
 
+def test_plug_get_ha_state_messages(plug_device):
+    """room 단위 state 토픽과 value를 그대로 반환하는지 검증합니다."""
+    value = {"plug1": "on", "plug2": "off"}
+    messages = plug_device.get_ha_state_messages(value)
+    assert messages == [(f"{HA_PREFIX}/{HA_SWITCH}/room1/state", value)]
+
+
 def test_plug_get_subscribe_topics(plug_device):
     """구독해야 할 토픽 리스트가 정상적으로 반환되는지 검증합니다."""
     topics = plug_device.get_subscribe_topics()

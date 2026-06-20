@@ -41,6 +41,13 @@ def test_light_get_discovery_payloads_add(light_device):
     assert json.loads(payload_str) == expected_payload
 
 
+def test_light_get_ha_state_messages(light_device):
+    """room 단위 state 토픽과 value를 그대로 반환하는지 검증합니다."""
+    value = {"light1": "on", "light2": "off"}
+    messages = light_device.get_ha_state_messages(value)
+    assert messages == [(f"{HA_PREFIX}/{HA_LIGHT}/room1/state", value)]
+
+
 def test_light_get_subscribe_topics(light_device):
     """구독해야 할 토픽 리스트가 정상적으로 반환되는지 검증합니다."""
     topics = light_device.get_subscribe_topics()

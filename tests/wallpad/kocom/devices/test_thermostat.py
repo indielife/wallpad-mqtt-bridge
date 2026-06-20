@@ -55,6 +55,13 @@ def test_thermostat_get_discovery_payloads_remove(thermostat_device):
     assert payloads[0] == (f"{HA_PREFIX}/{HA_CLIMATE}/room1/config", "")
 
 
+def test_thermostat_get_ha_state_messages(thermostat_device):
+    """room 단위 state 토픽과 value를 그대로 반환하는지 검증합니다."""
+    value = {"mode": "heat", "target_temp": 22, "current_temp": 20}
+    messages = thermostat_device.get_ha_state_messages(value)
+    assert messages == [(f"{HA_PREFIX}/{HA_CLIMATE}/room1/state", value)]
+
+
 def test_thermostat_get_subscribe_topics(thermostat_device):
     """구독해야 할 토픽 리스트가 정상적으로 반환되는지 검증합니다."""
     topics = thermostat_device.get_subscribe_topics()

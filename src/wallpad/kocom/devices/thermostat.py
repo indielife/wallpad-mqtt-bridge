@@ -45,6 +45,9 @@ class Thermostat(BaseDevice):
         }
         return [(topic, json.dumps(payload))]
 
+    def get_ha_state_messages(self, value) -> list[tuple[str, dict]]:
+        return [(f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/state", value)]
+
     def get_subscribe_topics(self) -> list[str]:
         topic = f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/config"
         mode_cmd_t = f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/mode"

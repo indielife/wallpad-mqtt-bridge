@@ -76,6 +76,15 @@ def test_gas_get_discovery_payloads_remove(gas_device):
     assert payloads[1] == (f"{HA_PREFIX}/{HA_SENSOR}/wallpad_gas/config", "")
 
 
+def test_gas_get_ha_state_messages(gas_device):
+    """sensor와 switch 두 토픽 모두에 {sub_device: value} 형태로 반환하는지 검증합니다."""
+    messages = gas_device.get_ha_state_messages("off")
+    assert messages == [
+        (f"{HA_PREFIX}/{HA_SENSOR}/wallpad_gas/state", {"gas": "off"}),
+        (f"{HA_PREFIX}/{HA_SWITCH}/wallpad_gas/state", {"gas": "off"}),
+    ]
+
+
 def test_gas_get_subscribe_topics(gas_device):
     """구독해야 할 토픽 리스트가 정상적으로 반환되는지 검증합니다."""
     topics = gas_device.get_subscribe_topics()
