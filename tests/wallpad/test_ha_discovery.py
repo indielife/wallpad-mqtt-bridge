@@ -3,14 +3,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from wallpad.kocom.kocom import (
-    DEVICE_ELEVATOR,
-    DEVICE_GAS,
-    HA_PREFIX,
-    HA_SENSOR,
-    HA_SWITCH,
-    Kocom,
-)
+from wallpad.kocom.kocom import Kocom
+from wallpad.mqtt import HA_PREFIX, HA_SENSOR, HA_SWITCH
+from wallpad.protocol.kocom.constants import DEVICE_ELEVATOR, DEVICE_GAS
 
 
 @pytest.fixture

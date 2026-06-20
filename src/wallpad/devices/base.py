@@ -44,6 +44,13 @@ class BaseDevice:
         """
         raise NotImplementedError
 
+    def get_ha_state_messages(self, value) -> list[tuple[str, dict]]:
+        """
+        HA에 발행할 (topic, payload) 튜플 리스트를 반환합니다.
+        대부분의 기기는 1개, Gas처럼 복수 토픽이 필요한 경우 여러 개를 반환합니다.
+        """
+        raise NotImplementedError
+
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs
     ) -> str | None:

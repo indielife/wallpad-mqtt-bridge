@@ -56,6 +56,13 @@ class Gas(BaseDevice):
             (sensor_topic, json.dumps(sensor_payload)),
         ]
 
+    def get_ha_state_messages(self, value) -> list[tuple[str, dict]]:
+        data = {self.sub_device: value}
+        return [
+            (f"{HA_PREFIX}/{HA_SENSOR}/{self.room}_{self.sub_device}/state", data),
+            (f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/state", data),
+        ]
+
     def get_subscribe_topics(self) -> list[str]:
         switch_topic = f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/config"
         cmd_t = f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/set"

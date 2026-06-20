@@ -59,6 +59,12 @@ def test_elevator_get_discovery_payloads_remove(elevator_device):
     assert payload_str == ""  # 삭제를 위해 페이로드는 비어 있어야 함
 
 
+def test_elevator_get_ha_state_messages(elevator_device):
+    """state 토픽에 {sub_device: value} 형태로 래핑하여 반환하는지 검증합니다."""
+    messages = elevator_device.get_ha_state_messages("on")
+    assert messages == [(f"{HA_PREFIX}/{HA_SWITCH}/wallpad/state", {"elevator": "on"})]
+
+
 def test_elevator_get_subscribe_topics(elevator_device):
     """구독해야 할 토픽 리스트가 정상적으로 반환되는지 검증합니다."""
     topics = elevator_device.get_subscribe_topics()
