@@ -198,12 +198,34 @@ class Kocom:
         self._task_scan = asyncio.create_task(self.scan_list())
         return [self._task_read, self._task_scan]
 
-    def _schedule_write(self, data: str) -> None:
-        if data and self._loop:
-            asyncio.run_coroutine_threadsafe(
-                self.transport.write(bytearray.fromhex(data)), self._loop
-            )
-            self.tick = time.time()
+    def on_connect(self, *_):
+        self.publish_ha_discovery(initial=True)
+
+    def publish_ha_discovery(self, initial=False, remove=False):
+        subscribe_list = []
+        subscribe_list.append(("rs485/bridge/#", 0))
+        publish_list = []
+
+        self.ha_registry = False
+        self.kocom_scan = True
+        ha_topic = False  # 초기화 보장
+
+        # 분리된 기기(Elevator, Gas, Fan) 객체들의 디스커버리 페이로드 생성
+        for device in self.devices:
+            for topic, payload in device.get_discovery_payloads(remove=remove):
+                publish_list.append({topic: payload})
+                ha_topic = topic
+            for topic in device.get_subscribe_topics():
+                subscribe_list.append((topic, 0))
+
+        if initial:
+            self.mqtt_client.subscribe(subscribe_list)
+
+        for ha in publish_list:
+            for topic, payload in ha.items():
+                self.mqtt_client.publish(topic, payload, retain=True)
+
+        self.ha_registry = ha_topic
 
     def on_message(self, client, obj, msg):  # noqa: C901
         _topic = msg.topic.split("/")
@@ -340,35 +362,6 @@ class Kocom:
             except Exception as e:
                 logger.error("[From HA] %s = %s, %r", topic, payload, e)
 
-    def on_connect(self, *_):
-        self.publish_ha_discovery(initial=True)
-
-    def publish_ha_discovery(self, initial=False, remove=False):
-        subscribe_list = []
-        subscribe_list.append(("rs485/bridge/#", 0))
-        publish_list = []
-
-        self.ha_registry = False
-        self.kocom_scan = True
-        ha_topic = False  # 초기화 보장
-
-        # 분리된 기기(Elevator, Gas, Fan) 객체들의 디스커버리 페이로드 생성
-        for device in self.devices:
-            for topic, payload in device.get_discovery_payloads(remove=remove):
-                publish_list.append({topic: payload})
-                ha_topic = topic
-            for topic in device.get_subscribe_topics():
-                subscribe_list.append((topic, 0))
-
-        if initial:
-            self.mqtt_client.subscribe(subscribe_list)
-
-        for ha in publish_list:
-            for topic, payload in ha.items():
-                self.mqtt_client.publish(topic, payload, retain=True)
-
-        self.ha_registry = ha_topic
-
     def _find_device(self, device_type: str, room: str):
         cls = _DEVICE_TYPE_MAP.get(device_type)
         if cls is None:
@@ -482,6 +475,13 @@ class Kocom:
         except Exception as e:
             logger.error("Failed to parse value from packet %r: %r", p, e)
             return False
+
+    def _schedule_write(self, data: str) -> None:
+        if data and self._loop:
+            asyncio.run_coroutine_threadsafe(
+                self.transport.write(bytearray.fromhex(data)), self._loop
+            )
+            self.tick = time.time()
 
     def packet_parsing(self, packet, name="kocom", from_to="From"):
         p = self.parse_packet(packet)

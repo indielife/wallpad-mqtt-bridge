@@ -67,6 +67,25 @@ class Grex:
         )
         return [self._task_ctrl, self._task_vent]
 
+    def on_connect(self, *_):
+        self.publish_ha_discovery(initial=True)
+
+    def publish_ha_discovery(self, initial=False, remove=False):
+        subscribe_list = []
+        publish_list = []
+        subscribe_list.append(("rs485/bridge/#", 0))
+
+        for topic, payload in self.device.get_discovery_payloads(remove=remove):
+            publish_list.append({topic: payload})
+        for topic in self.device.get_subscribe_topics():
+            subscribe_list.append((topic, 0))
+
+        if initial:
+            self.mqtt_client.subscribe(subscribe_list)
+        for ha in publish_list:
+            for topic, payload in ha.items():
+                self.mqtt_client.publish(topic, payload, retain=True)
+
     def on_message(self, client, obj, msg):
         _topic = msg.topic.split("/")
         _payload = msg.payload.decode()
@@ -89,25 +108,6 @@ class Grex:
 
                 if self.mqtt_cont["mode"] == "off" and self.mqtt_cont["speed"] == "off":
                     self.publish_state_to_ha(HA_FAN, self.mqtt_cont)
-
-    def on_connect(self, *_):
-        self.publish_ha_discovery(initial=True)
-
-    def publish_ha_discovery(self, initial=False, remove=False):
-        subscribe_list = []
-        publish_list = []
-        subscribe_list.append(("rs485/bridge/#", 0))
-
-        for topic, payload in self.device.get_discovery_payloads(remove=remove):
-            publish_list.append({topic: payload})
-        for topic in self.device.get_subscribe_topics():
-            subscribe_list.append((topic, 0))
-
-        if initial:
-            self.mqtt_client.subscribe(subscribe_list)
-        for ha in publish_list:
-            for topic, payload in ha.items():
-                self.mqtt_client.publish(topic, payload, retain=True)
 
     def publish_state_to_ha(self, target, value):
         if target == HA_FAN:
