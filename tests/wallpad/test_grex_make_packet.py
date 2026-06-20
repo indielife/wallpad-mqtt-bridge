@@ -1,7 +1,8 @@
 import pytest
 
-from wallpad.grex.devices import GrexPacketBuilder, GrexVentilator
+from wallpad.grex.devices import GrexVentilator
 from wallpad.grex.grex import Grex
+from wallpad.protocol.grex.packet_builder import GrexPacketBuilder
 
 
 @pytest.fixture

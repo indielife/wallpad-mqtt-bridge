@@ -4,7 +4,25 @@ import logging
 import time
 
 from wallpad.config import AppConfig
-from wallpad.kocom.constants import (
+from wallpad.kocom.devices import (
+    Elevator,
+    Fan,
+    Gas,
+    Light,
+    Plug,
+    Thermostat,
+)
+from wallpad.kocom.state import DeviceState, KocomStateManager, RoomState, ScanState, SubDeviceState
+from wallpad.mqtt import (
+    HA_CLIMATE,
+    HA_FAN,
+    HA_LIGHT,
+    HA_PREFIX,
+    HA_SENSOR,
+    HA_SWITCH,
+    MqttClient,
+)
+from wallpad.protocol.kocom.constants import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
     DEVICE_GAS,
@@ -22,25 +40,7 @@ from wallpad.kocom.constants import (
     KOCOM_TYPE,
     KOCOM_TYPE_REV,
 )
-from wallpad.kocom.devices import (
-    Elevator,
-    Fan,
-    Gas,
-    KocomPacketBuilder,
-    Light,
-    Plug,
-    Thermostat,
-)
-from wallpad.kocom.state import DeviceState, KocomStateManager, RoomState, ScanState, SubDeviceState
-from wallpad.mqtt import (
-    HA_CLIMATE,
-    HA_FAN,
-    HA_LIGHT,
-    HA_PREFIX,
-    HA_SENSOR,
-    HA_SWITCH,
-    MqttClient,
-)
+from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 from wallpad.transport import BaseTransport
 
 logger = logging.getLogger(__name__)  # HA MQTT Discovery

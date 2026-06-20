@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from wallpad.kocom.devices import Elevator, Fan, Gas, KocomPacketBuilder, Light, Thermostat
+from wallpad.kocom.devices import Elevator, Fan, Gas, Light, Thermostat
 from wallpad.kocom.kocom import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
@@ -11,6 +11,7 @@ from wallpad.kocom.kocom import (
     DEVICE_THERMOSTAT,
     Kocom,
 )
+from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 
 
 @pytest.fixture

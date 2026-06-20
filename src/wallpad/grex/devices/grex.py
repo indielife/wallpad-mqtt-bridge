@@ -2,10 +2,9 @@ import json
 from typing import ClassVar
 
 from wallpad.devices.base import BaseDevice
-from wallpad.grex.constants import MODE_HEX_MAP, SPEED_HEX_MAP
 from wallpad.mqtt import HA_FAN, HA_PREFIX, HA_SENSOR
-
-from .grex_packet_builder import GrexPacketBuilder
+from wallpad.protocol.grex.constants import MODE_HEX_MAP, SPEED_HEX_MAP
+from wallpad.protocol.grex.packet_builder import GrexPacketBuilder
 
 
 class GrexVentilator(BaseDevice):

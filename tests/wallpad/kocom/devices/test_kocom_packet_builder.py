@@ -1,4 +1,4 @@
-from wallpad.kocom.devices.kocom_packet_builder import KocomPacketBuilder
+from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 
 
 def test_kocom_packet_builder_build():
