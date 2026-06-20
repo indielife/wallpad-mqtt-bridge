@@ -72,12 +72,10 @@ def kocom_instance(mock_config):
     kocom.default_speed = "low"
     kocom.ha_registry = False
     kocom.kocom_scan = False
-    kocom._name = "kocom"
-    kocom.connected = True
+    kocom.name = "kocom"
 
-    # MQTT 및 시리얼 모킹
+    # MQTT 모킹
     kocom.d_mqtt = MagicMock()
-    kocom.write = MagicMock()
 
     # wp_list 초기화 (KocomStateManager 구조)
     kocom.wp_list = KocomStateManager()

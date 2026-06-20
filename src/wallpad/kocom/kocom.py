@@ -1,6 +1,6 @@
+import asyncio
 import json
 import logging
-import threading
 import time
 
 from wallpad.config import AppConfig
@@ -41,7 +41,7 @@ from wallpad.mqtt import (
     HA_SWITCH,
     MqttClient,
 )
-from wallpad.transport import ConnectionAdapter
+from wallpad.transport import BaseTransport
 
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
 
@@ -50,14 +50,12 @@ class Kocom:
     def __init__(  # noqa: C901
         self,
         config: AppConfig,
-        adapter: ConnectionAdapter,
-        name,
-        packet_len,
         mqtt_client: MqttClient,
+        transport: BaseTransport,
     ):
         self.config = config
-        self.adapter = adapter
-        self._name = name
+        self.transport = transport
+        self.name = config.wallpad_manufacturer
         self.mqtt_client = mqtt_client
 
         self.default_speed = config.kocom_default_speed
@@ -87,7 +85,7 @@ class Kocom:
         if self.wp_elevator:
             self.devices.append(
                 Elevator(
-                    name_prefix=self._name,
+                    name_prefix=self.name,
                     sw_version=self.config.sw_version,
                     packet_builder=self.packet_builder,
                 )
@@ -95,7 +93,7 @@ class Kocom:
         if self.wp_gas:
             self.devices.append(
                 Gas(
-                    name_prefix=self._name,
+                    name_prefix=self.name,
                     sw_version=self.config.sw_version,
                     packet_builder=self.packet_builder,
                 )
@@ -103,7 +101,7 @@ class Kocom:
         if self.wp_fan:
             self.devices.append(
                 Fan(
-                    name_prefix=self._name,
+                    name_prefix=self.name,
                     sw_version=self.config.sw_version,
                     packet_builder=self.packet_builder,
                 )
@@ -148,7 +146,7 @@ class Kocom:
                         if sub_device != "scan":
                             self.devices.append(
                                 Light(
-                                    name_prefix=self._name,
+                                    name_prefix=self.name,
                                     room=room,
                                     sub_device=sub_device,
                                     sw_version=self.config.sw_version,
@@ -163,7 +161,7 @@ class Kocom:
                         if sub_device != "scan":
                             self.devices.append(
                                 Plug(
-                                    name_prefix=self._name,
+                                    name_prefix=self.name,
                                     room=room,
                                     sub_device=sub_device,
                                     sw_version=self.config.sw_version,
@@ -175,39 +173,30 @@ class Kocom:
             for room in self.wp_list.get(DEVICE_THERMOSTAT, {}):
                 self.devices.append(
                     Thermostat(
-                        name_prefix=self._name,
+                        name_prefix=self.name,
                         room=room,
                         sw_version=self.config.sw_version,
                         packet_builder=self.packet_builder,
                     )
                 )
 
+        self._loop: asyncio.AbstractEventLoop | None = None
         self.mqtt_client.register_connect_callback(self.on_connect)
         self.mqtt_client.register_message_callback(self.on_message)
 
-        self._t1 = threading.Thread(target=self.get_serial, args=(name, packet_len))
-        self._t1.start()
-        self._t2 = threading.Thread(target=self.scan_list)
-        self._t2.start()
+    async def start(self) -> list[asyncio.Task]:
+        self._loop = asyncio.get_running_loop()
+        await self.transport.connect()
+        self._task_read = asyncio.create_task(self.get_serial(self.name, 42))
+        self._task_scan = asyncio.create_task(self.scan_list())
+        return [self._task_read, self._task_scan]
 
-    def read(self):
-        if not self.adapter:
-            return b""
-        try:
-            return self.adapter.read()
-        except Exception as e:
-            logger.error("Connection error during read: %r", e)
-            return b""
-
-    def write(self, data):
-        if not data or not self.adapter:
-            return
-        try:
-            res = self.adapter.write(bytearray.fromhex(data))
+    def _schedule_write(self, data: str) -> None:
+        if data and self._loop:
+            asyncio.run_coroutine_threadsafe(
+                self.transport.write(bytearray.fromhex(data)), self._loop
+            )
             self.tick = time.time()
-            return res
-        except Exception as e:
-            logger.error("Connection error during write: %r", e)
 
     def on_message(self, client, obj, msg):  # noqa: C901
         _topic = msg.topic.split("/")
@@ -428,11 +417,11 @@ class Kocom:
             self.mqtt_client.publish_json(topic, value)
             logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
 
-    def get_serial(self, packet_name, packet_len):
+    async def get_serial(self, packet_name, packet_len):
         packet = ""
         start_flag = False
         while True:
-            row_data = self.read()
+            row_data = await self.transport.read(1)
             hex_d = row_data.hex()
 
             start_hex = ""
@@ -535,7 +524,8 @@ class Kocom:
         try:
             if v["command"] == "조회" and v["src_device"] == DEVICE_WALLPAD:
                 if name == "HA":
-                    self.write(self.make_packet(v["dst_device"], v["dst_room"], "조회", "", ""))
+                    packet = self.make_packet(v["dst_device"], v["dst_room"], "조회", "", "")
+                    self._schedule_write(packet)
                 logger.debug(
                     "[%s %s]%s(%s) %s(%s) -> %s(%s)",
                     from_to,
@@ -615,18 +605,20 @@ class Kocom:
             return self.wp_thermostat
         return False
 
-    def _periodic_scan_room(self, device: str, room: str, scan: ScanState, now: float) -> None:
+    async def _periodic_scan_room(
+        self, device: str, room: str, scan: ScanState, now: float
+    ) -> None:
         if now - scan.last > 2:
             scan.count += 1
             scan.last = now
-            self.set_serial(device, room, "", "", cmd="조회")
-            time.sleep(self.config.packey_delay)
+            await self.set_serial(device, room, "", "", cmd="조회")
+            await asyncio.sleep(self.config.packey_delay)
         if scan.count > 4:
             scan.tick = now
             scan.count = 0
             scan.last = 0
 
-    def _scan_sub_device(
+    async def _scan_sub_device(
         self, device: str, room: str, sub_d: str, sub_v: SubDeviceState, now: float
     ) -> None:
         if sub_v.count > 4:
@@ -638,52 +630,52 @@ class Kocom:
                 sub_v.last += 5
             elif device == DEVICE_ELEVATOR:
                 sub_v.last = "state"
-            self.set_serial(device, room, sub_d, sub_v.set)
+            await self.set_serial(device, room, sub_d, sub_v.set)
         elif isinstance(sub_v.last, float) and now - sub_v.last > 1:
             sub_v.last = "set"
             sub_v.count += 1
 
-    def _scan_room(self, device: str, room: str, r_state: RoomState, now: float) -> None:
+    async def _scan_room(self, device: str, room: str, r_state: RoomState, now: float) -> None:
         if device == DEVICE_ELEVATOR:
             for sub_d, sub_v in r_state.sub_devices.items():
-                self._scan_sub_device(device, room, sub_d, sub_v, now)
+                await self._scan_sub_device(device, room, sub_d, sub_v, now)
             return
 
         scan = r_state.scan
         # 엘리베이터가 아닌 기기들의 주기적 스캔/조회 처리
         if now - scan.tick > self.config.scan_interval:
-            self._periodic_scan_room(device, room, scan, now)
+            await self._periodic_scan_room(device, room, scan, now)
         else:
             for sub_d, sub_v in r_state.sub_devices.items():
-                self._scan_sub_device(device, room, sub_d, sub_v, now)
+                await self._scan_sub_device(device, room, sub_d, sub_v, now)
 
-    def _perform_scan(self, now: float) -> None:
+    async def _perform_scan(self, now: float) -> None:
         for device, d_state in self.wp_list.items():
             if not self._is_device_enabled(device):
                 continue
 
             for room, r_state in d_state.items():
-                self._scan_room(device, room, r_state, now)
+                await self._scan_room(device, room, r_state, now)
 
-    def scan_list(self):
+    async def scan_list(self):
         while True:
             if not self.kocom_scan:
                 now = time.time()
                 if now - self.tick > KOCOM_INTERVAL / 1000:
                     try:
-                        self._perform_scan(now)
+                        await self._perform_scan(now)
                     except Exception as e:
                         logger.debug("Scan failed: %r", e)
-            time.sleep(0.2)
+            await asyncio.sleep(0.2)
 
-    def set_serial(self, device, room, target, value, cmd="상태"):
+    async def set_serial(self, device, room, target, value, cmd="상태"):
         if (time.time() - self.tick) < KOCOM_INTERVAL / 1000:
             return
 
         if cmd == "상태":
-            logger.info("[To %s]%s/%s/%s -> %s", self._name, device, room, target, value)
+            logger.info("[To %s]%s/%s/%s -> %s", self.name, device, room, target, value)
         elif cmd == "조회":
-            logger.info("[To %s]%s/%s -> 조회", self._name, device, room)
+            logger.info("[To %s]%s/%s -> 조회", self.name, device, room)
 
         packet = (
             self.make_packet(device, room, "상태", target, value)
@@ -696,11 +688,11 @@ class Kocom:
 
         v = self.value_packet(self.parse_packet(packet))
 
-        logger.debug("[To %s]%s", self._name, packet)
+        logger.debug("[To %s]%s", self.name, packet)
         if v["command"] == "조회" and v["src_device"] == DEVICE_WALLPAD:
             logger.debug(
                 "[To %s]%s(%s) %s(%s) -> %s(%s)",
-                self._name,
+                self.name,
                 v["type"],
                 v["command"],
                 v["src_device"],
@@ -711,7 +703,7 @@ class Kocom:
         else:
             logger.debug(
                 "[To %s]%s(%s) %s(%s) -> %s(%s) = %s",
-                self._name,
+                self.name,
                 v["type"],
                 v["command"],
                 v["src_device"],
@@ -722,7 +714,8 @@ class Kocom:
             )
         if device == DEVICE_ELEVATOR:
             self.publish_state_to_ha(DEVICE_ELEVATOR, DEVICE_WALLPAD, "on")
-        self.write(packet)
+        await self.transport.write(bytearray.fromhex(packet))
+        self.tick = time.time()
 
     def make_packet(self, device, room, cmd, target, value):
         # 1. 타겟 기기 객체 찾기

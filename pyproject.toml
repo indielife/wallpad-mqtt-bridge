@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "paho-mqtt>=2.1.0",
     "pyserial>=3.5",
-    "pyserial-asyncio>=0.6",
+    "pyserial-asyncio-fast>=0.16",
 ]
 
 [dependency-groups]
@@ -16,6 +16,7 @@ dev = [
     "cz-conventional-gitmoji>=0.7.0",
     "pre-commit>=4.6.0",
     "pytest>=9.0.3",
+    "pytest-asyncio>=1.4.0",
     "ruff>=0.15.16",
     "syrupy>=5.3.2",
 ]
@@ -27,3 +28,4 @@ tag_format = "v$version"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+asyncio_mode = "auto"
