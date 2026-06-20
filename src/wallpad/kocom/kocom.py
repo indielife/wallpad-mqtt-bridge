@@ -340,23 +340,9 @@ class Kocom:
             except Exception as e:
                 logger.error("[From HA] %s = %s, %r", topic, payload, e)
 
-    def on_connect(self, client, userdata, flags, reason_code):
-        if int(reason_code) == 0:
-            logger.info("[MQTT] connected OK")
-            client.subscribe("homeassistant/status")
-            self.publish_ha_discovery(initial=True)
-        elif int(reason_code) == 1:
-            logger.info("[MQTT] 1: Connection refused - incorrect protocol version")
-        elif int(reason_code) == 2:
-            logger.info("[MQTT] 2: Connection refused - invalid client identifier")
-        elif int(reason_code) == 3:
-            logger.info("[MQTT] 3: Connection refused - server unavailable")
-        elif int(reason_code) == 4:
-            logger.info("[MQTT] 4: Connection refused - bad username or password")
-        elif int(reason_code) == 5:
-            logger.info("[MQTT] 5: Connection refused - not authorised")
-        else:
-            logger.info("[MQTT] %s : Connection refused", reason_code)
+    def on_connect(self, client, *_):
+        client.subscribe("homeassistant/status")
+        self.publish_ha_discovery(initial=True)
 
     def publish_ha_discovery(self, initial=False, remove=False):
         subscribe_list = []

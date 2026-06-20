@@ -90,22 +90,8 @@ class Grex:
                 if self.mqtt_cont["mode"] == "off" and self.mqtt_cont["speed"] == "off":
                     self.publish_state_to_ha(HA_FAN, self.mqtt_cont)
 
-    def on_connect(self, client, userdata, flags, rc):
-        if int(rc) == 0:
-            logger.info("MQTT connected OK")
-            self.publish_ha_discovery(initial=True)
-        elif int(rc) == 1:
-            logger.info("1: Connection refused - incorrect protocol version")
-        elif int(rc) == 2:
-            logger.info("2: Connection refused - invalid client identifier")
-        elif int(rc) == 3:
-            logger.info("3: Connection refused - server unavailable")
-        elif int(rc) == 4:
-            logger.info("4: Connection refused - bad username or password")
-        elif int(rc) == 5:
-            logger.info("5: Connection refused - not authorised")
-        else:
-            logger.info(rc, ": Connection refused")
+    def on_connect(self, *_):
+        self.publish_ha_discovery(initial=True)
 
     def publish_ha_discovery(self, initial=False, remove=False):
         subscribe_list = []

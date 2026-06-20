@@ -6,6 +6,14 @@ from wallpad.mqtt.config import MqttConfig
 
 logger = logging.getLogger(__name__)
 
+_CONNECT_REASON_MESSAGES = {
+    1: "Connection refused - incorrect protocol version",
+    2: "Connection refused - invalid client identifier",
+    3: "Connection refused - server unavailable",
+    4: "Connection refused - bad username or password",
+    5: "Connection refused - not authorised",
+}
+
 
 class MqttClient:
     """MQTT 브로커와의 TCP 연결 및 메시지 라우팅을 전담하는 공통 클라이언트 래퍼 클래스입니다."""
@@ -50,14 +58,14 @@ class MqttClient:
         if rc == 0:
             logger.info("Connected successfully")
             self._connected = True
+            for cb in self._connect_callbacks:
+                try:
+                    cb(client, userdata, flags, rc)
+                except Exception as e:
+                    logger.error("Error in connect callback: %r", e)
         else:
-            logger.error("Connection failed with error code: %s", rc)
-
-        for cb in self._connect_callbacks:
-            try:
-                cb(client, userdata, flags, rc)
-            except Exception as e:
-                logger.error("Error in connect callback: %r", e)
+            msg = _CONNECT_REASON_MESSAGES.get(int(rc), "Connection refused")
+            logger.error("[MQTT] %s: %s", int(rc), msg)
 
     def _on_message(self, client, userdata, msg):
         for cb in self._message_callbacks:
