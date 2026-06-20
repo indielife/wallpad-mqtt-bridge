@@ -7,6 +7,7 @@ from wallpad.transport.serial import SerialAdapter
 from wallpad.transport.socket import SocketAdapter
 
 from .base import BaseTransport
+from .reconnect import ReconnectingTransport
 from .serial import SerialTransport
 from .socket import SocketTransport
 
@@ -23,6 +24,7 @@ def create(device_cfg: dict) -> BaseTransport:
 __all__ = [
     "BaseTransport",
     "ConnectionAdapter",
+    "ReconnectingTransport",
     "SerialAdapter",
     "SerialTransport",
     "SocketAdapter",
