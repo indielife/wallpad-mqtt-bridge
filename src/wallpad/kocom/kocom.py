@@ -340,8 +340,7 @@ class Kocom:
             except Exception as e:
                 logger.error("[From HA] %s = %s, %r", topic, payload, e)
 
-    def on_connect(self, client, *_):
-        client.subscribe("homeassistant/status")
+    def on_connect(self, *_):
         self.publish_ha_discovery(initial=True)
 
     def publish_ha_discovery(self, initial=False, remove=False):
