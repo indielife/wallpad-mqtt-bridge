@@ -65,20 +65,20 @@ def mock_config():
 
 
 @pytest.fixture
-def kocom_instance(mock_config):
+def panel_instance(mock_config):
     """상위 흐름 테스트를 위해 최소한의 상태만 구성한 WallpadPanel 인스턴스"""
-    kocom = WallpadPanel.__new__(WallpadPanel)
-    kocom.config = mock_config
-    kocom.default_speed = "low"
-    kocom.ha_registry = False
-    kocom.kocom_scan = False
-    kocom.name = "kocom"
+    panel = WallpadPanel.__new__(WallpadPanel)
+    panel.config = mock_config
+    panel.default_speed = "low"
+    panel.ha_registry = False
+    panel.kocom_scan = False
+    panel.name = "kocom"
 
     # MQTT 모킹
-    kocom.d_mqtt = MagicMock()
+    panel.d_mqtt = MagicMock()
 
     # wp_list 초기화 (KocomStateManager 구조)
-    kocom.wp_list = KocomStateManager()
+    panel.wp_list = KocomStateManager()
     initial_states = {
         DEVICE_LIGHT: {
             "livingroom": {
@@ -124,6 +124,6 @@ def kocom_instance(mock_config):
         },
     }
     for device, rooms in initial_states.items():
-        kocom.wp_list[device] = rooms
+        panel.wp_list[device] = rooms
 
-    return kocom
+    return panel

@@ -6,13 +6,13 @@ from wallpad.ventilator.ventilator import Ventilator
 
 
 @pytest.fixture
-def grex_instance():
+def ventilator_instance():
     """무거운 초기화를 우회한 Ventilator 인스턴스"""
-    grex = Ventilator.__new__(Ventilator)
-    grex.device = GrexVentilator(
+    ventilator = Ventilator.__new__(Ventilator)
+    ventilator.device = GrexVentilator(
         name_prefix="test_grex", sw_version="0.1.0", packet_builder=GrexPacketBuilder()
     )
-    return grex
+    return ventilator
 
 
 @pytest.mark.parametrize(
@@ -24,9 +24,9 @@ def grex_instance():
         ("off", "off", "d08ae022000000000000"),
     ],
 )
-def test_grex_make_control_packet(grex_instance, mode, speed, expected_prefix):
+def test_grex_make_control_packet(ventilator_instance, mode, speed, expected_prefix):
     """Grex의 컨트롤 패킷이 올바르게 조립되는지 검증합니다."""
-    packet = grex_instance.device.build_control_packet(mode, speed)
+    packet = ventilator_instance.device.build_control_packet(mode, speed)
 
     assert packet.startswith(expected_prefix)
     assert len(packet) == 22  # 10 bytes * 2 + checksum(2)
@@ -41,9 +41,9 @@ def test_grex_make_control_packet(grex_instance, mode, speed, expected_prefix):
         ("off", "off", "d18be02100000000000000"),
     ],
 )
-def test_grex_make_response_packet(grex_instance, mode, speed, expected_prefix):
+def test_grex_make_response_packet(ventilator_instance, mode, speed, expected_prefix):
     """Grex의 응답 패킷이 올바르게 조립되는지 검증합니다."""
-    packet = grex_instance.device.build_response_packet(mode, speed)
+    packet = ventilator_instance.device.build_response_packet(mode, speed)
 
     assert packet.startswith(expected_prefix)
     assert len(packet) == 24  # 11 bytes * 2 + checksum(2)

@@ -31,21 +31,21 @@ def mock_ventilator_transport():
 
 def test_grex_initial_state(mock_config, mock_controller_transport, mock_ventilator_transport):
     """Ventilator 객체 생성 시 내부 상태와 통신 의존성들이 정상적으로 초기화되는지 검증합니다."""
-    grex = Ventilator(
+    ventilator = Ventilator(
         mock_config, MagicMock(), mock_controller_transport, mock_ventilator_transport
     )
 
     # 1. 글로벌 변수 의존성 세팅 검증
-    assert grex.default_speed == "low"
+    assert ventilator.default_speed == "low"
 
     # 2. 통신 연결 정보 및 디바이스 상태 객체 검증
-    assert grex.controller_transport == mock_controller_transport
-    assert grex.ventilator_transport == mock_ventilator_transport
-    assert grex.grex_cont == {"mode": "off", "speed": "off"}
-    assert grex.vent_cont == {"mode": "off", "speed": "off"}
-    assert grex.mqtt_cont == {"mode": "off", "speed": "off"}
-    assert grex.device is not None
-    assert grex.device.name_prefix == "grex"
+    assert ventilator.controller_transport == mock_controller_transport
+    assert ventilator.ventilator_transport == mock_ventilator_transport
+    assert ventilator.grex_cont == {"mode": "off", "speed": "off"}
+    assert ventilator.vent_cont == {"mode": "off", "speed": "off"}
+    assert ventilator.mqtt_cont == {"mode": "off", "speed": "off"}
+    assert ventilator.device is not None
+    assert ventilator.device.name_prefix == "grex"
 
 
 def test_grex_default_speed_fallback(
@@ -54,8 +54,8 @@ def test_grex_default_speed_fallback(
     """Ventilator 객체 생성 시 잘못된 default_speed가 주어지면 low로 강제 설정되는지 검증합니다."""
     mock_config.ventilator_default_speed = "invalid_speed"
 
-    grex = Ventilator(
+    ventilator = Ventilator(
         mock_config, MagicMock(), mock_controller_transport, mock_ventilator_transport
     )
 
-    assert grex.default_speed == "low"
+    assert ventilator.default_speed == "low"

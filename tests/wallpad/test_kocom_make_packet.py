@@ -15,9 +15,9 @@ from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 
 
 @pytest.fixture
-def kocom_instance():
+def panel_instance():
     """무거운 초기화를 우회하고 패킷 생성에 필요한 최소한의 상태만 구성한 WallpadPanel 인스턴스"""
-    kocom = WallpadPanel.__new__(WallpadPanel)
+    panel = WallpadPanel.__new__(WallpadPanel)
     mock_config = MagicMock()
     mock_config.kocom_room = {
         "00": "livingroom",
@@ -46,8 +46,8 @@ def kocom_instance():
         "room1": "02",
         "room2": "03",
     }
-    kocom.config = mock_config
-    kocom.wp_list = {
+    panel.config = mock_config
+    panel.wp_list = {
         DEVICE_LIGHT: {
             "livingroom": {
                 "light1": {"state": "off"},
@@ -68,43 +68,43 @@ def kocom_instance():
             }
         },
     }
-    kocom.packet_builder = KocomPacketBuilder()
-    kocom.devices = [
+    panel.packet_builder = KocomPacketBuilder()
+    panel.devices = [
         Light(
             name_prefix="test",
             room="livingroom",
             sub_device="light1",
             sw_version="1.0",
-            packet_builder=kocom.packet_builder,
+            packet_builder=panel.packet_builder,
         ),
         Light(
             name_prefix="test",
             room="livingroom",
             sub_device="light2",
             sw_version="1.0",
-            packet_builder=kocom.packet_builder,
+            packet_builder=panel.packet_builder,
         ),
         Light(
             name_prefix="test",
             room="livingroom",
             sub_device="light3",
             sw_version="1.0",
-            packet_builder=kocom.packet_builder,
+            packet_builder=panel.packet_builder,
         ),
         Thermostat(
-            name_prefix="test", room="room1", sw_version="1.0", packet_builder=kocom.packet_builder
+            name_prefix="test", room="room1", sw_version="1.0", packet_builder=panel.packet_builder
         ),
-        Fan(name_prefix="test", sw_version="1.0", packet_builder=kocom.packet_builder),
-        Elevator(name_prefix="test", sw_version="1.0", packet_builder=kocom.packet_builder),
-        Gas(name_prefix="test", sw_version="1.0", packet_builder=kocom.packet_builder),
+        Fan(name_prefix="test", sw_version="1.0", packet_builder=panel.packet_builder),
+        Elevator(name_prefix="test", sw_version="1.0", packet_builder=panel.packet_builder),
+        Gas(name_prefix="test", sw_version="1.0", packet_builder=panel.packet_builder),
     ]
-    return kocom
+    return panel
 
 
-def test_make_packet_light(kocom_instance):
+def test_make_packet_light(panel_instance):
     """조명(Light) 제어 시 방 안의 다른 조명 상태까지 포함하여 페이로드를 조립하는지 검증합니다."""
     # 거실(livingroom)의 1번 조명을 'on'으로 제어
-    packet = kocom_instance.make_packet(DEVICE_LIGHT, "livingroom", "상태", "light1", "on")
+    packet = panel_instance.make_packet(DEVICE_LIGHT, "livingroom", "상태", "light1", "on")
 
     expected_body = (
         "aa5530bc00"  # Header
@@ -119,10 +119,10 @@ def test_make_packet_light(kocom_instance):
     assert len(packet) == len(expected_body) + 2 + 4  # 본문 + 체크섬(2자) + 테일(4자)
 
 
-def test_make_packet_thermostat(kocom_instance):
+def test_make_packet_thermostat(panel_instance):
     """보일러(Thermostat) 제어 시 모드와 목표 온도를 기반으로 페이로드를 조립하는지 검증합니다."""
     # room1 보일러 제어 (모드: heat, 온도: 25도)
-    packet = kocom_instance.make_packet(DEVICE_THERMOSTAT, "room1", "상태", "", "")
+    packet = panel_instance.make_packet(DEVICE_THERMOSTAT, "room1", "상태", "", "")
 
     expected_body = (
         "aa5530bc00"  # Header
@@ -135,9 +135,9 @@ def test_make_packet_thermostat(kocom_instance):
     assert packet.startswith(expected_body)
 
 
-def test_make_packet_elevator(kocom_instance):
+def test_make_packet_elevator(panel_instance):
     """엘리베이터 호출 시 p_device와 p_dst가 특수하게 덮어쓰여지는지 검증합니다."""
-    packet = kocom_instance.make_packet(DEVICE_ELEVATOR, "wallpad", "상태", "elevator", "on")
+    packet = panel_instance.make_packet(DEVICE_ELEVATOR, "wallpad", "상태", "elevator", "on")
 
     expected_body = (
         "aa5530bc00"  # Header
@@ -147,9 +147,9 @@ def test_make_packet_elevator(kocom_instance):
     assert packet.startswith(expected_body)
 
 
-def test_make_packet_gas(kocom_instance):
+def test_make_packet_gas(panel_instance):
     """가스 밸브 제어 시 p_cmd가 'off'로 강제되는지 검증합니다."""
-    packet = kocom_instance.make_packet(DEVICE_GAS, "wallpad", "상태", "gas", "off")
+    packet = panel_instance.make_packet(DEVICE_GAS, "wallpad", "상태", "gas", "off")
 
     expected_body = (
         "aa5530bc00"  # Header
@@ -162,9 +162,9 @@ def test_make_packet_gas(kocom_instance):
     assert packet.startswith(expected_body)
 
 
-def test_make_packet_fan(kocom_instance):
+def test_make_packet_fan(panel_instance):
     """환기팬(Fan) 제어 시 모드와 풍속을 기반으로 페이로드를 조립하는지 검증합니다."""
-    packet = kocom_instance.make_packet(DEVICE_FAN, "wallpad", "상태", "fan", "on")
+    packet = panel_instance.make_packet(DEVICE_FAN, "wallpad", "상태", "fan", "on")
 
     expected_body = (
         "aa5530bc00"  # Header

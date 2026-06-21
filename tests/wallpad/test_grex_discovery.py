@@ -13,7 +13,7 @@ from wallpad.ventilator.ventilator import (
 
 
 @pytest.fixture
-def grex_factory():
+def ventilator_factory():
     """
     Ventilator 인스턴스와 mock_mqtt_instance를 생성해주는 팩토리 픽스처.
     """
@@ -31,21 +31,21 @@ def grex_factory():
         mock_config.sw_version = "RS485 Compilation 0.1.0"
         mock_config.ventilator_default_speed = "low"
 
-        grex = Ventilator(
+        ventilator = Ventilator(
             mock_config,
             mock_mqtt_client,
             MagicMock(),
             MagicMock(),
         )
-        return grex, mock_mqtt_instance
+        return ventilator, mock_mqtt_instance
 
     yield _create
 
 
-def test_grex_publish_ha_discovery(snapshot, grex_factory):
-    grex, mock_mqtt_instance = grex_factory()
+def test_grex_publish_ha_discovery(snapshot, ventilator_factory):
+    ventilator, mock_mqtt_instance = ventilator_factory()
 
-    grex._publish_ha_discovery()
+    ventilator._publish_ha_discovery()
 
     publish_calls = mock_mqtt_instance.publish.call_args_list
     assert len(publish_calls) > 0
@@ -76,10 +76,10 @@ def test_grex_publish_ha_discovery(snapshot, grex_factory):
     mock_mqtt_instance.subscribe.assert_not_called()
 
 
-def test_grex_subscribe_ha_topics(snapshot, grex_factory):
-    grex, mock_mqtt_instance = grex_factory()
+def test_grex_subscribe_ha_topics(snapshot, ventilator_factory):
+    ventilator, mock_mqtt_instance = ventilator_factory()
 
-    grex._subscribe_ha_topics()
+    ventilator._subscribe_ha_topics()
 
     subscribe_calls = mock_mqtt_instance.subscribe.call_args_list
     assert len(subscribe_calls) > 0

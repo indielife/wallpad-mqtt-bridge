@@ -64,13 +64,13 @@ def kocom_factory(mock_config):
         mock_config.wp_elevator = active_device == "elevator"
         mock_config.wp_thermostat = active_device == "thermostat"
 
-        wallpad = WallpadPanel(
+        panel = WallpadPanel(
             mock_config,
             mock_mqtt_client,
             MagicMock(),
         )
 
-        return wallpad, mock_mqtt_instance
+        return panel, mock_mqtt_instance
 
     yield _create
 
