@@ -281,7 +281,7 @@ class TestValidateVentilator:
         with pytest.raises(ValueError, match="Ventilator serial ports are not fully configured."):
             config.validate()
 
-    def test_socket_ok(self):
+    def test_socket_not_supported(self):
         config = _make_config(
             comm_type="serial",
             serial_port="/dev/ttyUSB0",
@@ -289,9 +289,10 @@ class TestValidateVentilator:
             ventilator_socket_host="192.168.1.101",
         )
         config._ventilator_enabled = True
-        config.validate()
+        with pytest.raises(ValueError, match="Ventilator socket connection is not yet supported."):
+            config.validate()
 
-    def test_socket_missing_host(self):
+    def test_socket_missing_host_not_supported(self):
         config = _make_config(
             comm_type="serial",
             serial_port="/dev/ttyUSB0",
@@ -299,5 +300,5 @@ class TestValidateVentilator:
             ventilator_socket_host="",
         )
         config._ventilator_enabled = True
-        with pytest.raises(ValueError, match="Ventilator socket host is not configured."):
+        with pytest.raises(ValueError, match="Ventilator socket connection is not yet supported."):
             config.validate()

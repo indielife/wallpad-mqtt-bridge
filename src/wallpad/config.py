@@ -197,12 +197,10 @@ class AppConfig:
                 raise ValueError("Wallpad socket host is not configured.")
 
     def _validate_ventilator(self) -> None:
-        if self.ventilator_connection_type == "serial":
-            if not self.ventilator_ctrl_port or not self.ventilator_unit_port:
-                raise ValueError("Ventilator serial ports are not fully configured.")
-        elif self.ventilator_connection_type == "socket":
-            if not self.ventilator_socket_host:
-                raise ValueError("Ventilator socket host is not configured.")
+        if self.ventilator_connection_type == "socket":
+            raise ValueError("Ventilator socket connection is not yet supported.")
+        if not self.ventilator_ctrl_port or not self.ventilator_unit_port:
+            raise ValueError("Ventilator serial ports are not fully configured.")
 
     @property
     def ventilator(self) -> str:
