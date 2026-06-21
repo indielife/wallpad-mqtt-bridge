@@ -289,7 +289,9 @@ class TestValidateVentilator:
             ventilator_socket_host="192.168.1.101",
         )
         config._ventilator_enabled = True
-        with pytest.raises(ValueError, match=r"Ventilator socket connection is not yet supported\."):
+        with pytest.raises(
+            ValueError, match=r"Ventilator socket connection is not yet supported\."
+        ):
             config.validate()
 
     def test_socket_missing_host_not_supported(self):
@@ -300,5 +302,7 @@ class TestValidateVentilator:
             ventilator_socket_host="",
         )
         config._ventilator_enabled = True
-        with pytest.raises(ValueError, match=r"Ventilator socket connection is not yet supported\."):
+        with pytest.raises(
+            ValueError, match=r"Ventilator socket connection is not yet supported\."
+        ):
             config.validate()
