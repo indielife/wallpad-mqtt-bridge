@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from wallpad.grex.devices.grex import HA_FAN, HA_PREFIX, HA_SENSOR, GrexVentilator
+from wallpad.ventilator.devices.grex import HA_FAN, HA_PREFIX, HA_SENSOR, GrexVentilator
 
 
 @pytest.fixture

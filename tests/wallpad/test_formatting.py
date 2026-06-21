@@ -1,14 +1,14 @@
 from unittest.mock import MagicMock
 
-from wallpad.grex.grex import Grex
-from wallpad.kocom.devices import Thermostat
-from wallpad.kocom.kocom import DEVICE_THERMOSTAT, Kocom
+from wallpad.panel.devices import Thermostat
+from wallpad.panel.panel import DEVICE_THERMOSTAT, WallpadPanel
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
+from wallpad.ventilator.ventilator import Ventilator
 
 
 def test_kocom_check_sum_format():
-    """Kocom 패킷의 체크섬이 2자리 16진수(02x)로 올바르게 포맷팅되는지 검증합니다."""
-    kocom = Kocom.__new__(Kocom)  # 무거운 __init__ 을 우회하여 인스턴스 생성
+    """WallpadPanel 패킷의 체크섬이 2자리 16진수(02x)로 올바르게 포맷팅되는지 검증합니다."""
+    kocom = WallpadPanel.__new__(WallpadPanel)  # 무거운 __init__ 을 우회하여 인스턴스 생성
 
     # 17바이트 중 1바이트를 09로 설정. v_sum = 0.
     # sum = 9 + 1 = 10 -> "0a" (16진수 1자리일 때 앞에 0이 채워져야 함)
@@ -21,7 +21,7 @@ def test_kocom_check_sum_format():
 
 def test_kocom_make_packet_thermostat_temp_format():
     """보일러 목표 온도가 2자리 16진수(02x)로 올바르게 포맷팅되는지 검증합니다."""
-    kocom = Kocom.__new__(Kocom)
+    kocom = WallpadPanel.__new__(WallpadPanel)
     mock_config = MagicMock()
     mock_config.kocom_room = {
         "00": "livingroom",
@@ -72,14 +72,14 @@ def test_kocom_make_packet_thermostat_temp_format():
 
 
 def test_grex_hex_to_list_format():
-    """Grex 패킷 문자열이 0x 접두사가 붙은 리스트로 올바르게 변환되는지 검증합니다."""
-    grex = Grex.__new__(Grex)
+    """Ventilator 패킷 문자열이 0x 접두사가 붙은 리스트로 올바르게 변환되는지 검증합니다."""
+    grex = Ventilator.__new__(Ventilator)
     assert grex.hex_to_list("d08a09") == ["0xd0", "0x8a", "0x09"]
 
 
 def test_grex_checksum_format():
     """Grex의 체크섬 검증 포맷 로직을 검증합니다."""
-    grex = Grex.__new__(Grex)
+    grex = Ventilator.__new__(Ventilator)
 
     packet_with_checksum = "d0080109"
     is_valid, chk_sum_hex = grex.validate_checksum(packet_with_checksum, 3)

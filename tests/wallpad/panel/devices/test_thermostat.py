@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from wallpad.kocom.devices.thermostat import HA_CLIMATE, HA_PREFIX, Thermostat
+from wallpad.panel.devices.thermostat import HA_CLIMATE, HA_PREFIX, Thermostat
 
 
 @pytest.fixture

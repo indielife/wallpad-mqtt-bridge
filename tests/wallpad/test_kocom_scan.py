@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from wallpad.kocom.kocom import (
+from wallpad.panel.panel import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
     DEVICE_GAS,
@@ -40,7 +40,7 @@ async def test_scan_list_periodic_scan_trigger(kocom_instance, monkeypatch):
     kocom_instance.set_serial = AsyncMock()
 
     with (
-        patch("wallpad.kocom.kocom.asyncio.sleep", side_effect=_stop_after_one),
+        patch("wallpad.panel.panel.asyncio.sleep", side_effect=_stop_after_one),
         contextlib.suppress(RuntimeError),
     ):
         await kocom_instance.scan_list()
@@ -76,7 +76,7 @@ async def test_scan_list_sub_device_set_retry(kocom_instance, monkeypatch):
     kocom_instance.set_serial = AsyncMock()
 
     with (
-        patch("wallpad.kocom.kocom.asyncio.sleep", side_effect=_stop_after_one),
+        patch("wallpad.panel.panel.asyncio.sleep", side_effect=_stop_after_one),
         contextlib.suppress(RuntimeError),
     ):
         await kocom_instance.scan_list()
@@ -107,7 +107,7 @@ async def test_scan_list_sub_device_float_retry(kocom_instance, monkeypatch):
     kocom_instance.set_serial = AsyncMock()
 
     with (
-        patch("wallpad.kocom.kocom.asyncio.sleep", side_effect=_stop_after_one),
+        patch("wallpad.panel.panel.asyncio.sleep", side_effect=_stop_after_one),
         contextlib.suppress(RuntimeError),
     ):
         await kocom_instance.scan_list()
@@ -142,7 +142,7 @@ async def test_scan_list_elevator_trigger(kocom_instance, monkeypatch):
     kocom_instance.set_serial = AsyncMock()
 
     with (
-        patch("wallpad.kocom.kocom.asyncio.sleep", side_effect=_stop_after_one),
+        patch("wallpad.panel.panel.asyncio.sleep", side_effect=_stop_after_one),
         contextlib.suppress(RuntimeError),
     ):
         await kocom_instance.scan_list()

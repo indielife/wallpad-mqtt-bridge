@@ -3,19 +3,19 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from wallpad.grex.grex import (
+from wallpad.ventilator.ventilator import (
     DEVICE_FAN,
     HA_FAN,
     HA_PREFIX,
     HA_SENSOR,
-    Grex,
+    Ventilator,
 )
 
 
 @pytest.fixture
 def grex_factory():
     """
-    Grex 인스턴스와 mock_mqtt_instance를 생성해주는 팩토리 픽스처.
+    Ventilator 인스턴스와 mock_mqtt_instance를 생성해주는 팩토리 픽스처.
     """
     mock_mqtt_instance = MagicMock()
     mock_mqtt_client = MagicMock()
@@ -31,7 +31,7 @@ def grex_factory():
         mock_config.sw_version = "RS485 Compilation 0.1.0"
         mock_config.ventilator_default_speed = "low"
 
-        grex = Grex(
+        grex = Ventilator(
             mock_config,
             mock_mqtt_client,
             MagicMock(),

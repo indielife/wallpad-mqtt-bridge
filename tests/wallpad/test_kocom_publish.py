@@ -3,8 +3,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from wallpad.kocom.kocom import Kocom
 from wallpad.mqtt import HA_CLIMATE, HA_FAN, HA_LIGHT, HA_PREFIX, HA_SENSOR, HA_SWITCH
+from wallpad.panel.panel import WallpadPanel
 from wallpad.protocol.kocom.constants import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
@@ -36,7 +36,7 @@ def mock_config():
 
 @pytest.fixture
 def kocom_factory(mock_config):
-    """활성화할 device를 지정해 Kocom 인스턴스와 mock publish 검증용 리스트를 반환합니다."""
+    """활성화할 device를 지정해 WallpadPanel 인스턴스와 mock publish 검증용 리스트를 반환합니다."""
     published = []
 
     mock_mqtt = MagicMock()
@@ -51,7 +51,7 @@ def kocom_factory(mock_config):
         mock_config.wp_elevator = "elevator" in active_devices
         mock_config.wp_gas = "gas" in active_devices
         mock_config.wp_fan = "fan" in active_devices
-        kocom = Kocom(mock_config, mock_mqtt, MagicMock())
+        kocom = WallpadPanel(mock_config, mock_mqtt, MagicMock())
         published.clear()
         return kocom, published
 

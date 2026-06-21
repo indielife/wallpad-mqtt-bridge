@@ -2,22 +2,22 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from wallpad.kocom.devices import Elevator, Fan, Gas, Light, Thermostat
-from wallpad.kocom.kocom import (
+from wallpad.panel.devices import Elevator, Fan, Gas, Light, Thermostat
+from wallpad.panel.panel import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
     DEVICE_GAS,
     DEVICE_LIGHT,
     DEVICE_THERMOSTAT,
-    Kocom,
+    WallpadPanel,
 )
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 
 
 @pytest.fixture
 def kocom_instance():
-    """무거운 초기화를 우회하고 패킷 생성에 필요한 최소한의 상태만 구성한 Kocom 인스턴스"""
-    kocom = Kocom.__new__(Kocom)
+    """무거운 초기화를 우회하고 패킷 생성에 필요한 최소한의 상태만 구성한 WallpadPanel 인스턴스"""
+    kocom = WallpadPanel.__new__(WallpadPanel)
     mock_config = MagicMock()
     mock_config.kocom_room = {
         "00": "livingroom",

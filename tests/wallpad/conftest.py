@@ -2,16 +2,16 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from wallpad.kocom.kocom import (
+from wallpad.panel.panel import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
     DEVICE_GAS,
     DEVICE_LIGHT,
     DEVICE_PLUG,
     DEVICE_THERMOSTAT,
-    Kocom,
+    WallpadPanel,
 )
-from wallpad.kocom.state import KocomStateManager
+from wallpad.panel.state import KocomStateManager
 
 
 @pytest.fixture
@@ -37,7 +37,7 @@ def mock_config():
     config.packet_delay = 0.8
     config.kocom_default_speed = "low"
 
-    # 5. Kocom 사이즈 및 방 이름 매핑 설정
+    # 5. WallpadPanel 사이즈 및 방 이름 매핑 설정
     config.kocom_light_size = {"livingroom": 3}
     config.kocom_plug_size = {"livingroom": 2}
     config.kocom_room = {
@@ -66,8 +66,8 @@ def mock_config():
 
 @pytest.fixture
 def kocom_instance(mock_config):
-    """상위 흐름 테스트를 위해 최소한의 상태만 구성한 Kocom 인스턴스"""
-    kocom = Kocom.__new__(Kocom)
+    """상위 흐름 테스트를 위해 최소한의 상태만 구성한 WallpadPanel 인스턴스"""
+    kocom = WallpadPanel.__new__(WallpadPanel)
     kocom.config = mock_config
     kocom.default_speed = "low"
     kocom.ha_registry = False

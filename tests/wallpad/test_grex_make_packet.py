@@ -1,14 +1,14 @@
 import pytest
 
-from wallpad.grex.devices import GrexVentilator
-from wallpad.grex.grex import Grex
 from wallpad.protocol.grex.packet_builder import GrexPacketBuilder
+from wallpad.ventilator.devices import GrexVentilator
+from wallpad.ventilator.ventilator import Ventilator
 
 
 @pytest.fixture
 def grex_instance():
-    """무거운 초기화를 우회한 Grex 인스턴스"""
-    grex = Grex.__new__(Grex)
+    """무거운 초기화를 우회한 Ventilator 인스턴스"""
+    grex = Ventilator.__new__(Ventilator)
     grex.device = GrexVentilator(
         name_prefix="test_grex", sw_version="0.1.0", packet_builder=GrexPacketBuilder()
     )

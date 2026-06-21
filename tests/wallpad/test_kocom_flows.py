@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from wallpad.kocom.kocom import (
+from wallpad.panel.panel import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
     DEVICE_GAS,

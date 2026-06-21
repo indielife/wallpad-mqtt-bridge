@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from wallpad.kocom.devices.light import HA_LIGHT, HA_PREFIX, Light
+from wallpad.panel.devices.light import HA_LIGHT, HA_PREFIX, Light
 
 
 @pytest.fixture

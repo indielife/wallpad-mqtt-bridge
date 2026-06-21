@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from wallpad.kocom.devices.plug import HA_PREFIX, HA_SWITCH, Plug
+from wallpad.panel.devices.plug import HA_PREFIX, HA_SWITCH, Plug
 
 
 @pytest.fixture

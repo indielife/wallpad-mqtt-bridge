@@ -3,8 +3,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from wallpad.kocom.kocom import Kocom
 from wallpad.mqtt import HA_PREFIX, HA_SENSOR, HA_SWITCH
+from wallpad.panel.panel import WallpadPanel
 from wallpad.protocol.kocom.constants import DEVICE_ELEVATOR, DEVICE_GAS
 
 
@@ -21,7 +21,7 @@ def mock_config():
     config.packet_delay = 0.8
     config.kocom_default_speed = "low"
 
-    # 5. Kocom 사이즈 및 방 이름 매핑 설정
+    # 5. WallpadPanel 사이즈 및 방 이름 매핑 설정
     config.kocom_light_size = {"room1": 1}
     config.kocom_plug_size = {"room1": 1}
     config.kocom_room = {"00": "room1"}
@@ -38,7 +38,7 @@ def mock_config():
 @pytest.fixture
 def kocom_factory(mock_config):
     """
-    Kocom 인스턴스와 mock_mqtt_instance를 생성해주는 팩토리 픽스처.
+    WallpadPanel 인스턴스와 mock_mqtt_instance를 생성해주는 팩토리 픽스처.
     활성화할 디바이스 이름을 전달받아 해당 디바이스만 True로 설정합니다.
     """
     mock_mqtt_instance = MagicMock()
@@ -64,7 +64,7 @@ def kocom_factory(mock_config):
         mock_config.wp_elevator = active_device == "elevator"
         mock_config.wp_thermostat = active_device == "thermostat"
 
-        wallpad = Kocom(
+        wallpad = WallpadPanel(
             mock_config,
             mock_mqtt_client,
             MagicMock(),
@@ -127,7 +127,7 @@ def kocom_factory(mock_config):
     ],
 )
 def test_publish_ha_discovery(snapshot, active_device, expected_topics, remove, kocom_factory):
-    # 1. 의존성 팩토리로 Kocom 인스턴스 생성
+    # 1. 의존성 팩토리로 WallpadPanel 인스턴스 생성
     wallpad, mock_mqtt_instance = kocom_factory(active_device)
 
     # 2. 테스트할 메서드 실행

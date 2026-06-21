@@ -2,14 +2,14 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from wallpad.kocom.kocom import (
+from wallpad.panel.panel import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
     DEVICE_GAS,
     DEVICE_LIGHT,
     DEVICE_PLUG,
     DEVICE_THERMOSTAT,
-    Kocom,
+    WallpadPanel,
 )
 
 
@@ -35,7 +35,7 @@ def mock_config():
     config.packet_delay = 0.8
     config.kocom_default_speed = "low"
 
-    # 5. Kocom 사이즈 및 방 이름 매핑 설정
+    # 5. WallpadPanel 사이즈 및 방 이름 매핑 설정
     config.kocom_light_size = {"livingroom": 3}
     config.kocom_plug_size = {"livingroom": 2}
     config.kocom_room = {
@@ -79,8 +79,8 @@ def mock_transport():
 
 
 def test_kocom_initial_state(mock_config, mock_transport):
-    """Kocom 객체 생성 시 내부 상태와 설정값들이 정상적으로 초기화되는지 검증합니다."""
-    kocom = Kocom(mock_config, MagicMock(), mock_transport)
+    """WallpadPanel 객체 생성 시 내부 상태와 설정값들이 정상적으로 초기화되는지 검증합니다."""
+    kocom = WallpadPanel(mock_config, MagicMock(), mock_transport)
 
     # 1. 글로벌 변수 의존성 세팅 검증
     assert kocom.default_speed == "low"

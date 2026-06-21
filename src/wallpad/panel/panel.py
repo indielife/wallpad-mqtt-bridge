@@ -4,15 +4,6 @@ import logging
 import time
 
 from wallpad.config import AppConfig
-from wallpad.kocom.devices import (
-    Elevator,
-    Fan,
-    Gas,
-    Light,
-    Plug,
-    Thermostat,
-)
-from wallpad.kocom.state import DeviceState, KocomStateManager, RoomState, ScanState, SubDeviceState
 from wallpad.mqtt import (
     HA_CLIMATE,
     HA_FAN,
@@ -20,6 +11,15 @@ from wallpad.mqtt import (
     HA_SWITCH,
     MqttClient,
 )
+from wallpad.panel.devices import (
+    Elevator,
+    Fan,
+    Gas,
+    Light,
+    Plug,
+    Thermostat,
+)
+from wallpad.panel.state import DeviceState, KocomStateManager, RoomState, ScanState, SubDeviceState
 from wallpad.protocol.kocom.constants import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
@@ -53,7 +53,7 @@ _DEVICE_TYPE_MAP = {
 }
 
 
-class Kocom:
+class WallpadPanel:
     def __init__(  # noqa: C901
         self,
         config: AppConfig,

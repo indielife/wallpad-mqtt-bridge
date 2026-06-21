@@ -4,7 +4,6 @@ import logging
 from typing import ClassVar
 
 from wallpad.config import AppConfig
-from wallpad.grex.devices import GrexVentilator
 from wallpad.mqtt import (
     HA_FAN,
     HA_PREFIX,
@@ -14,11 +13,12 @@ from wallpad.mqtt import (
 from wallpad.protocol.grex.constants import DEVICE_FAN, MODE, SPEED
 from wallpad.protocol.grex.packet_builder import GrexPacketBuilder
 from wallpad.transport import BaseTransport
+from wallpad.ventilator.devices import GrexVentilator
 
 logger = logging.getLogger(__name__)
 
 
-class Grex:
+class Ventilator:
     # GREX 전열교환기 패킷 기본정보
     MODE: ClassVar[dict[str, str]] = MODE
     SPEED: ClassVar[dict[str, str]] = SPEED

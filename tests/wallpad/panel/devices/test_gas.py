@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from wallpad.kocom.devices.gas import HA_PREFIX, HA_SENSOR, HA_SWITCH, Gas
+from wallpad.panel.devices.gas import HA_PREFIX, HA_SENSOR, HA_SWITCH, Gas
 
 
 @pytest.fixture

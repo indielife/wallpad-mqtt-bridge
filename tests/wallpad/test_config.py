@@ -38,7 +38,7 @@ SAMPLE_OPTIONS_JSON = {
     "kocom_room_thermostat": ["livingroom"],
     "ventilator": {
         "enable": False,
-        "manufacturer": "Grex",
+        "manufacturer": "grex",
         "connection_type": "Serial",
         "serial": {"ventilator_port": "/dev/ttyUSB1", "controller_port": "/dev/ttyUSB2"},
         "socket": {"host": "192.168.1.101", "port": 8899},

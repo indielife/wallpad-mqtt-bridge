@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from wallpad.kocom.devices.fan import HA_FAN, HA_PREFIX, Fan
+from wallpad.panel.devices.fan import HA_FAN, HA_PREFIX, Fan
 
 
 @pytest.fixture

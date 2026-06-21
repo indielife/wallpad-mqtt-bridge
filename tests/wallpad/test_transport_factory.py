@@ -32,7 +32,7 @@ SERIAL_OPTIONS_JSON = {
     },
     "ventilator": {
         "enable": True,
-        "manufacturer": "Grex",
+        "manufacturer": "grex",
         "connection_type": "Serial",
         "serial": {"ventilator_port": "/dev/ttyUSB1", "controller_port": "/dev/ttyUSB2"},
     },
