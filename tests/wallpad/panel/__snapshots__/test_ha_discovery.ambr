@@ -20,7 +20,7 @@
 # ---
 # name: test_publish_ha_discovery[False-fan-expected_topics2][fan_publish_payload_fan_wallpad_fan]
   dict({
-    'cmd_t': 'homeassistant/fan/wallpad/mode',
+    'command_topic': 'homeassistant/fan/wallpad/mode',
     'device': dict({
       'ids': 'kocom_wallpad',
       'mdl': 'Wallpad',
@@ -29,8 +29,8 @@
       'sw': 'RS485 Compilation 0.1.0',
     }),
     'name': 'test_name_wallpad_fan',
-    'pl_off': 'off',
-    'pl_on': 'on',
+    'payload_off': 'off',
+    'payload_on': 'on',
     'spd_cmd_t': 'homeassistant/fan/wallpad/speed',
     'spd_stat_t': 'homeassistant/fan/wallpad/state',
     'spd_val_tpl': '{{ value_json.speed }}',
@@ -40,9 +40,9 @@
       'high',
       'off',
     ]),
-    'stat_t': 'homeassistant/fan/wallpad/state',
-    'stat_val_tpl': '{{ value_json.mode }}',
-    'uniq_id': 'test_name_wallpad_fan',
+    'state_topic': 'homeassistant/fan/wallpad/state',
+    'state_value_template': '{{ value_json.mode }}',
+    'unique_id': 'test_name_wallpad_fan',
   })
 # ---
 # name: test_publish_ha_discovery[False-gas-expected_topics1][gas_publish_payload_sensor_wallpad_gas]

@@ -30,16 +30,16 @@ def test_fan_get_discovery_payloads_add(fan_device):
 
     expected_payload = {
         "name": "test_kocom_wallpad_fan",
-        "cmd_t": f"{HA_PREFIX}/{HA_FAN}/wallpad/mode",
-        "stat_t": f"{HA_PREFIX}/{HA_FAN}/wallpad/state",
+        "command_topic": f"{HA_PREFIX}/{HA_FAN}/wallpad/mode",
+        "state_topic": f"{HA_PREFIX}/{HA_FAN}/wallpad/state",
         "spd_cmd_t": f"{HA_PREFIX}/{HA_FAN}/wallpad/speed",
         "spd_stat_t": f"{HA_PREFIX}/{HA_FAN}/wallpad/state",
-        "stat_val_tpl": "{{ value_json.mode }}",
+        "state_value_template": "{{ value_json.mode }}",
         "spd_val_tpl": "{{ value_json.speed }}",
-        "pl_on": "on",
-        "pl_off": "off",
+        "payload_on": "on",
+        "payload_off": "off",
         "spds": ["low", "medium", "high", "off"],
-        "uniq_id": "test_kocom_wallpad_fan",
+        "unique_id": "test_kocom_wallpad_fan",
         "device": fan_device.device_info,
     }
     assert json.loads(payload_str) == expected_payload

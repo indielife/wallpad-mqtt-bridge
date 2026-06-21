@@ -24,16 +24,16 @@ class Fan(BaseDevice):
 
         payload = {
             "name": f"{self.name_prefix}_{self.room}_{self.sub_device}",
-            "cmd_t": f"{HA_PREFIX}/{HA_FAN}/{self.room}/mode",
-            "stat_t": f"{HA_PREFIX}/{HA_FAN}/{self.room}/state",
+            "command_topic": f"{HA_PREFIX}/{HA_FAN}/{self.room}/mode",
+            "state_topic": f"{HA_PREFIX}/{HA_FAN}/{self.room}/state",
             "spd_cmd_t": f"{HA_PREFIX}/{HA_FAN}/{self.room}/speed",
             "spd_stat_t": f"{HA_PREFIX}/{HA_FAN}/{self.room}/state",
-            "stat_val_tpl": "{{ value_json.mode }}",
+            "state_value_template": "{{ value_json.mode }}",
             "spd_val_tpl": "{{ value_json.speed }}",
-            "pl_on": "on",
-            "pl_off": "off",
+            "payload_on": "on",
+            "payload_off": "off",
             "spds": ["low", "medium", "high", "off"],
-            "uniq_id": f"{self.name_prefix}_{self.room}_{self.sub_device}",
+            "unique_id": f"{self.name_prefix}_{self.room}_{self.sub_device}",
             "device": self.device_info,
         }
         return [(topic, json.dumps(payload))]
@@ -43,9 +43,9 @@ class Fan(BaseDevice):
 
     def get_subscribe_topics(self) -> list[str]:
         topic = f"{HA_PREFIX}/{HA_FAN}/{self.room}_{self.sub_device}/config"
-        cmd_t = f"{HA_PREFIX}/{HA_FAN}/{self.room}/mode"
+        command_topic = f"{HA_PREFIX}/{HA_FAN}/{self.room}/mode"
         spd_cmd_t = f"{HA_PREFIX}/{HA_FAN}/{self.room}/speed"
-        return [topic, cmd_t, spd_cmd_t]
+        return [topic, command_topic, spd_cmd_t]
 
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs
