@@ -85,6 +85,7 @@ async def run_ventilator(config: AppConfig, mqtt_client: MqttClient) -> list[asy
 async def main():
     config = AppConfig()
     config.load()
+    config.validate()
 
     root_dir = os.path.abspath(os.getcwd())
     log_path = os.path.join(root_dir, "log", "kocom.log")

@@ -182,6 +182,25 @@ class AppConfig:
 
         self.ventilator_default_speed = vent.get("default_speed", self.ventilator_default_speed)
 
+    def validate(self) -> None:
+        """AppConfig 필수값 검증. 유효하지 않으면 ValueError를 발생시킵니다."""
+        self._validate_wallpad()
+        if self._ventilator_enabled:
+            self._validate_ventilator()
+
+    def _validate_wallpad(self) -> None:
+        if self.comm_type == "serial":
+            if not self.serial_port:
+                raise ValueError("Wallpad serial port is not configured.")
+        elif self.comm_type == "socket" and not self.socket_host:
+            raise ValueError("Wallpad socket host is not configured.")
+
+    def _validate_ventilator(self) -> None:
+        if self.ventilator_connection_type == "socket":
+            raise ValueError("Ventilator socket connection is not yet supported.")
+        if not self.ventilator_ctrl_port or not self.ventilator_unit_port:
+            raise ValueError("Ventilator serial ports are not fully configured.")
+
     @property
     def ventilator(self) -> str:
         return self.ventilator_manufacturer

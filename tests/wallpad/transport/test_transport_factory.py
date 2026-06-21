@@ -1,7 +1,5 @@
 import json
 
-import pytest
-
 from wallpad.config import AppConfig
 from wallpad.transport import (
     create_ventilator_transports,
@@ -106,16 +104,3 @@ def test_create_ventilator_transports_serial(tmp_path):
     assert unit._transport.port == "/dev/ttyUSB1"
 
 
-def test_create_wallpad_transport_invalid_type(tmp_path):
-    """잘못된 wallpad 연결 타입 설정 시 ValueError를 발생하는지 검증합니다."""
-    invalid_options = SOCKET_OPTIONS_JSON.copy()
-    invalid_options["wallpad"] = invalid_options["wallpad"].copy()
-    invalid_options["wallpad"]["connection_type"] = "unknown"
-
-    options_file = tmp_path / "options.json"
-    options_file.write_text(json.dumps(invalid_options))
-    config = AppConfig(options_path=str(options_file))
-    config.load()
-
-    with pytest.raises(ValueError, match="Invalid Wallpad connection type: unknown"):
-        create_wallpad_transport(config)

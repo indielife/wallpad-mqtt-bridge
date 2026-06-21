@@ -2,6 +2,8 @@ import json
 import os
 from unittest.mock import mock_open, patch
 
+import pytest
+
 from wallpad.config import AppConfig
 
 SAMPLE_OPTIONS_JSON = {
@@ -198,3 +200,105 @@ def test_env_var_overrides_options_json(mock_isfile):
         assert config.mqtt_config.username == "envuser"
         assert config.mqtt_config.password == "envpass"
         assert config.socket_host == "10.0.0.50"
+
+
+# --- AppConfig.validate() 테스트 ---
+
+
+def _make_config(**kwargs) -> AppConfig:
+    """테스트용 AppConfig를 직접 속성 설정으로 생성합니다."""
+    config = AppConfig.__new__(AppConfig)
+    AppConfig.__init__(config)
+    for key, value in kwargs.items():
+        setattr(config, key, value)
+    return config
+
+
+class TestValidateWallpad:
+    def test_serial_ok(self):
+        config = _make_config(comm_type="serial", serial_port="/dev/ttyUSB0")
+        config.validate()
+
+    def test_serial_missing_port(self):
+        config = _make_config(comm_type="serial", serial_port="")
+        with pytest.raises(ValueError, match=r"Wallpad serial port is not configured\."):
+            config.validate()
+
+    def test_socket_ok(self):
+        config = _make_config(comm_type="socket", socket_host="192.168.1.100")
+        config.validate()
+
+    def test_socket_missing_host(self):
+        config = _make_config(comm_type="socket", socket_host=None)
+        with pytest.raises(ValueError, match=r"Wallpad socket host is not configured\."):
+            config.validate()
+
+
+class TestValidateVentilator:
+    def test_disabled_skips_validation(self):
+        config = _make_config(
+            comm_type="serial",
+            serial_port="/dev/ttyUSB0",
+            ventilator_connection_type="serial",
+            ventilator_ctrl_port="",
+            ventilator_unit_port="",
+        )
+        config._ventilator_enabled = False
+        config.validate()
+
+    def test_serial_ok(self):
+        config = _make_config(
+            comm_type="serial",
+            serial_port="/dev/ttyUSB0",
+            ventilator_connection_type="serial",
+            ventilator_ctrl_port="/dev/ttyUSB1",
+            ventilator_unit_port="/dev/ttyUSB2",
+        )
+        config._ventilator_enabled = True
+        config.validate()
+
+    def test_serial_missing_ctrl_port(self):
+        config = _make_config(
+            comm_type="serial",
+            serial_port="/dev/ttyUSB0",
+            ventilator_connection_type="serial",
+            ventilator_ctrl_port="",
+            ventilator_unit_port="/dev/ttyUSB2",
+        )
+        config._ventilator_enabled = True
+        with pytest.raises(ValueError, match=r"Ventilator serial ports are not fully configured\."):
+            config.validate()
+
+    def test_serial_missing_unit_port(self):
+        config = _make_config(
+            comm_type="serial",
+            serial_port="/dev/ttyUSB0",
+            ventilator_connection_type="serial",
+            ventilator_ctrl_port="/dev/ttyUSB1",
+            ventilator_unit_port="",
+        )
+        config._ventilator_enabled = True
+        with pytest.raises(ValueError, match=r"Ventilator serial ports are not fully configured\."):
+            config.validate()
+
+    def test_socket_not_supported(self):
+        config = _make_config(
+            comm_type="serial",
+            serial_port="/dev/ttyUSB0",
+            ventilator_connection_type="socket",
+            ventilator_socket_host="192.168.1.101",
+        )
+        config._ventilator_enabled = True
+        with pytest.raises(ValueError, match=r"Ventilator socket connection is not yet supported\."):
+            config.validate()
+
+    def test_socket_missing_host_not_supported(self):
+        config = _make_config(
+            comm_type="serial",
+            serial_port="/dev/ttyUSB0",
+            ventilator_connection_type="socket",
+            ventilator_socket_host="",
+        )
+        config._ventilator_enabled = True
+        with pytest.raises(ValueError, match=r"Ventilator socket connection is not yet supported\."):
+            config.validate()
