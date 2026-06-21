@@ -221,7 +221,7 @@ class TestValidateWallpad:
 
     def test_serial_missing_port(self):
         config = _make_config(comm_type="serial", serial_port="")
-        with pytest.raises(ValueError, match="Wallpad serial port is not configured."):
+        with pytest.raises(ValueError, match=r"Wallpad serial port is not configured\."):
             config.validate()
 
     def test_socket_ok(self):
@@ -230,7 +230,7 @@ class TestValidateWallpad:
 
     def test_socket_missing_host(self):
         config = _make_config(comm_type="socket", socket_host=None)
-        with pytest.raises(ValueError, match="Wallpad socket host is not configured."):
+        with pytest.raises(ValueError, match=r"Wallpad socket host is not configured\."):
             config.validate()
 
 
@@ -266,7 +266,7 @@ class TestValidateVentilator:
             ventilator_unit_port="/dev/ttyUSB2",
         )
         config._ventilator_enabled = True
-        with pytest.raises(ValueError, match="Ventilator serial ports are not fully configured."):
+        with pytest.raises(ValueError, match=r"Ventilator serial ports are not fully configured\."):
             config.validate()
 
     def test_serial_missing_unit_port(self):
@@ -278,7 +278,7 @@ class TestValidateVentilator:
             ventilator_unit_port="",
         )
         config._ventilator_enabled = True
-        with pytest.raises(ValueError, match="Ventilator serial ports are not fully configured."):
+        with pytest.raises(ValueError, match=r"Ventilator serial ports are not fully configured\."):
             config.validate()
 
     def test_socket_not_supported(self):
@@ -289,7 +289,7 @@ class TestValidateVentilator:
             ventilator_socket_host="192.168.1.101",
         )
         config._ventilator_enabled = True
-        with pytest.raises(ValueError, match="Ventilator socket connection is not yet supported."):
+        with pytest.raises(ValueError, match=r"Ventilator socket connection is not yet supported\."):
             config.validate()
 
     def test_socket_missing_host_not_supported(self):
@@ -300,5 +300,5 @@ class TestValidateVentilator:
             ventilator_socket_host="",
         )
         config._ventilator_enabled = True
-        with pytest.raises(ValueError, match="Ventilator socket connection is not yet supported."):
+        with pytest.raises(ValueError, match=r"Ventilator socket connection is not yet supported\."):
             config.validate()

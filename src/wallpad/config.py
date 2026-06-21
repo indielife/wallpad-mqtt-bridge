@@ -192,9 +192,8 @@ class AppConfig:
         if self.comm_type == "serial":
             if not self.serial_port:
                 raise ValueError("Wallpad serial port is not configured.")
-        elif self.comm_type == "socket":
-            if not self.socket_host:
-                raise ValueError("Wallpad socket host is not configured.")
+        elif self.comm_type == "socket" and not self.socket_host:
+            raise ValueError("Wallpad socket host is not configured.")
 
     def _validate_ventilator(self) -> None:
         if self.ventilator_connection_type == "socket":
