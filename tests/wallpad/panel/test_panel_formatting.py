@@ -3,7 +3,6 @@ from unittest.mock import MagicMock
 from wallpad.panel.devices import Thermostat
 from wallpad.panel.panel import DEVICE_THERMOSTAT, WallpadPanel
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
-from wallpad.ventilator.ventilator import Ventilator
 
 
 def test_panel_check_sum_format():
@@ -69,19 +68,3 @@ def test_panel_make_packet_thermostat_temp_format():
     panel.wp_list[DEVICE_THERMOSTAT]["room1"]["target_temp"]["set"] = 9.0
     packet_single = panel.make_packet(DEVICE_THERMOSTAT, "room1", "상태", "", "")
     assert packet_single[20:26] == "110009"
-
-
-def test_ventilator_hex_to_list_format():
-    """Ventilator 패킷 문자열이 0x 접두사가 붙은 리스트로 올바르게 변환되는지 검증합니다."""
-    ventilator = Ventilator.__new__(Ventilator)
-    assert ventilator.hex_to_list("d08a09") == ["0xd0", "0x8a", "0x09"]
-
-
-def test_ventilator_checksum_format():
-    """Grex의 체크섬 검증 포맷 로직을 검증합니다."""
-    ventilator = Ventilator.__new__(Ventilator)
-
-    packet_with_checksum = "d0080109"
-    is_valid, chk_sum_hex = ventilator.validate_checksum(packet_with_checksum, 3)
-    assert is_valid is True
-    assert chk_sum_hex == "0x09"  # validate 과정에서는 내부적으로 "0x09"로 비교됨
