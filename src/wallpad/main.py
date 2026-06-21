@@ -5,13 +5,13 @@ import os
 import os.path
 
 from wallpad.config import AppConfig
-from wallpad.grex import Grex
-from wallpad.kocom import Kocom
 from wallpad.mqtt import MqttClient
+from wallpad.panel import WallpadPanel
 from wallpad.transport import (
     create_ventilator_transports,
     create_wallpad_transport,
 )
+from wallpad.ventilator import Ventilator
 from wallpad.version import SW_VERSION
 
 logger = logging.getLogger(__name__)
@@ -53,8 +53,8 @@ async def run_wallpad(config: AppConfig, mqtt_client: MqttClient) -> list[asynci
     try:
         logger.info("Initializing Wallpad %s", config.wallpad_manufacturer)
         transport = create_wallpad_transport(config)
-        kocom = Kocom(config, mqtt_client, transport)
-        return await kocom.start()
+        panel = WallpadPanel(config, mqtt_client, transport)
+        return await panel.start()
     except Exception as e:
         logger.error("Failed to initialize Wallpad %s: %r", config.wallpad_manufacturer, e)
         return []
@@ -75,8 +75,8 @@ async def run_ventilator(config: AppConfig, mqtt_client: MqttClient) -> list[asy
     try:
         logger.info("Initializing Grex (Serial)")
         ctrl_transport, unit_transport = create_ventilator_transports(config)
-        grex = Grex(config, mqtt_client, ctrl_transport, unit_transport)
-        return await grex.start()
+        ventilator = Ventilator(config, mqtt_client, ctrl_transport, unit_transport)
+        return await ventilator.start()
     except Exception as e:
         logger.error("Failed to initialize Grex: %r", e)
         return []

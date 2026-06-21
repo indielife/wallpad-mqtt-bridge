@@ -1,0 +1,88 @@
+# serializer version: 1
+# name: test_ventilator_publish_ha_discovery[grex_publish_payload_grex_fan]
+  dict({
+    'cmd_t': 'homeassistant/fan/grex/mode',
+    'device': dict({
+      'ids': 'grex_ventilator',
+      'mdl': 'Ventilator',
+      'mf': 'Grex',
+      'name': 'Grex Ventilator',
+      'sw': 'RS485 Compilation 0.1.0',
+    }),
+    'name': 'grex_fan',
+    'pl_off': 'off',
+    'pl_on': 'on',
+    'spd_cmd_t': 'homeassistant/fan/grex/speed',
+    'spd_stat_t': 'homeassistant/fan/grex/state',
+    'spd_val_tpl': '{{ value_json.speed }}',
+    'spds': list([
+      'low',
+      'medium',
+      'high',
+      'off',
+    ]),
+    'stat_t': 'homeassistant/fan/grex/state',
+    'stat_val_tpl': '{{ value_json.mode }}',
+    'uniq_id': 'grex_grex_fan',
+  })
+# ---
+# name: test_ventilator_publish_ha_discovery[grex_publish_payload_grex_fan_mode]
+  dict({
+    'device': dict({
+      'ids': 'grex_ventilator',
+      'mdl': 'Ventilator',
+      'mf': 'Grex',
+      'name': 'Grex Ventilator',
+      'sw': 'RS485 Compilation 0.1.0',
+    }),
+    'ic': 'mdi:play-circle-outline',
+    'name': 'grex_fan_mode',
+    'stat_t': 'homeassistant/sensor/grex_fan/state',
+    'uniq_id': 'grex_grex_fan_mode',
+    'val_tpl': '{{ value_json.fan_mode }}',
+  })
+# ---
+# name: test_ventilator_publish_ha_discovery[grex_publish_payload_grex_fan_speed]
+  dict({
+    'device': dict({
+      'ids': 'grex_ventilator',
+      'mdl': 'Ventilator',
+      'mf': 'Grex',
+      'name': 'Grex Ventilator',
+      'sw': 'RS485 Compilation 0.1.0',
+    }),
+    'ic': 'mdi:speedometer',
+    'name': 'grex_fan_speed',
+    'stat_t': 'homeassistant/sensor/grex_fan/state',
+    'uniq_id': 'grex_grex_fan_speed',
+    'val_tpl': '{{ value_json.fan_speed }}',
+  })
+# ---
+# name: test_ventilator_subscribe_ha_topics[grex_subscribe_topics]
+  list([
+    tuple(
+      'wallpad/bridge/#',
+      0,
+    ),
+    tuple(
+      'homeassistant/fan/grex_fan/config',
+      0,
+    ),
+    tuple(
+      'homeassistant/fan/grex/mode',
+      0,
+    ),
+    tuple(
+      'homeassistant/fan/grex/speed',
+      0,
+    ),
+    tuple(
+      'homeassistant/sensor/grex_fan_mode/config',
+      0,
+    ),
+    tuple(
+      'homeassistant/sensor/grex_fan_speed/config',
+      0,
+    ),
+  ])
+# ---
