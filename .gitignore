@@ -221,7 +221,6 @@ __marimo__/
 .cursor/
 .cursorrules/
 .cursorrules
-CLAUDE.md
 
 # Developments & Local
 scripts/options.json

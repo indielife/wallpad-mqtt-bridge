@@ -12,7 +12,13 @@
 
 ## Test Plan
 
-<!-- 어떻게 테스트되었는지 기술할 것. -->
+<!--
+어떻게 테스트되었는지 기술할 것.
+아래 항목 중 해당하는 것을 체크할 것.
+-->
+
+- [ ] `pre-commit run --all-files` 통과
+- [ ] `pytest tests/` 통과
 
 ## Checklist
 

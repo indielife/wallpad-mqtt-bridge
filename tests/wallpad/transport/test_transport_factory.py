@@ -102,5 +102,3 @@ def test_create_ventilator_transports_serial(tmp_path):
     assert isinstance(unit, ReconnectingTransport)
     assert isinstance(unit._transport, SerialTransport)
     assert unit._transport.port == "/dev/ttyUSB1"
-
-
