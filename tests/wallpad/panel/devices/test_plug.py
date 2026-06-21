@@ -30,13 +30,13 @@ def test_plug_get_discovery_payloads_add(plug_device):
 
     expected_payload = {
         "name": "test_kocom_room1_plug1",
-        "cmd_t": f"{HA_PREFIX}/{HA_SWITCH}/room1_plug1/set",
-        "stat_t": f"{HA_PREFIX}/{HA_SWITCH}/room1/state",
-        "val_tpl": "{{ value_json.plug1 }}",
-        "ic": "mdi:power-socket-eu",
-        "pl_on": "on",
-        "pl_off": "off",
-        "uniq_id": "test_kocom_room1_plug1",
+        "command_topic": f"{HA_PREFIX}/{HA_SWITCH}/room1_plug1/set",
+        "state_topic": f"{HA_PREFIX}/{HA_SWITCH}/room1/state",
+        "value_template": "{{ value_json.plug1 }}",
+        "icon": "mdi:power-socket-eu",
+        "payload_on": "on",
+        "payload_off": "off",
+        "unique_id": "test_kocom_room1_plug1",
         "device": plug_device.device_info,
     }
     assert json.loads(payload_str) == expected_payload

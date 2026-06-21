@@ -32,13 +32,13 @@ def test_gas_get_discovery_payloads_add(gas_device):
 
     expected_switch_payload = {
         "name": "test_kocom_wallpad_gas",
-        "cmd_t": f"{HA_PREFIX}/{HA_SWITCH}/wallpad_gas/set",
-        "stat_t": f"{HA_PREFIX}/{HA_SWITCH}/wallpad_gas/state",
-        "val_tpl": "{{ value_json.gas }}",
-        "ic": "mdi:gas-cylinder",
-        "pl_on": "on",
-        "pl_off": "off",
-        "uniq_id": "test_kocom_wallpad_gas",
+        "command_topic": f"{HA_PREFIX}/{HA_SWITCH}/wallpad_gas/set",
+        "state_topic": f"{HA_PREFIX}/{HA_SWITCH}/wallpad_gas/state",
+        "value_template": "{{ value_json.gas }}",
+        "icon": "mdi:gas-cylinder",
+        "payload_on": "on",
+        "payload_off": "off",
+        "unique_id": "test_kocom_wallpad_gas",
         "device": {
             "name": "Kocom wallpad",
             "ids": "kocom_wallpad",
@@ -50,10 +50,10 @@ def test_gas_get_discovery_payloads_add(gas_device):
 
     expected_sensor_payload = {
         "name": "test_kocom_wallpad_gas",
-        "stat_t": f"{HA_PREFIX}/{HA_SENSOR}/wallpad_gas/state",
-        "val_tpl": "{{ value_json.gas }}",
-        "ic": "mdi:gas-cylinder",
-        "uniq_id": "test_kocom_wallpad_gas",
+        "state_topic": f"{HA_PREFIX}/{HA_SENSOR}/wallpad_gas/state",
+        "value_template": "{{ value_json.gas }}",
+        "icon": "mdi:gas-cylinder",
+        "unique_id": "test_kocom_wallpad_gas",
         "device": {
             "name": "Kocom wallpad",
             "ids": "kocom_wallpad",

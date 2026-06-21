@@ -30,13 +30,13 @@ def test_elevator_get_discovery_payloads_add(elevator_device):
 
     expected_payload = {
         "name": "test_kocom_wallpad_elevator",
-        "cmd_t": f"{HA_PREFIX}/{HA_SWITCH}/wallpad_elevator/set",
-        "stat_t": f"{HA_PREFIX}/{HA_SWITCH}/wallpad/state",
-        "val_tpl": "{{ value_json.elevator }}",
-        "ic": "mdi:elevator",
-        "pl_on": "on",
-        "pl_off": "off",
-        "uniq_id": "test_kocom_wallpad_elevator",
+        "command_topic": f"{HA_PREFIX}/{HA_SWITCH}/wallpad_elevator/set",
+        "state_topic": f"{HA_PREFIX}/{HA_SWITCH}/wallpad/state",
+        "value_template": "{{ value_json.elevator }}",
+        "icon": "mdi:elevator",
+        "payload_on": "on",
+        "payload_off": "off",
+        "unique_id": "test_kocom_wallpad_elevator",
         "device": {
             "name": "Kocom wallpad",
             "ids": "kocom_wallpad",
