@@ -30,19 +30,19 @@ def test_thermostat_get_discovery_payloads_add(thermostat_device):
 
     expected_payload = {
         "name": "test_kocom_room1_thermostat",
-        "mode_cmd_t": f"{HA_PREFIX}/{HA_CLIMATE}/room1/mode",
-        "mode_stat_t": f"{HA_PREFIX}/{HA_CLIMATE}/room1/state",
-        "mode_stat_tpl": "{{ value_json.mode }}",
-        "temp_cmd_t": f"{HA_PREFIX}/{HA_CLIMATE}/room1/target_temp",
-        "temp_stat_t": f"{HA_PREFIX}/{HA_CLIMATE}/room1/state",
-        "temp_stat_tpl": "{{ value_json.target_temp }}",
-        "curr_temp_t": f"{HA_PREFIX}/{HA_CLIMATE}/room1/state",
-        "curr_temp_tpl": "{{ value_json.current_temp }}",
+        "mode_command_topic": f"{HA_PREFIX}/{HA_CLIMATE}/room1/mode",
+        "mode_state_topic": f"{HA_PREFIX}/{HA_CLIMATE}/room1/state",
+        "mode_state_template": "{{ value_json.mode }}",
+        "temperature_command_topic": f"{HA_PREFIX}/{HA_CLIMATE}/room1/target_temp",
+        "temperature_state_topic": f"{HA_PREFIX}/{HA_CLIMATE}/room1/state",
+        "temperature_state_template": "{{ value_json.target_temp }}",
+        "current_temperature_topic": f"{HA_PREFIX}/{HA_CLIMATE}/room1/state",
+        "current_temperature_template": "{{ value_json.current_temp }}",
         "min_temp": 5,
         "max_temp": 40,
         "temp_step": 1,
         "modes": ["off", "heat", "fan_only"],
-        "uniq_id": "test_kocom_room1_thermostat",
+        "unique_id": "test_kocom_room1_thermostat",
         "device": thermostat_device.device_info,
     }
     assert json.loads(payload_str) == expected_payload

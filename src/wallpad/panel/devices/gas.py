@@ -27,13 +27,13 @@ class Gas(BaseDevice):
 
         switch_payload = {
             "name": f"{self.name_prefix}_{self.room}_{self.sub_device}",
-            "cmd_t": f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/set",
-            "stat_t": f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/state",
-            "val_tpl": f"{{{{ value_json.{self.sub_device} }}}}",
-            "ic": "mdi:gas-cylinder",
-            "pl_on": "on",
-            "pl_off": "off",
-            "uniq_id": f"{self.name_prefix}_{self.room}_{self.sub_device}",
+            "command_topic": f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/set",
+            "state_topic": f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/state",
+            "value_template": f"{{{{ value_json.{self.sub_device} }}}}",
+            "icon": "mdi:gas-cylinder",
+            "payload_on": "on",
+            "payload_off": "off",
+            "unique_id": f"{self.name_prefix}_{self.room}_{self.sub_device}",
             "device": self.device_info,
         }
 
@@ -44,11 +44,11 @@ class Gas(BaseDevice):
         # 유지 중이며, 추후 메이저 업데이트 시 _switch, _sensor 접미사를 붙여 수정해야 합니다.
         sensor_payload = {
             "name": f"{self.name_prefix}_{self.room}_{self.sub_device}",
-            "stat_t": f"{HA_PREFIX}/{HA_SENSOR}/{self.room}_{self.sub_device}/state",
-            "val_tpl": f"{{{{ value_json.{self.sub_device} }}}}",
-            "ic": "mdi:gas-cylinder",
+            "state_topic": f"{HA_PREFIX}/{HA_SENSOR}/{self.room}_{self.sub_device}/state",
+            "value_template": f"{{{{ value_json.{self.sub_device} }}}}",
+            "icon": "mdi:gas-cylinder",
             # TODO: 동일 ID 사용 중 (수정 필요)
-            "uniq_id": f"{self.name_prefix}_{self.room}_{self.sub_device}",
+            "unique_id": f"{self.name_prefix}_{self.room}_{self.sub_device}",
             "device": self.device_info,
         }
         return [
@@ -65,9 +65,9 @@ class Gas(BaseDevice):
 
     def get_subscribe_topics(self) -> list[str]:
         switch_topic = f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/config"
-        cmd_t = f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/set"
+        command_topic = f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/set"
         sensor_topic = f"{HA_PREFIX}/{HA_SENSOR}/{self.room}_{self.sub_device}/config"
-        return [switch_topic, cmd_t, sensor_topic]
+        return [switch_topic, command_topic, sensor_topic]
 
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs

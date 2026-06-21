@@ -29,12 +29,12 @@ class Light(BaseDevice):
 
         payload = {
             "name": f"{self.name_prefix}_{self.room}_{self.sub_device}",
-            "cmd_t": f"{HA_PREFIX}/{HA_LIGHT}/{self.room}_{self.sub_device}/set",
-            "stat_t": f"{HA_PREFIX}/{HA_LIGHT}/{self.room}/state",
-            "val_tpl": f"{{{{ value_json.{self.sub_device} }}}}",
-            "pl_on": "on",
-            "pl_off": "off",
-            "uniq_id": f"{self.name_prefix}_{self.room}_{self.sub_device}",
+            "command_topic": f"{HA_PREFIX}/{HA_LIGHT}/{self.room}_{self.sub_device}/set",
+            "state_topic": f"{HA_PREFIX}/{HA_LIGHT}/{self.room}/state",
+            "value_template": f"{{{{ value_json.{self.sub_device} }}}}",
+            "payload_on": "on",
+            "payload_off": "off",
+            "unique_id": f"{self.name_prefix}_{self.room}_{self.sub_device}",
             "device": self.device_info,
         }
         return [(topic, json.dumps(payload))]
@@ -44,8 +44,8 @@ class Light(BaseDevice):
 
     def get_subscribe_topics(self) -> list[str]:
         topic = f"{HA_PREFIX}/{HA_LIGHT}/{self.room}_{self.sub_device}/config"
-        cmd_t = f"{HA_PREFIX}/{HA_LIGHT}/{self.room}_{self.sub_device}/set"
-        return [topic, cmd_t]
+        command_topic = f"{HA_PREFIX}/{HA_LIGHT}/{self.room}_{self.sub_device}/set"
+        return [topic, command_topic]
 
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs

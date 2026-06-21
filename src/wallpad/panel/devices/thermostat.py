@@ -28,19 +28,19 @@ class Thermostat(BaseDevice):
 
         payload = {
             "name": f"{self.name_prefix}_{self.room}_{self.sub_device}",
-            "mode_cmd_t": f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/mode",
-            "mode_stat_t": f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/state",
-            "mode_stat_tpl": "{{ value_json.mode }}",
-            "temp_cmd_t": f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/target_temp",
-            "temp_stat_t": f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/state",
-            "temp_stat_tpl": "{{ value_json.target_temp }}",
-            "curr_temp_t": f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/state",
-            "curr_temp_tpl": "{{ value_json.current_temp }}",
+            "mode_command_topic": f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/mode",
+            "mode_state_topic": f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/state",
+            "mode_state_template": "{{ value_json.mode }}",
+            "temperature_command_topic": f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/target_temp",
+            "temperature_state_topic": f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/state",
+            "temperature_state_template": "{{ value_json.target_temp }}",
+            "current_temperature_topic": f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/state",
+            "current_temperature_template": "{{ value_json.current_temp }}",
             "min_temp": 5,
             "max_temp": 40,
             "temp_step": 1,
             "modes": ["off", "heat", "fan_only"],
-            "uniq_id": f"{self.name_prefix}_{self.room}_{self.sub_device}",
+            "unique_id": f"{self.name_prefix}_{self.room}_{self.sub_device}",
             "device": self.device_info,
         }
         return [(topic, json.dumps(payload))]
@@ -50,9 +50,9 @@ class Thermostat(BaseDevice):
 
     def get_subscribe_topics(self) -> list[str]:
         topic = f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/config"
-        mode_cmd_t = f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/mode"
-        temp_cmd_t = f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/target_temp"
-        return [topic, mode_cmd_t, temp_cmd_t]
+        mode_command_topic = f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/mode"
+        temperature_command_topic = f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/target_temp"
+        return [topic, mode_command_topic, temperature_command_topic]
 
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs

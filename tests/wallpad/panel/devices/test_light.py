@@ -30,12 +30,12 @@ def test_light_get_discovery_payloads_add(light_device):
 
     expected_payload = {
         "name": "test_kocom_room1_light1",
-        "cmd_t": f"{HA_PREFIX}/{HA_LIGHT}/room1_light1/set",
-        "stat_t": f"{HA_PREFIX}/{HA_LIGHT}/room1/state",
-        "val_tpl": "{{ value_json.light1 }}",
-        "pl_on": "on",
-        "pl_off": "off",
-        "uniq_id": "test_kocom_room1_light1",
+        "command_topic": f"{HA_PREFIX}/{HA_LIGHT}/room1_light1/set",
+        "state_topic": f"{HA_PREFIX}/{HA_LIGHT}/room1/state",
+        "value_template": "{{ value_json.light1 }}",
+        "payload_on": "on",
+        "payload_off": "off",
+        "unique_id": "test_kocom_room1_light1",
         "device": light_device.device_info,
     }
     assert json.loads(payload_str) == expected_payload

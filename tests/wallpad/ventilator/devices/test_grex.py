@@ -34,42 +34,42 @@ def test_grex_get_discovery_payloads_add(grex_device):
 
     expected_device_info = {
         "name": "Grex Ventilator",
-        "ids": "grex_ventilator",
-        "mf": "Grex",
-        "mdl": "Ventilator",
-        "sw": "1.0.0",
+        "identifiers": "grex_ventilator",
+        "manufacturer": "Grex",
+        "model": "Ventilator",
+        "sw_version": "1.0.0",
     }
 
     expected_fan_payload = {
         "name": "test_grex_fan",
-        "cmd_t": f"{HA_PREFIX}/{HA_FAN}/grex/mode",
-        "stat_t": f"{HA_PREFIX}/{HA_FAN}/grex/state",
+        "command_topic": f"{HA_PREFIX}/{HA_FAN}/grex/mode",
+        "state_topic": f"{HA_PREFIX}/{HA_FAN}/grex/state",
         "spd_cmd_t": f"{HA_PREFIX}/{HA_FAN}/grex/speed",
         "spd_stat_t": f"{HA_PREFIX}/{HA_FAN}/grex/state",
-        "stat_val_tpl": "{{ value_json.mode }}",
+        "state_value_template": "{{ value_json.mode }}",
         "spd_val_tpl": "{{ value_json.speed }}",
-        "pl_on": "on",
-        "pl_off": "off",
+        "payload_on": "on",
+        "payload_off": "off",
         "spds": ["low", "medium", "high", "off"],
-        "uniq_id": "test_grex_grex_fan",
+        "unique_id": "test_grex_grex_fan",
         "device": expected_device_info,
     }
 
     expected_mode_payload = {
         "name": "test_grex_fan_mode",
-        "stat_t": f"{HA_PREFIX}/{HA_SENSOR}/grex_fan/state",
-        "val_tpl": "{{ value_json.fan_mode }}",
-        "ic": "mdi:play-circle-outline",
-        "uniq_id": "test_grex_grex_fan_mode",
+        "state_topic": f"{HA_PREFIX}/{HA_SENSOR}/grex_fan/state",
+        "value_template": "{{ value_json.fan_mode }}",
+        "icon": "mdi:play-circle-outline",
+        "unique_id": "test_grex_grex_fan_mode",
         "device": expected_device_info,
     }
 
     expected_speed_payload = {
         "name": "test_grex_fan_speed",
-        "stat_t": f"{HA_PREFIX}/{HA_SENSOR}/grex_fan/state",
-        "val_tpl": "{{ value_json.fan_speed }}",
-        "ic": "mdi:speedometer",
-        "uniq_id": "test_grex_grex_fan_speed",
+        "state_topic": f"{HA_PREFIX}/{HA_SENSOR}/grex_fan/state",
+        "value_template": "{{ value_json.fan_speed }}",
+        "icon": "mdi:speedometer",
+        "unique_id": "test_grex_grex_fan_speed",
         "device": expected_device_info,
     }
 
