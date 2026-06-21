@@ -25,10 +25,10 @@ class BaseDevice:
         """HA Discovery에 등록될 물리적 기기(Device)의 공통 메타데이터입니다."""
         return {
             "name": f"Kocom {self.room}",
-            "ids": f"kocom_{self.room}",
-            "mf": "KOCOM",
-            "mdl": "Wallpad",
-            "sw": self.sw_version,
+            "identifiers": f"kocom_{self.room}",
+            "manufacturer": "KOCOM",
+            "model": "Wallpad",
+            "sw_version": self.sw_version,
         }
 
     def get_discovery_payloads(self, remove: bool = False) -> list[tuple[str, str]]:

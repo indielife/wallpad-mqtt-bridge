@@ -39,10 +39,10 @@ def test_elevator_get_discovery_payloads_add(elevator_device):
         "unique_id": "test_kocom_wallpad_elevator",
         "device": {
             "name": "Kocom wallpad",
-            "ids": "kocom_wallpad",
-            "mf": "KOCOM",
-            "mdl": "Wallpad",
-            "sw": "1.0.0",
+            "identifiers": "kocom_wallpad",
+            "manufacturer": "KOCOM",
+            "model": "Wallpad",
+            "sw_version": "1.0.0",
         },
     }
     assert json.loads(payload_str) == expected_payload

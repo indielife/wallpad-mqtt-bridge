@@ -27,10 +27,10 @@ class GrexVentilator(BaseDevice):
         """Grex 고유의 기기 메타데이터를 반환하도록 오버라이딩합니다."""
         return {
             "name": "Grex Ventilator",
-            "ids": "grex_ventilator",
-            "mf": "Grex",
-            "mdl": "Ventilator",
-            "sw": self.sw_version,
+            "identifiers": "grex_ventilator",
+            "manufacturer": "Grex",
+            "model": "Ventilator",
+            "sw_version": self.sw_version,
         }
 
     def get_discovery_payloads(self, remove: bool = False) -> list[tuple[str, str]]:

@@ -34,10 +34,10 @@ def test_grex_get_discovery_payloads_add(grex_device):
 
     expected_device_info = {
         "name": "Grex Ventilator",
-        "ids": "grex_ventilator",
-        "mf": "Grex",
-        "mdl": "Ventilator",
-        "sw": "1.0.0",
+        "identifiers": "grex_ventilator",
+        "manufacturer": "Grex",
+        "model": "Ventilator",
+        "sw_version": "1.0.0",
     }
 
     expected_fan_payload = {
