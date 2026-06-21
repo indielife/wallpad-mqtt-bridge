@@ -78,7 +78,7 @@ def mock_transport():
     return MagicMock()
 
 
-def test_kocom_initial_state(mock_config, mock_transport):
+def test_panel_initial_state(mock_config, mock_transport):
     """WallpadPanel 객체 생성 시 내부 상태와 설정값들이 정상적으로 초기화되는지 검증합니다."""
     panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
 

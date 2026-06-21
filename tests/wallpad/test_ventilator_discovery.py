@@ -42,7 +42,7 @@ def ventilator_factory():
     yield _create
 
 
-def test_grex_publish_ha_discovery(snapshot, ventilator_factory):
+def test_ventilator_publish_ha_discovery(snapshot, ventilator_factory):
     ventilator, mock_mqtt_instance = ventilator_factory()
 
     ventilator._publish_ha_discovery()
@@ -76,7 +76,7 @@ def test_grex_publish_ha_discovery(snapshot, ventilator_factory):
     mock_mqtt_instance.subscribe.assert_not_called()
 
 
-def test_grex_subscribe_ha_topics(snapshot, ventilator_factory):
+def test_ventilator_subscribe_ha_topics(snapshot, ventilator_factory):
     ventilator, mock_mqtt_instance = ventilator_factory()
 
     ventilator._subscribe_ha_topics()

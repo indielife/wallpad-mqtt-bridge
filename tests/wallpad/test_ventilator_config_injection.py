@@ -29,7 +29,9 @@ def mock_ventilator_transport():
     return MagicMock()
 
 
-def test_grex_initial_state(mock_config, mock_controller_transport, mock_ventilator_transport):
+def test_ventilator_initial_state(
+    mock_config, mock_controller_transport, mock_ventilator_transport
+):
     """Ventilator 객체 생성 시 내부 상태와 통신 의존성들이 정상적으로 초기화되는지 검증합니다."""
     ventilator = Ventilator(
         mock_config, MagicMock(), mock_controller_transport, mock_ventilator_transport
@@ -48,7 +50,7 @@ def test_grex_initial_state(mock_config, mock_controller_transport, mock_ventila
     assert ventilator.device.name_prefix == "grex"
 
 
-def test_grex_default_speed_fallback(
+def test_ventilator_default_speed_fallback(
     mock_config, mock_controller_transport, mock_ventilator_transport
 ):
     """Ventilator 객체 생성 시 잘못된 default_speed가 주어지면 low로 강제 설정되는지 검증합니다."""

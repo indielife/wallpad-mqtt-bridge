@@ -6,7 +6,7 @@ from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 from wallpad.ventilator.ventilator import Ventilator
 
 
-def test_kocom_check_sum_format():
+def test_panel_check_sum_format():
     """WallpadPanel 패킷의 체크섬이 2자리 16진수(02x)로 올바르게 포맷팅되는지 검증합니다."""
     panel = WallpadPanel.__new__(WallpadPanel)  # 무거운 __init__ 을 우회하여 인스턴스 생성
 
@@ -19,7 +19,7 @@ def test_kocom_check_sum_format():
     assert chk_sum == "0a"
 
 
-def test_kocom_make_packet_thermostat_temp_format():
+def test_panel_make_packet_thermostat_temp_format():
     """보일러 목표 온도가 2자리 16진수(02x)로 올바르게 포맷팅되는지 검증합니다."""
     panel = WallpadPanel.__new__(WallpadPanel)
     mock_config = MagicMock()
@@ -71,13 +71,13 @@ def test_kocom_make_packet_thermostat_temp_format():
     assert packet_single[20:26] == "110009"
 
 
-def test_grex_hex_to_list_format():
+def test_ventilator_hex_to_list_format():
     """Ventilator 패킷 문자열이 0x 접두사가 붙은 리스트로 올바르게 변환되는지 검증합니다."""
     ventilator = Ventilator.__new__(Ventilator)
     assert ventilator.hex_to_list("d08a09") == ["0xd0", "0x8a", "0x09"]
 
 
-def test_grex_checksum_format():
+def test_ventilator_checksum_format():
     """Grex의 체크섬 검증 포맷 로직을 검증합니다."""
     ventilator = Ventilator.__new__(Ventilator)
 
