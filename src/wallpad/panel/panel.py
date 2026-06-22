@@ -54,7 +54,7 @@ _DEVICE_TYPE_MAP = {
 
 
 class WallpadPanel:
-    def __init__(  # noqa: C901
+    def __init__(
         self,
         config: AppConfig,
         mqtt_client: MqttClient,
@@ -78,118 +78,143 @@ class WallpadPanel:
         self.scan_packet_buf = []
 
         self.tick = time.time()
-        self.wp_list = KocomStateManager()
-        self.wp_light = self.config.wp_light
-        self.wp_fan = self.config.wp_fan
-        self.wp_plug = self.config.wp_plug
-        self.wp_gas = self.config.wp_gas
-        self.wp_elevator = self.config.wp_elevator
-        self.wp_thermostat = self.config.wp_thermostat
+        self.device_states = KocomStateManager()
+        self.fan_enabled = config.fan_enabled
+        self.gas_enabled = config.gas_enabled
+        self.elevator_enabled = config.elevator_enabled
 
         self.packet_builder = KocomPacketBuilder()
-
         self.devices = []
-        if self.wp_elevator:
-            self.devices.append(
-                Elevator(
-                    name_prefix=self.name,
-                    sw_version=self.config.sw_version,
-                    packet_builder=self.packet_builder,
-                )
-            )
-        if self.wp_gas:
-            self.devices.append(
-                Gas(
-                    name_prefix=self.name,
-                    sw_version=self.config.sw_version,
-                    packet_builder=self.packet_builder,
-                )
-            )
-        if self.wp_fan:
-            self.devices.append(
-                Fan(
-                    name_prefix=self.name,
-                    sw_version=self.config.sw_version,
-                    packet_builder=self.packet_builder,
-                )
-            )
-        for d_name in KOCOM_DEVICE.values():
-            device_state = DeviceState()
-            self.wp_list[d_name] = device_state
-
-            if d_name in (DEVICE_ELEVATOR, DEVICE_GAS):
-                room_state = RoomState()
-                room_state[d_name] = SubDeviceState(state="off", set_val="off")
-                device_state[DEVICE_WALLPAD] = room_state
-            elif d_name == DEVICE_FAN:
-                room_state = RoomState()
-                room_state["mode"] = SubDeviceState(state="off", set_val="off")
-                room_state["speed"] = SubDeviceState(state="off", set_val="off")
-                device_state[DEVICE_WALLPAD] = room_state
-            elif d_name == DEVICE_THERMOSTAT:
-                for r_name in self.config.kocom_room_thermostat.values():
-                    room_state = RoomState()
-                    room_state["mode"] = SubDeviceState(state="off", set_val="off")
-                    room_state["current_temp"] = SubDeviceState(state=0, set_val=0)
-                    room_state["target_temp"] = SubDeviceState(
-                        state=self.config.init_temp, set_val=self.config.init_temp
-                    )
-                    device_state[r_name] = room_state
-            elif d_name in (DEVICE_LIGHT, DEVICE_PLUG):
-                for r_name in self.config.kocom_room.values():
-                    room_state = RoomState()
-                    if d_name == DEVICE_LIGHT:
-                        for i in range(0, self.config.kocom_light_size.get(r_name, 0) + 1):
-                            room_state[d_name + str(i)] = SubDeviceState(state="off", set_val="off")
-                    elif d_name == DEVICE_PLUG:
-                        for i in range(0, self.config.kocom_plug_size.get(r_name, 0) + 1):
-                            room_state[d_name + str(i)] = SubDeviceState(state="on", set_val="on")
-                    device_state[r_name] = room_state
-
-        if self.wp_light:
-            for room, r_value in self.wp_list.get(DEVICE_LIGHT, {}).items():
-                if isinstance(r_value, dict):
-                    for sub_device in r_value:
-                        if sub_device != "scan":
-                            self.devices.append(
-                                Light(
-                                    name_prefix=self.name,
-                                    room=room,
-                                    sub_device=sub_device,
-                                    sw_version=self.config.sw_version,
-                                    packet_builder=self.packet_builder,
-                                )
-                            )
-
-        if self.wp_plug:
-            for room, r_value in self.wp_list.get(DEVICE_PLUG, {}).items():
-                if isinstance(r_value, dict):
-                    for sub_device in r_value:
-                        if sub_device != "scan":
-                            self.devices.append(
-                                Plug(
-                                    name_prefix=self.name,
-                                    room=room,
-                                    sub_device=sub_device,
-                                    sw_version=self.config.sw_version,
-                                    packet_builder=self.packet_builder,
-                                )
-                            )
-
-        if self.wp_thermostat:
-            for room in self.wp_list.get(DEVICE_THERMOSTAT, {}):
-                self.devices.append(
-                    Thermostat(
-                        name_prefix=self.name,
-                        room=room,
-                        sw_version=self.config.sw_version,
-                        packet_builder=self.packet_builder,
-                    )
-                )
+        self._init_global_devices(config)
+        self._init_room_devices(config)
 
         self._loop: asyncio.AbstractEventLoop | None = None
         self.mqtt_client.register_connect_callback(self.on_connect)
         self.mqtt_client.register_message_callback(self.on_message)
+
+    def _init_global_devices(self, config: AppConfig) -> None:
+        if self.elevator_enabled:
+            self._init_elevator(config)
+        if self.gas_enabled:
+            self._init_gas(config)
+        if self.fan_enabled:
+            self._init_fan(config)
+
+    def _init_elevator(self, config: AppConfig) -> None:
+        self.devices.append(
+            Elevator(
+                name_prefix=self.name,
+                sw_version=config.sw_version,
+                packet_builder=self.packet_builder,
+            )
+        )
+        device_state = DeviceState()
+        room_state = RoomState()
+        room_state[DEVICE_ELEVATOR] = SubDeviceState(state="off", set_val="off")
+        device_state[DEVICE_WALLPAD] = room_state
+        self.device_states[DEVICE_ELEVATOR] = device_state
+
+    def _init_gas(self, config: AppConfig) -> None:
+        self.devices.append(
+            Gas(
+                name_prefix=self.name,
+                sw_version=config.sw_version,
+                packet_builder=self.packet_builder,
+            )
+        )
+        device_state = DeviceState()
+        room_state = RoomState()
+        room_state[DEVICE_GAS] = SubDeviceState(state="off", set_val="off")
+        device_state[DEVICE_WALLPAD] = room_state
+        self.device_states[DEVICE_GAS] = device_state
+
+    def _init_fan(self, config: AppConfig) -> None:
+        self.devices.append(
+            Fan(
+                name_prefix=self.name,
+                sw_version=config.sw_version,
+                packet_builder=self.packet_builder,
+            )
+        )
+        device_state = DeviceState()
+        room_state = RoomState()
+        room_state["mode"] = SubDeviceState(state="off", set_val="off")
+        room_state["speed"] = SubDeviceState(state="off", set_val="off")
+        device_state[DEVICE_WALLPAD] = room_state
+        self.device_states[DEVICE_FAN] = device_state
+
+    def _init_room_devices(self, config: AppConfig) -> None:
+        light_state = self._init_lights(config)
+        plug_state = self._init_plugs(config)
+        thermo_state = self._init_thermostats(config)
+        if light_state:
+            self.device_states[DEVICE_LIGHT] = light_state
+        if plug_state:
+            self.device_states[DEVICE_PLUG] = plug_state
+        if thermo_state:
+            self.device_states[DEVICE_THERMOSTAT] = thermo_state
+
+    def _init_lights(self, config: AppConfig) -> DeviceState:
+        device_state = DeviceState()
+        for room in config.rooms:
+            if room.light_addr is None or room.light_count == 0:
+                continue
+            room_state = RoomState()
+            for i in range(room.light_count + 1):
+                room_state[DEVICE_LIGHT + str(i)] = SubDeviceState(state="off", set_val="off")
+                self.devices.append(
+                    Light(
+                        name_prefix=self.name,
+                        room=room.name,
+                        sub_device=DEVICE_LIGHT + str(i),
+                        sw_version=config.sw_version,
+                        packet_builder=self.packet_builder,
+                    )
+                )
+            device_state[room.name] = room_state
+        return device_state
+
+    def _init_plugs(self, config: AppConfig) -> DeviceState:
+        device_state = DeviceState()
+        for room in config.rooms:
+            if room.light_addr is None or room.plug_count == 0:
+                continue
+            room_state = RoomState()
+            for i in range(room.plug_count + 1):
+                room_state[DEVICE_PLUG + str(i)] = SubDeviceState(state="on", set_val="on")
+                self.devices.append(
+                    Plug(
+                        name_prefix=self.name,
+                        room=room.name,
+                        sub_device=DEVICE_PLUG + str(i),
+                        sw_version=config.sw_version,
+                        packet_builder=self.packet_builder,
+                    )
+                )
+            device_state[room.name] = room_state
+        return device_state
+
+    def _init_thermostats(self, config: AppConfig) -> DeviceState:
+        device_state = DeviceState()
+        for room in config.rooms:
+            if room.thermo_addr is None:
+                continue
+            room_state = RoomState()
+            room_state["mode"] = SubDeviceState(state="off", set_val="off")
+            room_state["current_temp"] = SubDeviceState(state=0, set_val=0)
+            room_state["target_temp"] = SubDeviceState(
+                state=config.init_temp, set_val=config.init_temp
+            )
+            device_state[room.name] = room_state
+            self.devices.append(
+                Thermostat(
+                    name_prefix=self.name,
+                    room=room.name,
+                    sw_version=config.sw_version,
+                    packet_builder=self.packet_builder,
+                )
+            )
+        return device_state
 
     async def start(self) -> list[asyncio.Task]:
         self._loop = asyncio.get_running_loop()
@@ -254,7 +279,7 @@ class WallpadPanel:
                 logger.info("[From HA]HomeAssistant Remove")
                 return
             elif _topic[3] == "scan":
-                self.wp_list.reset_scan_states()
+                self.device_states.reset_scan_states()
                 logger.info("[From HA]HomeAssistant Scan")
                 return
             elif _topic[3] == "packet":
@@ -303,17 +328,17 @@ class WallpadPanel:
                         payload = "off"
                         logger.warning("Cannot set GAS to ON from HA")
                     else:
-                        self.wp_list.update_from_ha(
+                        self.device_states.update_from_ha(
                             device, room, sub_device, command, payload, self.default_speed
                         )
                 elif device == DEVICE_ELEVATOR:
-                    self.wp_list.update_from_ha(
+                    self.device_states.update_from_ha(
                         device, room, sub_device, command, payload, self.default_speed
                     )
                     if payload == "off":
                         self.publish_state_to_ha(device, DEVICE_WALLPAD, payload)
                 else:
-                    self.wp_list.update_from_ha(
+                    self.device_states.update_from_ha(
                         device, room, sub_device, command, payload, self.default_speed
                     )
                 logger.info("[From HA]%s/%s/%s/%s = %s", device, room, sub_device, command, payload)
@@ -323,8 +348,10 @@ class WallpadPanel:
             device = DEVICE_THERMOSTAT
             room = topic[2]
             try:
-                self.wp_list.update_from_ha(device, room, "", command, payload, self.default_speed)
-                room_state = self.wp_list[device][room]
+                self.device_states.update_from_ha(
+                    device, room, "", command, payload, self.default_speed
+                )
+                room_state = self.device_states[device][room]
                 ha_payload = {
                     "mode": room_state["mode"]["set"],
                     "target_temp": room_state["target_temp"]["set"],
@@ -344,8 +371,10 @@ class WallpadPanel:
             device = DEVICE_FAN
             room = topic[2]
             try:
-                self.wp_list.update_from_ha(device, room, "", command, payload, self.default_speed)
-                room_state = self.wp_list[device][room]
+                self.device_states.update_from_ha(
+                    device, room, "", command, payload, self.default_speed
+                )
+                room_state = self.device_states[device][room]
                 ha_payload = {
                     "mode": room_state["mode"]["set"],
                     "speed": room_state["speed"]["set"],
@@ -464,7 +493,7 @@ class WallpadPanel:
             elif v["src_device"] == DEVICE_THERMOSTAT:
                 v["value"] = self.parse_thermostat(
                     p["value"],
-                    self.wp_list[v["src_device"]][v["src_room"]]["target_temp"]["state"],
+                    self.device_states[v["src_device"]][v["src_room"]]["target_temp"]["state"],
                 )
             elif v["src_device"] == DEVICE_WALLPAD and v["dst_device"] == DEVICE_ELEVATOR:
                 v["value"] = "off"
@@ -544,7 +573,7 @@ class WallpadPanel:
     def set_list(self, device, room, value, name="kocom"):
         try:
             logger.info("[From %s]%s/%s/state = %s", name, device, room, value)
-            self.wp_list.update_from_rs485(device, room, value, self.default_speed)
+            self.device_states.update_from_rs485(device, room, value, self.default_speed)
         except Exception as e:
             logger.error(
                 "Failed to update state from %s: %s/%s = %s (error: %r)",
@@ -556,19 +585,7 @@ class WallpadPanel:
             )
 
     def _is_device_enabled(self, device: str) -> bool:
-        if device == DEVICE_ELEVATOR:
-            return self.wp_elevator
-        if device == DEVICE_FAN:
-            return self.wp_fan
-        if device == DEVICE_GAS:
-            return self.wp_gas
-        if device == DEVICE_LIGHT:
-            return self.wp_light
-        if device == DEVICE_PLUG:
-            return self.wp_plug
-        if device == DEVICE_THERMOSTAT:
-            return self.wp_thermostat
-        return False
+        return device in self.device_states
 
     async def _periodic_scan_room(
         self, device: str, room: str, scan: ScanState, now: float
@@ -615,7 +632,7 @@ class WallpadPanel:
                 await self._scan_sub_device(device, room, sub_d, sub_v, now)
 
     async def _perform_scan(self, now: float) -> None:
-        for device, d_state in self.wp_list.items():
+        for device, d_state in self.device_states.items():
             if not self._is_device_enabled(device):
                 continue
 
@@ -701,7 +718,7 @@ class WallpadPanel:
 
         # 2. 객체에게 패킷 생성 위임 (전략 패턴 + 빌더)
         if target_obj and cmd != "조회":
-            room_state = self.wp_list.get(device, {}).get(room, {})
+            room_state = self.device_states.get(device, {}).get(room, {})
             built_packet = target_obj.build_packet(
                 cmd=cmd,
                 target=target,

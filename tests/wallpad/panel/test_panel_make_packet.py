@@ -47,7 +47,7 @@ def panel_instance():
         "room2": "03",
     }
     panel.config = mock_config
-    panel.wp_list = {
+    panel.device_states = {
         DEVICE_LIGHT: {
             "livingroom": {
                 "light1": {"state": "off"},

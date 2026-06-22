@@ -50,7 +50,7 @@ def test_panel_make_packet_thermostat_temp_format():
         "room2": "03",
     }
     panel.config = mock_config
-    panel.wp_list = {
+    panel.device_states = {
         DEVICE_THERMOSTAT: {"room1": {"mode": {"set": "heat"}, "target_temp": {"set": 25.0}}}
     }
     panel.packet_builder = KocomPacketBuilder()
@@ -65,6 +65,6 @@ def test_panel_make_packet_thermostat_temp_format():
     assert packet[20:26] == "110019"
 
     # 9도일 경우 "09"로 패딩되는지 추가 검증
-    panel.wp_list[DEVICE_THERMOSTAT]["room1"]["target_temp"]["set"] = 9.0
+    panel.device_states[DEVICE_THERMOSTAT]["room1"]["target_temp"]["set"] = 9.0
     packet_single = panel.make_packet(DEVICE_THERMOSTAT, "room1", "상태", "", "")
     assert packet_single[20:26] == "110009"
