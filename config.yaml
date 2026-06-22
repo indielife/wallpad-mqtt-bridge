@@ -52,35 +52,34 @@ options:
       fan: false
       gas: false
       elevator: false
-
-  # 방 설정: 방별 조명/콘센트 패킷 번호(room_no), 기기 개수, 난방 패킷 번호(thermo_no)를 통합 관리.
-  # room_no: 조명/콘센트 패킷 인덱스 (0부터 시작). 생략 시 조명/콘센트 없음.
-  # thermo_no: 난방 패킷 인덱스 (조명과 다를 수 있음). 생략 시 난방 없음.
-  rooms:
-    - name: livingroom
-      room_no: 0
-      light_count: 3
-      plug_count: 2
-      thermo_no: 0
-    - name: bedroom
-      room_no: 1
-      light_count: 2
-      plug_count: 2
-      thermo_no: 1
-    - name: room1
-      room_no: 3
-      light_count: 2
-      plug_count: 2
-      thermo_no: 2
-    - name: room2
-      room_no: 2
-      light_count: 2
-      plug_count: 2
-      thermo_no: 3
-    - name: kitchen
-      room_no: 4
-      light_count: 3
-      plug_count: 2
+    # 방 설정: 방별 조명/콘센트 패킷 번호(room_no), 기기 개수, 난방 패킷 번호(thermo_no)를 통합 관리.
+    # room_no: 조명/콘센트 패킷 인덱스 (0부터 시작). 생략 시 조명/콘센트 없음.
+    # thermo_no: 난방 패킷 인덱스 (조명과 다를 수 있음). 생략 시 난방 없음.
+    rooms:
+      - name: livingroom
+        room_no: 0
+        light_count: 3
+        plug_count: 2
+        thermo_no: 0
+      - name: bedroom
+        room_no: 1
+        light_count: 2
+        plug_count: 2
+        thermo_no: 1
+      - name: room1
+        room_no: 3
+        light_count: 2
+        plug_count: 2
+        thermo_no: 2
+      - name: room2
+        room_no: 2
+        light_count: 2
+        plug_count: 2
+        thermo_no: 3
+      - name: kitchen
+        room_no: 4
+        light_count: 3
+        plug_count: 2
 
   advanced:
     init_temp: 22
@@ -126,13 +125,12 @@ schema:
       fan: bool
       gas: bool
       elevator: bool
-
-  rooms:
-    - name: str
-      room_no: int?
-      light_count: int?
-      plug_count: int?
-      thermo_no: int?
+    rooms:
+      - name: str
+        room_no: int?
+        light_count: int?
+        plug_count: int?
+        thermo_no: int?
 
   advanced:
     init_temp: "int(10,30)"

@@ -19,15 +19,15 @@
       "fan": false,
       "gas": false,
       "elevator": false
-    }
+    },
+    "rooms": [
+      {"name": "livingroom", "room_no": 0, "light_count": 3, "plug_count": 2, "thermo_no": 0},
+      {"name": "bedroom",    "room_no": 1, "light_count": 2, "plug_count": 2, "thermo_no": 1},
+      {"name": "room1",      "room_no": 3, "light_count": 2, "plug_count": 2, "thermo_no": 2},
+      {"name": "room2",      "room_no": 2, "light_count": 2, "plug_count": 2, "thermo_no": 3},
+      {"name": "kitchen",    "room_no": 4, "light_count": 3, "plug_count": 2}
+    ]
   },
-  "rooms": [
-    {"name": "livingroom", "room_no": 0, "light_count": 3, "plug_count": 2, "thermo_no": 0},
-    {"name": "bedroom",    "room_no": 1, "light_count": 2, "plug_count": 2, "thermo_no": 1},
-    {"name": "room1",      "room_no": 3, "light_count": 2, "plug_count": 2, "thermo_no": 2},
-    {"name": "room2",      "room_no": 2, "light_count": 2, "plug_count": 2, "thermo_no": 3},
-    {"name": "kitchen",    "room_no": 4, "light_count": 3, "plug_count": 2}
-  ],
   "advanced": {
     "init_temp": 22,
     "scan_interval": 300,

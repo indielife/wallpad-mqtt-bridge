@@ -23,11 +23,11 @@ SAMPLE_OPTIONS_JSON = {
             "gas": True,
             "elevator": False,
         },
+        "rooms": [
+            {"name": "livingroom", "room_no": 0, "light_count": 3, "plug_count": 2, "thermo_no": 0},
+            {"name": "bedroom", "room_no": 1, "light_count": 2, "plug_count": 2, "thermo_no": 1},
+        ],
     },
-    "rooms": [
-        {"name": "livingroom", "room_no": 0, "light_count": 3, "plug_count": 2, "thermo_no": 0},
-        {"name": "bedroom", "room_no": 1, "light_count": 2, "plug_count": 2, "thermo_no": 1},
-    ],
     "advanced": {
         "init_temp": 24,
         "scan_interval": 500,
@@ -324,14 +324,14 @@ SAMPLE_OPTIONS_JSON_ROOMS = {
             "gas": True,
             "elevator": False,
         },
+        "rooms": [
+            {"name": "livingroom", "room_no": 0, "light_count": 3, "plug_count": 2, "thermo_no": 0},
+            {"name": "bedroom", "room_no": 1, "light_count": 2, "plug_count": 2, "thermo_no": 1},
+            # room1은 조명 주소 03, 난방 주소 02로 교차하는 실제 케이스
+            {"name": "room1", "room_no": 3, "light_count": 2, "plug_count": 2, "thermo_no": 2},
+            {"name": "kitchen", "room_no": 4, "light_count": 3, "plug_count": 2},
+        ],
     },
-    "rooms": [
-        {"name": "livingroom", "room_no": 0, "light_count": 3, "plug_count": 2, "thermo_no": 0},
-        {"name": "bedroom", "room_no": 1, "light_count": 2, "plug_count": 2, "thermo_no": 1},
-        # room1은 조명 주소 03, 난방 주소 02로 교차하는 실제 케이스
-        {"name": "room1", "room_no": 3, "light_count": 2, "plug_count": 2, "thermo_no": 2},
-        {"name": "kitchen", "room_no": 4, "light_count": 3, "plug_count": 2},
-    ],
     "advanced": {
         "init_temp": 22,
         "scan_interval": 300,

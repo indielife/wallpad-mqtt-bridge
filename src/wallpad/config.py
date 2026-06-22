@@ -136,8 +136,8 @@ class AppConfig:
         self.kocom_default_speed = adv.get("default_speed", self.kocom_default_speed)
         self.log_level = adv.get("loglevel", self.log_level).lower()
 
-        # 6. 방 기반 기기 설정
-        rooms_list = json_data.get("rooms", [])
+        # 6. 방 기반 기기 설정 (wallpad 섹션 하위)
+        rooms_list = wallpad_json.get("rooms", [])
         if rooms_list:
             self.rooms = [
                 RoomConfig(
