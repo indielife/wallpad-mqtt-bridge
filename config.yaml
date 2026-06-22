@@ -49,12 +49,38 @@ options:
     serial:
       port: "/dev/ttyUSB0"
     enabled_devices:
-      light: true
-      plug: false
-      thermostat: false
       fan: false
       gas: false
       elevator: false
+
+  # 방 설정: 방별 조명/콘센트 패킷 번호(room_no), 기기 개수, 난방 패킷 번호(thermo_no)를 통합 관리.
+  # room_no: 조명/콘센트 패킷 인덱스 (0부터 시작). 생략 시 조명/콘센트 없음.
+  # thermo_no: 난방 패킷 인덱스 (조명과 다를 수 있음). 생략 시 난방 없음.
+  rooms:
+    - name: livingroom
+      room_no: 0
+      light_count: 3
+      plug_count: 2
+      thermo_no: 0
+    - name: bedroom
+      room_no: 1
+      light_count: 2
+      plug_count: 2
+      thermo_no: 1
+    - name: room1
+      room_no: 3
+      light_count: 2
+      plug_count: 2
+      thermo_no: 2
+    - name: room2
+      room_no: 2
+      light_count: 2
+      plug_count: 2
+      thermo_no: 3
+    - name: kitchen
+      room_no: 4
+      light_count: 3
+      plug_count: 2
 
   advanced:
     init_temp: 22
@@ -62,47 +88,6 @@ options:
     packet_delay: 0.8
     default_speed: low
     loglevel: info
-
-  # 방별 조명 개수 설정
-  kocom_light_size:
-    - name: livingroom
-      number: 3
-    - name: bedroom
-      number: 2
-    - name: room1
-      number: 2
-    - name: room2
-      number: 2
-    - name: kitchen
-      number: 3
-
-  # 방별 콘센트 개수 설정
-  kocom_plug_size:
-    - name: livingroom
-      number: 3
-    - name: bedroom
-      number: 2
-    - name: room1
-      number: 2
-    - name: room2
-      number: 2
-    - name: kitchen
-      number: 3
-
-  # 전체 방 목록
-  kocom_room:
-    - livingroom
-    - bedroom
-    - room1
-    - room2
-    - kitchen
-
-  # 온도조절기가 설치된 방 목록
-  kocom_room_thermostat:
-    - livingroom
-    - bedroom
-    - room1
-    - room2
 
   # 환기장치(전열교환기) 설정
   ventilator:
@@ -138,12 +123,16 @@ schema:
     serial:
       port: str?
     enabled_devices:
-      light: bool
-      plug: bool
-      thermostat: bool
       fan: bool
       gas: bool
       elevator: bool
+
+  rooms:
+    - name: str
+      room_no: int?
+      light_count: int?
+      plug_count: int?
+      thermo_no: int?
 
   advanced:
     init_temp: "int(10,30)"
@@ -151,20 +140,6 @@ schema:
     packet_delay: float
     default_speed: str
     loglevel: str
-
-  kocom_light_size:
-    - name: str?
-      number: int?
-
-  kocom_plug_size:
-    - name: str?
-      number: int?
-
-  kocom_room:
-    - str?
-
-  kocom_room_thermostat:
-    - str?
 
   ventilator:
     enable: bool

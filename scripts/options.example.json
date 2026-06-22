@@ -16,14 +16,18 @@
       "port": "/dev/ttyUSB0"
     },
     "enabled_devices": {
-      "light": true,
-      "plug": false,
-      "thermostat": false,
       "fan": false,
       "gas": false,
       "elevator": false
     }
   },
+  "rooms": [
+    {"name": "livingroom", "room_no": 0, "light_count": 3, "plug_count": 2, "thermo_no": 0},
+    {"name": "bedroom",    "room_no": 1, "light_count": 2, "plug_count": 2, "thermo_no": 1},
+    {"name": "room1",      "room_no": 3, "light_count": 2, "plug_count": 2, "thermo_no": 2},
+    {"name": "room2",      "room_no": 2, "light_count": 2, "plug_count": 2, "thermo_no": 3},
+    {"name": "kitchen",    "room_no": 4, "light_count": 3, "plug_count": 2}
+  ],
   "advanced": {
     "init_temp": 22,
     "scan_interval": 300,
@@ -31,22 +35,6 @@
     "default_speed": "low",
     "loglevel": "info"
   },
-  "kocom_light_size": [
-    {"name": "livingroom", "number": 3},
-    {"name": "bedroom", "number": 2},
-    {"name": "room1", "number": 2},
-    {"name": "room2", "number": 2},
-    {"name": "kitchen", "number": 3}
-  ],
-  "kocom_plug_size": [
-    {"name": "livingroom", "number": 3},
-    {"name": "bedroom", "number": 2},
-    {"name": "room1", "number": 2},
-    {"name": "room2", "number": 2},
-    {"name": "kitchen", "number": 3}
-  ],
-  "kocom_room": ["livingroom", "bedroom", "room1", "room2", "kitchen"],
-  "kocom_room_thermostat": ["livingroom", "bedroom", "room1", "room2"],
   "ventilator": {
     "enable": false,
     "manufacturer": "none",
