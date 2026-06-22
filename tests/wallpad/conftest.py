@@ -46,9 +46,9 @@ def mock_config():
     ]
 
     # 집 전체 단위 기기 활성화 (기본값: 모두 비활성)
-    config.wp_fan = False
-    config.wp_gas = False
-    config.wp_elevator = False
+    config.fan_enabled = False
+    config.gas_enabled = False
+    config.elevator_enabled = False
 
     # 패킷 빌딩/파싱용 파생 매핑
     config.kocom_room_rev = {

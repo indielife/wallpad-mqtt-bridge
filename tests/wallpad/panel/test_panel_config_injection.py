@@ -44,9 +44,9 @@ def mock_config():
     ]
 
     # Fan/Gas/Elevator는 여전히 boolean
-    config.wp_fan = False
-    config.wp_gas = True
-    config.wp_elevator = False
+    config.fan_enabled = False
+    config.gas_enabled = True
+    config.elevator_enabled = False
 
     # 패킷 빌딩용 역방향 매핑
     config.kocom_room_rev = {

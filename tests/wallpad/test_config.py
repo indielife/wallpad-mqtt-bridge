@@ -72,9 +72,9 @@ def test_app_config_load(mock_isfile):
         assert config.serial_port == "/dev/ttyUSB0"
 
         # 4. 집 전체 단위 기기 (fan/gas/elevator) 검증
-        assert config.wp_gas is True
-        assert config.wp_fan is False
-        assert config.wp_elevator is False
+        assert config.gas_enabled is True
+        assert config.fan_enabled is False
+        assert config.elevator_enabled is False
 
         # 5. Advanced 설정 검증
         assert config.init_temp == 24
@@ -118,9 +118,9 @@ def test_app_config_defaults(mock_isfile):
     config.load()
 
     # 집 전체 단위 기기는 기본 비활성화
-    assert config.wp_fan is False
-    assert config.wp_gas is False
-    assert config.wp_elevator is False
+    assert config.fan_enabled is False
+    assert config.gas_enabled is False
+    assert config.elevator_enabled is False
     assert config.wallpad_enabled is True
     assert config.wallpad == "kocom"
     assert config.kocom_default_speed == "low"
@@ -396,9 +396,9 @@ def test_app_config_load_rooms(mock_isfile):
         }
 
         # fan/gas/elevator는 여전히 enabled_devices boolean
-        assert config.wp_fan is False
-        assert config.wp_gas is True
-        assert config.wp_elevator is False
+        assert config.fan_enabled is False
+        assert config.gas_enabled is True
+        assert config.elevator_enabled is False
 
 
 @patch("wallpad.config.os.path.isfile", return_value=False)

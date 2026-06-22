@@ -54,9 +54,9 @@ def panel_factory(mock_config):
 
     def _create(*active_devices: str):
         # 집 전체 단위 기기
-        mock_config.wp_elevator = "elevator" in active_devices
-        mock_config.wp_gas = "gas" in active_devices
-        mock_config.wp_fan = "fan" in active_devices
+        mock_config.elevator_enabled = "elevator" in active_devices
+        mock_config.gas_enabled = "gas" in active_devices
+        mock_config.fan_enabled = "fan" in active_devices
 
         # 방 기반 기기: active_devices에 맞는 rooms 구성
         room_no = 0 if ("light" in active_devices or "plug" in active_devices) else None

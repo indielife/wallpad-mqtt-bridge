@@ -220,18 +220,30 @@ class AppConfig:
     def kocom_plug_size(self) -> dict[str, int]:
         return {r.name: r.plug_count for r in self.rooms if r.light_addr is not None}
 
-    # --- 집 전체 단위 기기 활성화 여부 ---
+    # --- 기기 활성화 여부 ---
 
     @property
-    def wp_fan(self) -> bool:
+    def light_enabled(self) -> bool:
+        return any(r.light_addr is not None and r.light_count > 0 for r in self.rooms)
+
+    @property
+    def plug_enabled(self) -> bool:
+        return any(r.light_addr is not None and r.plug_count > 0 for r in self.rooms)
+
+    @property
+    def thermostat_enabled(self) -> bool:
+        return any(r.thermo_addr is not None for r in self.rooms)
+
+    @property
+    def fan_enabled(self) -> bool:
         return self.wp_list.get("fan") is True
 
     @property
-    def wp_gas(self) -> bool:
+    def gas_enabled(self) -> bool:
         return self.wp_list.get("gas") is True
 
     @property
-    def wp_elevator(self) -> bool:
+    def elevator_enabled(self) -> bool:
         return self.wp_list.get("elevator") is True
 
     @property

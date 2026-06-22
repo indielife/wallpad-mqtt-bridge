@@ -53,9 +53,9 @@ def kocom_factory(mock_config):
         mock_config.mqtt_config = {"server": "test", "username": "", "password": ""}
 
         # 집 전체 단위 기기
-        mock_config.wp_fan = active_device == "fan"
-        mock_config.wp_gas = active_device == "gas"
-        mock_config.wp_elevator = active_device == "elevator"
+        mock_config.fan_enabled = active_device == "fan"
+        mock_config.gas_enabled = active_device == "gas"
+        mock_config.elevator_enabled = active_device == "elevator"
 
         # 방 기반 기기: active_device에 맞는 rooms 설정
         if active_device == "light":
