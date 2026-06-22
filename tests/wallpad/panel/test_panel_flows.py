@@ -19,14 +19,14 @@ def test_parse_message_light_plug(panel_instance):
     # 조명 1 켜기 명령어 처리
     topic_light = ["homeassistant", "light", "livingroom_light1", "set"]
     panel_instance.parse_message(topic_light, "on")
-    assert panel_instance.wp_list[DEVICE_LIGHT]["livingroom"]["light1"]["set"] == "on"
-    assert panel_instance.wp_list[DEVICE_LIGHT]["livingroom"]["light1"]["last"] == "set"
+    assert panel_instance.device_states[DEVICE_LIGHT]["livingroom"]["light1"]["set"] == "on"
+    assert panel_instance.device_states[DEVICE_LIGHT]["livingroom"]["light1"]["last"] == "set"
 
     # 콘센트 2 끄기 명령어 처리
     topic_plug = ["homeassistant", "switch", "livingroom_plug2", "set"]
     panel_instance.parse_message(topic_plug, "off")
-    assert panel_instance.wp_list[DEVICE_PLUG]["livingroom"]["plug2"]["set"] == "off"
-    assert panel_instance.wp_list[DEVICE_PLUG]["livingroom"]["plug2"]["last"] == "set"
+    assert panel_instance.device_states[DEVICE_PLUG]["livingroom"]["plug2"]["set"] == "off"
+    assert panel_instance.device_states[DEVICE_PLUG]["livingroom"]["plug2"]["last"] == "set"
 
 
 def test_parse_message_gas_and_elevator(panel_instance):
@@ -35,19 +35,19 @@ def test_parse_message_gas_and_elevator(panel_instance):
     topic_gas = ["homeassistant", "switch", "wallpad_gas", "set"]
     panel_instance.parse_message(topic_gas, "on")
     assert (
-        panel_instance.wp_list[DEVICE_GAS]["wallpad"]["gas"]["set"] == "off"
+        panel_instance.device_states[DEVICE_GAS]["wallpad"]["gas"]["set"] == "off"
     )  # "on"은 허용되지 않음
 
     # 가스밸브 'off' 명령어는 허용
     panel_instance.parse_message(topic_gas, "off")
-    assert panel_instance.wp_list[DEVICE_GAS]["wallpad"]["gas"]["set"] == "off"
-    assert panel_instance.wp_list[DEVICE_GAS]["wallpad"]["gas"]["last"] == "set"
+    assert panel_instance.device_states[DEVICE_GAS]["wallpad"]["gas"]["set"] == "off"
+    assert panel_instance.device_states[DEVICE_GAS]["wallpad"]["gas"]["last"] == "set"
 
     # 엘리베이터 'on' 명령어 처리 검증
     topic_elevator = ["homeassistant", "switch", "wallpad_elevator", "set"]
     panel_instance.parse_message(topic_elevator, "on")
-    assert panel_instance.wp_list[DEVICE_ELEVATOR]["wallpad"]["elevator"]["set"] == "on"
-    assert panel_instance.wp_list[DEVICE_ELEVATOR]["wallpad"]["elevator"]["last"] == "set"
+    assert panel_instance.device_states[DEVICE_ELEVATOR]["wallpad"]["elevator"]["set"] == "on"
+    assert panel_instance.device_states[DEVICE_ELEVATOR]["wallpad"]["elevator"]["last"] == "set"
 
 
 def test_parse_message_thermostat(panel_instance):
@@ -55,16 +55,19 @@ def test_parse_message_thermostat(panel_instance):
     # 보일러 온도 25도로 변경 시 모드는 자동으로 heat으로 작동
     topic_temp = ["homeassistant", "climate", "livingroom", "target_temp"]
     panel_instance.parse_message(topic_temp, "25.0")
-    assert panel_instance.wp_list[DEVICE_THERMOSTAT]["livingroom"]["target_temp"]["set"] == 25
-    assert panel_instance.wp_list[DEVICE_THERMOSTAT]["livingroom"]["mode"]["set"] == "heat"
-    assert panel_instance.wp_list[DEVICE_THERMOSTAT]["livingroom"]["target_temp"]["last"] == "set"
-    assert panel_instance.wp_list[DEVICE_THERMOSTAT]["livingroom"]["mode"]["last"] == "set"
+    assert panel_instance.device_states[DEVICE_THERMOSTAT]["livingroom"]["target_temp"]["set"] == 25
+    assert panel_instance.device_states[DEVICE_THERMOSTAT]["livingroom"]["mode"]["set"] == "heat"
+    assert (
+        panel_instance.device_states[DEVICE_THERMOSTAT]["livingroom"]["target_temp"]["last"]
+        == "set"
+    )
+    assert panel_instance.device_states[DEVICE_THERMOSTAT]["livingroom"]["mode"]["last"] == "set"
 
     # 보일러 모드 끄기 명령어 처리
     topic_mode = ["homeassistant", "climate", "livingroom", "mode"]
     panel_instance.parse_message(topic_mode, "off")
-    assert panel_instance.wp_list[DEVICE_THERMOSTAT]["livingroom"]["mode"]["set"] == "off"
-    assert panel_instance.wp_list[DEVICE_THERMOSTAT]["livingroom"]["mode"]["last"] == "set"
+    assert panel_instance.device_states[DEVICE_THERMOSTAT]["livingroom"]["mode"]["set"] == "off"
+    assert panel_instance.device_states[DEVICE_THERMOSTAT]["livingroom"]["mode"]["last"] == "set"
 
 
 def test_parse_message_fan(panel_instance):
@@ -72,16 +75,16 @@ def test_parse_message_fan(panel_instance):
     # 환기팬 모드 on 변경 시 기본 속도는 default_speed (low)으로 작동
     topic_mode = ["homeassistant", "fan", "wallpad", "mode"]
     panel_instance.parse_message(topic_mode, "on")
-    assert panel_instance.wp_list[DEVICE_FAN]["wallpad"]["mode"]["set"] == "on"
-    assert panel_instance.wp_list[DEVICE_FAN]["wallpad"]["speed"]["set"] == "low"
-    assert panel_instance.wp_list[DEVICE_FAN]["wallpad"]["mode"]["last"] == "set"
-    assert panel_instance.wp_list[DEVICE_FAN]["wallpad"]["speed"]["last"] == "set"
+    assert panel_instance.device_states[DEVICE_FAN]["wallpad"]["mode"]["set"] == "on"
+    assert panel_instance.device_states[DEVICE_FAN]["wallpad"]["speed"]["set"] == "low"
+    assert panel_instance.device_states[DEVICE_FAN]["wallpad"]["mode"]["last"] == "set"
+    assert panel_instance.device_states[DEVICE_FAN]["wallpad"]["speed"]["last"] == "set"
 
     # 환기팬 스피드 high 변경
     topic_speed = ["homeassistant", "fan", "wallpad", "speed"]
     panel_instance.parse_message(topic_speed, "high")
-    assert panel_instance.wp_list[DEVICE_FAN]["wallpad"]["speed"]["set"] == "high"
-    assert panel_instance.wp_list[DEVICE_FAN]["wallpad"]["mode"]["set"] == "on"
+    assert panel_instance.device_states[DEVICE_FAN]["wallpad"]["speed"]["set"] == "high"
+    assert panel_instance.device_states[DEVICE_FAN]["wallpad"]["mode"]["set"] == "on"
 
 
 def test_packet_parsing_light_status(panel_instance):
@@ -91,10 +94,10 @@ def test_packet_parsing_light_status(panel_instance):
     packet = "aa5530d0000e00010000ff00000000000000000d0d"
     panel_instance.packet_parsing(packet)
 
-    assert panel_instance.wp_list[DEVICE_LIGHT]["livingroom"]["light1"]["state"] == "on"
-    assert panel_instance.wp_list[DEVICE_LIGHT]["livingroom"]["light2"]["state"] == "off"
-    assert panel_instance.wp_list[DEVICE_LIGHT]["livingroom"]["light3"]["state"] == "off"
-    assert panel_instance.wp_list[DEVICE_LIGHT]["livingroom"]["scan"]["tick"] > 0.0
+    assert panel_instance.device_states[DEVICE_LIGHT]["livingroom"]["light1"]["state"] == "on"
+    assert panel_instance.device_states[DEVICE_LIGHT]["livingroom"]["light2"]["state"] == "off"
+    assert panel_instance.device_states[DEVICE_LIGHT]["livingroom"]["light3"]["state"] == "off"
+    assert panel_instance.device_states[DEVICE_LIGHT]["livingroom"]["scan"]["tick"] > 0.0
 
 
 def test_packet_parsing_thermostat_status(panel_instance):
@@ -104,7 +107,11 @@ def test_packet_parsing_thermostat_status(panel_instance):
     packet = "aa5530d00036000100001100160014000000000d0d"
     panel_instance.packet_parsing(packet)
 
-    assert panel_instance.wp_list[DEVICE_THERMOSTAT]["livingroom"]["mode"]["state"] == "heat"
-    assert panel_instance.wp_list[DEVICE_THERMOSTAT]["livingroom"]["target_temp"]["state"] == 22
-    assert panel_instance.wp_list[DEVICE_THERMOSTAT]["livingroom"]["current_temp"]["state"] == 20
-    assert panel_instance.wp_list[DEVICE_THERMOSTAT]["livingroom"]["scan"]["tick"] > 0.0
+    assert panel_instance.device_states[DEVICE_THERMOSTAT]["livingroom"]["mode"]["state"] == "heat"
+    assert (
+        panel_instance.device_states[DEVICE_THERMOSTAT]["livingroom"]["target_temp"]["state"] == 22
+    )
+    assert (
+        panel_instance.device_states[DEVICE_THERMOSTAT]["livingroom"]["current_temp"]["state"] == 20
+    )
+    assert panel_instance.device_states[DEVICE_THERMOSTAT]["livingroom"]["scan"]["tick"] > 0.0

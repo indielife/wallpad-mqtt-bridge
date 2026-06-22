@@ -65,7 +65,7 @@ class AppConfig:
         self.socket_port = None
 
         # 4. 집 전체 단위 기기 활성화 (방 개념 없음)
-        self.wp_list = {}
+        self._enabled_devices = {}
 
         # 5. Advanced 세부 제어 설정
         self.init_temp = 22
@@ -126,7 +126,7 @@ class AppConfig:
         self.socket_port = soc.get("port")
 
         # 4. 집 전체 단위 기기 활성화 (fan/gas/elevator)
-        self.wp_list = wallpad_json.get("enabled_devices", {})
+        self._enabled_devices = wallpad_json.get("enabled_devices", {})
 
         # 5. Advanced 세부 제어 설정
         adv = json_data.get("advanced", {})
@@ -236,15 +236,15 @@ class AppConfig:
 
     @property
     def fan_enabled(self) -> bool:
-        return self.wp_list.get("fan") is True
+        return self._enabled_devices.get("fan") is True
 
     @property
     def gas_enabled(self) -> bool:
-        return self.wp_list.get("gas") is True
+        return self._enabled_devices.get("gas") is True
 
     @property
     def elevator_enabled(self) -> bool:
-        return self.wp_list.get("elevator") is True
+        return self._enabled_devices.get("elevator") is True
 
     @property
     def ventilator(self) -> str:

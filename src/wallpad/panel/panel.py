@@ -78,7 +78,7 @@ class WallpadPanel:
         self.scan_packet_buf = []
 
         self.tick = time.time()
-        self.wp_list = KocomStateManager()
+        self.device_states = KocomStateManager()
         self.fan_enabled = config.fan_enabled
         self.gas_enabled = config.gas_enabled
         self.elevator_enabled = config.elevator_enabled
@@ -112,7 +112,7 @@ class WallpadPanel:
         room_state = RoomState()
         room_state[DEVICE_ELEVATOR] = SubDeviceState(state="off", set_val="off")
         device_state[DEVICE_WALLPAD] = room_state
-        self.wp_list[DEVICE_ELEVATOR] = device_state
+        self.device_states[DEVICE_ELEVATOR] = device_state
 
     def _init_gas(self, config: AppConfig) -> None:
         self.devices.append(
@@ -126,7 +126,7 @@ class WallpadPanel:
         room_state = RoomState()
         room_state[DEVICE_GAS] = SubDeviceState(state="off", set_val="off")
         device_state[DEVICE_WALLPAD] = room_state
-        self.wp_list[DEVICE_GAS] = device_state
+        self.device_states[DEVICE_GAS] = device_state
 
     def _init_fan(self, config: AppConfig) -> None:
         self.devices.append(
@@ -141,18 +141,18 @@ class WallpadPanel:
         room_state["mode"] = SubDeviceState(state="off", set_val="off")
         room_state["speed"] = SubDeviceState(state="off", set_val="off")
         device_state[DEVICE_WALLPAD] = room_state
-        self.wp_list[DEVICE_FAN] = device_state
+        self.device_states[DEVICE_FAN] = device_state
 
     def _init_room_devices(self, config: AppConfig) -> None:
         light_state = self._init_lights(config)
         plug_state = self._init_plugs(config)
         thermo_state = self._init_thermostats(config)
         if light_state:
-            self.wp_list[DEVICE_LIGHT] = light_state
+            self.device_states[DEVICE_LIGHT] = light_state
         if plug_state:
-            self.wp_list[DEVICE_PLUG] = plug_state
+            self.device_states[DEVICE_PLUG] = plug_state
         if thermo_state:
-            self.wp_list[DEVICE_THERMOSTAT] = thermo_state
+            self.device_states[DEVICE_THERMOSTAT] = thermo_state
 
     def _init_lights(self, config: AppConfig) -> DeviceState:
         device_state = DeviceState()
@@ -279,7 +279,7 @@ class WallpadPanel:
                 logger.info("[From HA]HomeAssistant Remove")
                 return
             elif _topic[3] == "scan":
-                self.wp_list.reset_scan_states()
+                self.device_states.reset_scan_states()
                 logger.info("[From HA]HomeAssistant Scan")
                 return
             elif _topic[3] == "packet":
@@ -328,17 +328,17 @@ class WallpadPanel:
                         payload = "off"
                         logger.warning("Cannot set GAS to ON from HA")
                     else:
-                        self.wp_list.update_from_ha(
+                        self.device_states.update_from_ha(
                             device, room, sub_device, command, payload, self.default_speed
                         )
                 elif device == DEVICE_ELEVATOR:
-                    self.wp_list.update_from_ha(
+                    self.device_states.update_from_ha(
                         device, room, sub_device, command, payload, self.default_speed
                     )
                     if payload == "off":
                         self.publish_state_to_ha(device, DEVICE_WALLPAD, payload)
                 else:
-                    self.wp_list.update_from_ha(
+                    self.device_states.update_from_ha(
                         device, room, sub_device, command, payload, self.default_speed
                     )
                 logger.info("[From HA]%s/%s/%s/%s = %s", device, room, sub_device, command, payload)
@@ -348,8 +348,10 @@ class WallpadPanel:
             device = DEVICE_THERMOSTAT
             room = topic[2]
             try:
-                self.wp_list.update_from_ha(device, room, "", command, payload, self.default_speed)
-                room_state = self.wp_list[device][room]
+                self.device_states.update_from_ha(
+                    device, room, "", command, payload, self.default_speed
+                )
+                room_state = self.device_states[device][room]
                 ha_payload = {
                     "mode": room_state["mode"]["set"],
                     "target_temp": room_state["target_temp"]["set"],
@@ -369,8 +371,10 @@ class WallpadPanel:
             device = DEVICE_FAN
             room = topic[2]
             try:
-                self.wp_list.update_from_ha(device, room, "", command, payload, self.default_speed)
-                room_state = self.wp_list[device][room]
+                self.device_states.update_from_ha(
+                    device, room, "", command, payload, self.default_speed
+                )
+                room_state = self.device_states[device][room]
                 ha_payload = {
                     "mode": room_state["mode"]["set"],
                     "speed": room_state["speed"]["set"],
@@ -489,7 +493,7 @@ class WallpadPanel:
             elif v["src_device"] == DEVICE_THERMOSTAT:
                 v["value"] = self.parse_thermostat(
                     p["value"],
-                    self.wp_list[v["src_device"]][v["src_room"]]["target_temp"]["state"],
+                    self.device_states[v["src_device"]][v["src_room"]]["target_temp"]["state"],
                 )
             elif v["src_device"] == DEVICE_WALLPAD and v["dst_device"] == DEVICE_ELEVATOR:
                 v["value"] = "off"
@@ -569,7 +573,7 @@ class WallpadPanel:
     def set_list(self, device, room, value, name="kocom"):
         try:
             logger.info("[From %s]%s/%s/state = %s", name, device, room, value)
-            self.wp_list.update_from_rs485(device, room, value, self.default_speed)
+            self.device_states.update_from_rs485(device, room, value, self.default_speed)
         except Exception as e:
             logger.error(
                 "Failed to update state from %s: %s/%s = %s (error: %r)",
@@ -581,7 +585,7 @@ class WallpadPanel:
             )
 
     def _is_device_enabled(self, device: str) -> bool:
-        return device in self.wp_list
+        return device in self.device_states
 
     async def _periodic_scan_room(
         self, device: str, room: str, scan: ScanState, now: float
@@ -628,7 +632,7 @@ class WallpadPanel:
                 await self._scan_sub_device(device, room, sub_d, sub_v, now)
 
     async def _perform_scan(self, now: float) -> None:
-        for device, d_state in self.wp_list.items():
+        for device, d_state in self.device_states.items():
             if not self._is_device_enabled(device):
                 continue
 
@@ -714,7 +718,7 @@ class WallpadPanel:
 
         # 2. 객체에게 패킷 생성 위임 (전략 패턴 + 빌더)
         if target_obj and cmd != "조회":
-            room_state = self.wp_list.get(device, {}).get(room, {})
+            room_state = self.device_states.get(device, {}).get(room, {})
             built_packet = target_obj.build_packet(
                 cmd=cmd,
                 target=target,

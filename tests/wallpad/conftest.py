@@ -88,7 +88,7 @@ def panel_instance(mock_config):
     panel.d_mqtt = MagicMock()
 
     # wp_list 초기화 (KocomStateManager 구조)
-    panel.wp_list = KocomStateManager()
+    panel.device_states = KocomStateManager()
     initial_states = {
         DEVICE_LIGHT: {
             "livingroom": {
@@ -134,6 +134,6 @@ def panel_instance(mock_config):
         },
     }
     for device, rooms in initial_states.items():
-        panel.wp_list[device] = rooms
+        panel.device_states[device] = rooms
 
     return panel

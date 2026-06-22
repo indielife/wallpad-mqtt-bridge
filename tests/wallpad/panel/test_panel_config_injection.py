@@ -73,30 +73,30 @@ class TestWpListLight:
         """rooms에 있는 방에 대해 조명 상태가 초기화되는지 검증합니다."""
         panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
 
-        assert DEVICE_LIGHT in panel.wp_list
-        assert "livingroom" in panel.wp_list[DEVICE_LIGHT]
-        assert "bedroom" in panel.wp_list[DEVICE_LIGHT]
-        assert "kitchen" in panel.wp_list[DEVICE_LIGHT]
+        assert DEVICE_LIGHT in panel.device_states
+        assert "livingroom" in panel.device_states[DEVICE_LIGHT]
+        assert "bedroom" in panel.device_states[DEVICE_LIGHT]
+        assert "kitchen" in panel.device_states[DEVICE_LIGHT]
 
     def test_light_subdevice_count_matches_light_count(self, mock_config, mock_transport):
         """light_count에 맞는 수의 서브기기(light1~N + light0)가 생성되는지 검증합니다."""
         panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
 
-        livingroom = panel.wp_list[DEVICE_LIGHT]["livingroom"]
+        livingroom = panel.device_states[DEVICE_LIGHT]["livingroom"]
         assert "light0" in livingroom  # 전체 on/off 표시용
         assert "light1" in livingroom
         assert "light2" in livingroom
         assert "light3" in livingroom
         assert "light4" not in livingroom  # light_count=3이므로 4는 없음
 
-        bedroom = panel.wp_list[DEVICE_LIGHT]["bedroom"]
+        bedroom = panel.device_states[DEVICE_LIGHT]["bedroom"]
         assert "light2" in bedroom
         assert "light3" not in bedroom  # light_count=2이므로 3은 없음
 
     def test_light_initial_state_is_off(self, mock_config, mock_transport):
         panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
 
-        state = panel.wp_list[DEVICE_LIGHT]["livingroom"]["light1"]
+        state = panel.device_states[DEVICE_LIGHT]["livingroom"]["light1"]
         assert state["state"] == "off"
         assert state["set"] == "off"
 
@@ -105,13 +105,13 @@ class TestWpListPlug:
     def test_plug_state_created_for_rooms(self, mock_config, mock_transport):
         panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
 
-        assert DEVICE_PLUG in panel.wp_list
-        assert "livingroom" in panel.wp_list[DEVICE_PLUG]
+        assert DEVICE_PLUG in panel.device_states
+        assert "livingroom" in panel.device_states[DEVICE_PLUG]
 
     def test_plug_subdevice_count_matches_plug_count(self, mock_config, mock_transport):
         panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
 
-        livingroom = panel.wp_list[DEVICE_PLUG]["livingroom"]
+        livingroom = panel.device_states[DEVICE_PLUG]["livingroom"]
         assert "plug0" in livingroom
         assert "plug1" in livingroom
         assert "plug2" in livingroom
@@ -121,7 +121,7 @@ class TestWpListPlug:
         """콘센트 초기 상태는 on입니다 (오작동 방지)."""
         panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
 
-        state = panel.wp_list[DEVICE_PLUG]["livingroom"]["plug1"]
+        state = panel.device_states[DEVICE_PLUG]["livingroom"]["plug1"]
         assert state["state"] == "on"
         assert state["set"] == "on"
 
@@ -131,30 +131,30 @@ class TestWpListThermostat:
         """thermo_no가 있는 방만 난방 상태가 초기화되는지 검증합니다."""
         panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
 
-        assert DEVICE_THERMOSTAT in panel.wp_list
-        assert "livingroom" in panel.wp_list[DEVICE_THERMOSTAT]
-        assert "bedroom" in panel.wp_list[DEVICE_THERMOSTAT]
-        assert "kitchen" not in panel.wp_list[DEVICE_THERMOSTAT]  # thermo_no 없음
+        assert DEVICE_THERMOSTAT in panel.device_states
+        assert "livingroom" in panel.device_states[DEVICE_THERMOSTAT]
+        assert "bedroom" in panel.device_states[DEVICE_THERMOSTAT]
+        assert "kitchen" not in panel.device_states[DEVICE_THERMOSTAT]  # thermo_no 없음
 
     def test_thermostat_initial_temp(self, mock_config, mock_transport):
         panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
 
-        state = panel.wp_list[DEVICE_THERMOSTAT]["livingroom"]
+        state = panel.device_states[DEVICE_THERMOSTAT]["livingroom"]
         assert state["target_temp"]["state"] == mock_config.init_temp
 
 
 class TestWpListGlobalDevices:
     def test_gas_in_wp_list_when_enabled(self, mock_config, mock_transport):
         panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
-        assert DEVICE_GAS in panel.wp_list
+        assert DEVICE_GAS in panel.device_states
 
     def test_fan_not_in_wp_list_when_disabled(self, mock_config, mock_transport):
         panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
-        assert DEVICE_FAN not in panel.wp_list
+        assert DEVICE_FAN not in panel.device_states
 
     def test_elevator_not_in_wp_list_when_disabled(self, mock_config, mock_transport):
         panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
-        assert DEVICE_ELEVATOR not in panel.wp_list
+        assert DEVICE_ELEVATOR not in panel.device_states
 
 
 class TestDeviceObjects:
