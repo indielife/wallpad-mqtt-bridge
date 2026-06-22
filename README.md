@@ -11,7 +11,7 @@
 
 ### 1. MQTT Broker
 홈어시스턴트에서 사용하는 MQTT 브로커(예: Mosquitto Broker 애드온)와의 연결 정보입니다.
-- **Host**: MQTT 브로커가 동작 중인 호스트 IP 주소 (예: `192.168.0.10`)
+- **Host**: MQTT 브로커 호스트. HA 내부 Mosquitto 브로커 애드온을 사용하는 경우 `core-mosquitto`를 입력합니다. 외부 브로커는 IP 주소로 입력합니다. (기본값: `core-mosquitto`)
 - **Username**: MQTT 사용자 계정 ID
 - **Password**: MQTT 사용자 계정 비밀번호
 

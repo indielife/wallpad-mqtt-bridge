@@ -35,7 +35,7 @@ map:
 # ==============================================================================
 options:
   mqtt_broker:
-    host: ""
+    host: core-mosquitto
     username: ""
     password: ""
 

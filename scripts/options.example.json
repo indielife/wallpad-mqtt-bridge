@@ -1,6 +1,6 @@
 {
   "mqtt_broker": {
-    "host": "192.168.0.x",
+    "host": "core-mosquitto",
     "username": "mqtt_user",
     "password": "mqtt_password"
   },
