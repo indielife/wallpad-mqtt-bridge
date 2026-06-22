@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, call, patch
 
 import pytest
 
-from wallpad.transport.reconnect import ReconnectingTransport
+from wallpad.transport.reconnect import MAX_RECONNECT_INTERVAL, ReconnectingTransport
 
 
 @pytest.fixture
@@ -18,6 +18,48 @@ def transport(inner):
 async def test_connect_delegates(transport, inner):
     await transport.connect()
     inner.connect.assert_awaited_once()
+
+
+async def test_connect_retries_on_failure(transport, inner):
+    inner.connect.side_effect = [OSError("refused"), None]
+
+    with patch("wallpad.transport.reconnect.asyncio.sleep"):
+        await transport.connect()
+
+    assert inner.connect.await_count == 2
+
+
+async def test_connect_retries_multiple_failures(transport, inner):
+    inner.connect.side_effect = [OSError("refused"), OSError("refused"), None]
+
+    with patch("wallpad.transport.reconnect.asyncio.sleep"):
+        await transport.connect()
+
+    assert inner.connect.await_count == 3
+
+
+async def test_connect_backoff_doubles(transport, inner):
+    inner.connect.side_effect = [OSError("refused"), OSError("refused"), None]
+
+    with patch("wallpad.transport.reconnect.asyncio.sleep") as mock_sleep:
+        await transport.connect()
+
+    assert mock_sleep.await_count == 2
+    delays = [c.args[0] for c in mock_sleep.await_args_list]
+    assert delays[0] == 5.0
+    assert delays[1] == 10.0
+
+
+async def test_connect_backoff_caps_at_max(inner):
+    transport = ReconnectingTransport(inner, reconnect_interval=40.0)
+    inner.connect.side_effect = [OSError("refused"), OSError("refused"), None]
+
+    with patch("wallpad.transport.reconnect.asyncio.sleep") as mock_sleep:
+        await transport.connect()
+
+    delays = [c.args[0] for c in mock_sleep.await_args_list]
+    assert delays[0] == 40.0
+    assert delays[1] == MAX_RECONNECT_INTERVAL
 
 
 async def test_close_delegates(transport, inner):

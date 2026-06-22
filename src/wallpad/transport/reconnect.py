@@ -7,6 +7,7 @@ from .base import BaseTransport
 logger = logging.getLogger(__name__)
 
 RECONNECT_INTERVAL = 5.0
+MAX_RECONNECT_INTERVAL = 60.0
 
 
 class ReconnectingTransport(BaseTransport):
@@ -15,7 +16,16 @@ class ReconnectingTransport(BaseTransport):
         self._reconnect_interval = reconnect_interval
 
     async def connect(self):
-        await self._transport.connect()
+        delay = self._reconnect_interval
+        while True:
+            try:
+                await self._transport.connect()
+                logger.info("Connected successfully.")
+                return
+            except Exception as e:
+                logger.warning("Connect failed: %r. Retrying in %.0fs...", e, delay)
+                await asyncio.sleep(delay)
+                delay = min(delay * 2, MAX_RECONNECT_INTERVAL)
 
     async def _reconnect(self):
         while True:
