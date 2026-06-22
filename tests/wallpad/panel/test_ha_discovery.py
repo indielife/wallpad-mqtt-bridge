@@ -8,30 +8,29 @@ from wallpad.panel.panel import WallpadPanel
 from wallpad.protocol.kocom.constants import DEVICE_ELEVATOR, DEVICE_GAS
 
 
+def _make_room(name, room_no=None, light_count=0, plug_count=0, thermo_no=None):
+    r = MagicMock()
+    r.name = name
+    r.room_no = room_no
+    r.light_count = light_count
+    r.plug_count = plug_count
+    r.thermo_no = thermo_no
+    r.light_addr = f"{room_no:02d}" if room_no is not None else None
+    r.thermo_addr = f"{thermo_no:02d}" if thermo_no is not None else None
+    return r
+
+
 @pytest.fixture
 def mock_config():
     """테스트용 가짜 AppConfig 설정을 생성하는 픽스처"""
     config = MagicMock()
     config.sw_version = "RS485 Compilation 0.1.0"
     config.wallpad_manufacturer = "test_name"
-
-    # 4. Advanced 세부 제어 설정
     config.init_temp = 22
-    config.scan_interval = 300
-    config.packet_delay = 0.8
     config.kocom_default_speed = "low"
-
-    # 5. WallpadPanel 사이즈 및 방 이름 매핑 설정
-    config.kocom_light_size = {"room1": 1}
-    config.kocom_plug_size = {"room1": 1}
-    config.kocom_room = {"00": "room1"}
-    config.kocom_room_thermostat = {"00": "room1"}
     config.kocom_room_rev = {"room1": "00", "wallpad": "00"}
     config.kocom_room_thermostat_rev = {"room1": "00"}
-
-    # 6. Ventilator(전열교환기) 설정
     config.ventilator_default_speed = "low"
-
     return config
 
 
@@ -39,7 +38,7 @@ def mock_config():
 def kocom_factory(mock_config):
     """
     WallpadPanel 인스턴스와 mock_mqtt_instance를 생성해주는 팩토리 픽스처.
-    활성화할 디바이스 이름을 전달받아 해당 디바이스만 True로 설정합니다.
+    활성화할 디바이스 이름을 전달받아 해당 디바이스만 설정합니다.
     """
     mock_mqtt_instance = MagicMock()
     mock_mqtt_client = MagicMock()
@@ -51,25 +50,24 @@ def kocom_factory(mock_config):
     mock_mqtt_client.subscribe.side_effect = mock_mqtt_instance.subscribe
 
     def _create(active_device: str):
-        mock_config.mqtt_config = {
-            "server": "test",
-            "username": "",
-            "password": "",
-        }
+        mock_config.mqtt_config = {"server": "test", "username": "", "password": ""}
 
-        mock_config.wp_light = active_device == "light"
+        # 집 전체 단위 기기
         mock_config.wp_fan = active_device == "fan"
-        mock_config.wp_plug = active_device == "plug"
         mock_config.wp_gas = active_device == "gas"
         mock_config.wp_elevator = active_device == "elevator"
-        mock_config.wp_thermostat = active_device == "thermostat"
 
-        panel = WallpadPanel(
-            mock_config,
-            mock_mqtt_client,
-            MagicMock(),
-        )
+        # 방 기반 기기: active_device에 맞는 rooms 설정
+        if active_device == "light":
+            mock_config.rooms = [_make_room("room1", room_no=0, light_count=1)]
+        elif active_device == "plug":
+            mock_config.rooms = [_make_room("room1", room_no=0, plug_count=1)]
+        elif active_device == "thermostat":
+            mock_config.rooms = [_make_room("room1", thermo_no=0)]
+        else:
+            mock_config.rooms = []
 
+        panel = WallpadPanel(mock_config, mock_mqtt_client, MagicMock())
         return panel, mock_mqtt_instance
 
     yield _create

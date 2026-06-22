@@ -15,21 +15,29 @@ from wallpad.protocol.kocom.constants import (
 )
 
 
+def _make_room(name, room_no=None, light_count=0, plug_count=0, thermo_no=None):
+    r = MagicMock()
+    r.name = name
+    r.room_no = room_no
+    r.light_count = light_count
+    r.plug_count = plug_count
+    r.thermo_no = thermo_no
+    r.light_addr = f"{room_no:02d}" if room_no is not None else None
+    r.thermo_addr = f"{thermo_no:02d}" if thermo_no is not None else None
+    return r
+
+
 @pytest.fixture
 def mock_config():
     config = MagicMock()
     config.sw_version = "1.0.0"
     config.mqtt_config = {"server": "test", "username": "", "password": ""}
     config.init_temp = 22
-    config.scan_interval = 300
-    config.packet_delay = 0.8
     config.kocom_default_speed = "low"
-    config.kocom_light_size = {"room1": 2}
-    config.kocom_plug_size = {"room1": 1}
-    config.kocom_room = {"00": "room1"}
-    config.kocom_room_thermostat = {"00": "room1"}
     config.kocom_room_rev = {"room1": "00", "wallpad": "00"}
     config.kocom_room_thermostat_rev = {"room1": "00"}
+    config.kocom_light_size = {"room1": 2}
+    config.kocom_plug_size = {"room1": 1}
     config.ventilator_default_speed = "low"
     return config
 
@@ -45,12 +53,27 @@ def panel_factory(mock_config):
     )
 
     def _create(*active_devices: str):
-        mock_config.wp_light = "light" in active_devices
-        mock_config.wp_plug = "plug" in active_devices
-        mock_config.wp_thermostat = "thermostat" in active_devices
+        # 집 전체 단위 기기
         mock_config.wp_elevator = "elevator" in active_devices
         mock_config.wp_gas = "gas" in active_devices
         mock_config.wp_fan = "fan" in active_devices
+
+        # 방 기반 기기: active_devices에 맞는 rooms 구성
+        room_no = 0 if ("light" in active_devices or "plug" in active_devices) else None
+        thermo_no = 0 if "thermostat" in active_devices else None
+        if room_no is not None or thermo_no is not None:
+            mock_config.rooms = [
+                _make_room(
+                    "room1",
+                    room_no=room_no,
+                    light_count=2 if "light" in active_devices else 0,
+                    plug_count=1 if "plug" in active_devices else 0,
+                    thermo_no=thermo_no,
+                )
+            ]
+        else:
+            mock_config.rooms = []
+
         panel = WallpadPanel(mock_config, mock_mqtt, MagicMock())
         published.clear()
         return panel, published
