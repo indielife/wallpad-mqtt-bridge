@@ -34,14 +34,4 @@ git checkout -b <branch-name>
 
 ## PR 작성
 
-- `.github/PULL_REQUEST_TEMPLATE.md` 템플릿 준수
-- PR 제목 형식: 커밋 메시지 제목과 동일 (`<emoji> <type>(<scope>): <subject>`)
-- `.gitignore` 대상 파일(`.cursor/`, `.cursorrules/`, `.vscode/`, `.env` 등)은 커밋 메시지·PR 어디에도 언급하지 않습니다
-
-## GitHub Actions (@claude 에이전트)
-
-`@claude` 멘션으로 GitHub Actions에서 코드를 작성·수정할 때 커밋 전 아래 순서를 반드시 실행합니다:
-
-1. `.venv/bin/pre-commit run --all-files` — 오류 발생 시 수정 후 재실행
-2. `.venv/bin/pytest` — 모두 통과한 상태에서만 커밋
-3. PR 제목은 커밋 메시지 제목과 동일하게 `<emoji> <type>(<scope>): <subject>` 형식 준수 (이슈 번호 제목에 포함 금지)
+PR 생성 전 반드시 [CONTRIBUTING.md](CONTRIBUTING.md)를 읽고 규칙을 따릅니다.

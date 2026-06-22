@@ -36,14 +36,11 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
-          # This is an optional setting that allows Claude to read CI results on PRs
           additional_permissions: |
             actions: read
 
-          # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
-          # prompt: 'Update the pull request description to include a summary of changes.'
-
-          # Optional: Add claude_args to customize behavior and configuration
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://code.claude.com/docs/en/cli-reference for available options
-          # claude_args: '--allowed-tools Bash(gh pr *)'
+          custom_instructions: |
+            커밋 전 반드시 아래 순서를 실행합니다:
+            1. `.venv/bin/pre-commit run --all-files` — 오류 발생 시 수정 후 재실행
+            2. `.venv/bin/pytest` — 모두 통과한 상태에서만 커밋
+            커밋/브랜치/PR 규칙은 CONTRIBUTING.md를 참조합니다.
