@@ -23,7 +23,7 @@ def _stop_after_one(secs):
 
 async def test_scan_list_periodic_scan_trigger(panel_instance, monkeypatch):
     """주기적 스캔(조회) 기능이 실행되는지 검증합니다."""
-    # DEVICE_LIGHT만 wp_list에 남겨 다른 기기가 스캔에 영향을 주지 않도록 합니다.
+    # DEVICE_LIGHT만 device_states에 남겨 다른 기기가 스캔에 영향을 주지 않도록 합니다.
     panel_instance.device_states = KocomStateManager()
     panel_instance.device_states[DEVICE_LIGHT] = {
         "livingroom": {

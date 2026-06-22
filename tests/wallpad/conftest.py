@@ -87,7 +87,7 @@ def panel_instance(mock_config):
     # MQTT 모킹
     panel.d_mqtt = MagicMock()
 
-    # wp_list 초기화 (KocomStateManager 구조)
+    # device_states 초기화 (KocomStateManager 구조)
     panel.device_states = KocomStateManager()
     initial_states = {
         DEVICE_LIGHT: {

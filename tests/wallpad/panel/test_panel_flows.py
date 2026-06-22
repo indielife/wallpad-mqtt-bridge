@@ -15,7 +15,7 @@ from wallpad.panel.panel import (
 
 
 def test_parse_message_light_plug(panel_instance):
-    """MQTT 조명 및 콘센트 제어 메시지가 들어왔을 때 wp_list 상태 변경을 검증합니다."""
+    """MQTT 조명 및 콘센트 제어 메시지가 들어왔을 때 device_states 상태 변경을 검증합니다."""
     # 조명 1 켜기 명령어 처리
     topic_light = ["homeassistant", "light", "livingroom_light1", "set"]
     panel_instance.parse_message(topic_light, "on")
@@ -51,7 +51,7 @@ def test_parse_message_gas_and_elevator(panel_instance):
 
 
 def test_parse_message_thermostat(panel_instance):
-    """MQTT 보일러 목표 온도 및 모드 제어 메시지가 들어왔을 때 wp_list 상태 변경을 검증합니다."""
+    """MQTT 보일러 목표 온도 및 모드 제어 메시지가 들어왔을 때 device_states 상태 변경을 검증합니다."""
     # 보일러 온도 25도로 변경 시 모드는 자동으로 heat으로 작동
     topic_temp = ["homeassistant", "climate", "livingroom", "target_temp"]
     panel_instance.parse_message(topic_temp, "25.0")
@@ -71,7 +71,7 @@ def test_parse_message_thermostat(panel_instance):
 
 
 def test_parse_message_fan(panel_instance):
-    """MQTT 환기팬 제어 메시지가 들어왔을 때 wp_list 상태 변경을 검증합니다."""
+    """MQTT 환기팬 제어 메시지가 들어왔을 때 device_states 상태 변경을 검증합니다."""
     # 환기팬 모드 on 변경 시 기본 속도는 default_speed (low)으로 작동
     topic_mode = ["homeassistant", "fan", "wallpad", "mode"]
     panel_instance.parse_message(topic_mode, "on")
@@ -88,7 +88,7 @@ def test_parse_message_fan(panel_instance):
 
 
 def test_packet_parsing_light_status(panel_instance):
-    """RS485 조명 상태 수신 패킷 파싱 시 wp_list 상태 업데이트를 검증합니다."""
+    """RS485 조명 상태 수신 패킷 파싱 시 device_states 상태 업데이트를 검증합니다."""
     # 거실(livingroom) 조명 상태 수신 ACK 패킷 (light1 켜짐, light2 & light3 꺼짐)
     # aa55(header) 30d(type:ack) 0(order) 00(pad) 0e(light) 00(livingroom) 0100(dst:wallpad) 00(상태) ff00000000000000(value) 00(checksum) 0d0d(tail)
     packet = "aa5530d0000e00010000ff00000000000000000d0d"
@@ -101,7 +101,7 @@ def test_packet_parsing_light_status(panel_instance):
 
 
 def test_packet_parsing_thermostat_status(panel_instance):
-    """RS485 보일러 상태 수신 패킷 파싱 시 wp_list 상태 업데이트를 검증합니다."""
+    """RS485 보일러 상태 수신 패킷 파싱 시 device_states 상태 업데이트를 검증합니다."""
     # 거실(livingroom) 보일러 상태 수신 ACK 패킷 (heat모드, 목표 22도, 현재 20도)
     # aa55 30d 0 00 36(thermo) 00(livingroom) 0100(dst:wallpad) 00(상태) 1100160014000000(value) 00 0d0d
     packet = "aa5530d00036000100001100160014000000000d0d"

@@ -64,7 +64,7 @@ graph LR
    - Kocom 헤더(`aa`)가 수집되면, 지정된 패킷 길이만큼 데이터를 모아 체크섬을 검증합니다.
 2. **패킷 파싱 (`packet_parsing`)**
    - 수신 완료된 패킷에서 목적지(Destination), 출발지(Source), 명령(Command), 제어 대상, 상태 값 등을 분석합니다.
-   - 분석된 정보는 내부 상태 관리자(`self.wp_list`)에 업데이트됩니다.
+   - 분석된 정보는 내부 상태 관리자(`self.device_states`)에 업데이트됩니다.
 3. **HA 전송 (`publish_state_to_ha`)**
    - 기기의 상태 업데이트가 있으면 JSON 형태로 가공하여 미리 정의된 HA 상태 토픽으로 MQTT 메시지를 발행(Publish)합니다.
    * **예시 토픽:** `homeassistant/light/livingroom/state`
@@ -78,7 +78,7 @@ graph LR
    - Home Assistant 대시보드나 자동화 규칙에 의해 기기 제어가 트리거되면, HA는 MQTT 제어 토픽으로 메시지를 발행합니다.
    - 브릿지는 이를 구독(Subscribe)하고 있다가 이벤트를 수신합니다.
 2. **목표 상태 기록**
-   - 수신한 명령 토픽과 페이로드(예: `on`/`off`, 설정 온도 등)를 확인하고, `self.wp_list`에 해당 기기의 목표 제어 값(`set_val`)을 기록합니다.
+   - 수신한 명령 토픽과 페이로드(예: `on`/`off`, 설정 온도 등)를 확인하고, `self.device_states`에 해당 기기의 목표 제어 값(`set_val`)을 기록합니다.
 3. **주기적 스캔 및 패킷 전송 스레드 (`_t2` / `scan_list`)**
    - 백그라운드 스레드에서 주기적으로 전체 기기 상태를 스캔하며, HA가 설정한 목표 제어 값(`set_val`)과 실제 기기 상태(`state`)에 차이가 있는지 감시합니다.
    - 차이가 발견되면 `set_serial`을 호출합니다.

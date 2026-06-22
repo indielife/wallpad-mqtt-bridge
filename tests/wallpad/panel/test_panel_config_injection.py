@@ -143,16 +143,16 @@ class TestWpListThermostat:
         assert state["target_temp"]["state"] == mock_config.init_temp
 
 
-class TestWpListGlobalDevices:
-    def test_gas_in_wp_list_when_enabled(self, mock_config, mock_transport):
+class TestGlobalDeviceStates:
+    def test_gas_in_device_states_when_enabled(self, mock_config, mock_transport):
         panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
         assert DEVICE_GAS in panel.device_states
 
-    def test_fan_not_in_wp_list_when_disabled(self, mock_config, mock_transport):
+    def test_fan_not_in_device_states_when_disabled(self, mock_config, mock_transport):
         panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
         assert DEVICE_FAN not in panel.device_states
 
-    def test_elevator_not_in_wp_list_when_disabled(self, mock_config, mock_transport):
+    def test_elevator_not_in_device_states_when_disabled(self, mock_config, mock_transport):
         panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
         assert DEVICE_ELEVATOR not in panel.device_states
 
