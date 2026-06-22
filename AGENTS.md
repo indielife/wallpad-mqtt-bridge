@@ -10,9 +10,7 @@
 
 ## 브랜치 규칙
 
-형식: `<type>/<issue-number>-<description>` (예: `feat/12-add-boiler`)
-
-**브랜치 생성 전 반드시 원격 main 동기화:**
+명명 규칙은 [CONTRIBUTING.md](CONTRIBUTING.md) 참조. 브랜치 생성 전 반드시 원격 main 동기화:
 
 ```bash
 git fetch origin
@@ -24,14 +22,10 @@ git checkout -b <branch-name>
 
 - 패키지 추가: `uv add [package]`
 - 스크립트/도구 실행: **반드시 `.venv/bin/` 바이너리를 직접 호출** (`uv run` 사용 금지)
-  - 예: `.venv/bin/pytest`, `.venv/bin/ruff`, `.venv/bin/pre-commit`
+  - 예: `.venv/bin/pytest`, `.venv/bin/pre-commit`
 - Python 버전: 3.12 이상
-- 린트/포맷: `.venv/bin/ruff check` 및 `.venv/bin/ruff format` — 모든 Python 코드는 통과해야 함
+- 린트/포맷: `.venv/bin/ruff check` 및 `.venv/bin/ruff format` 통과 필수
 
-## Git 커밋 규칙
+## 커밋 및 PR
 
-커밋 전 반드시 [CONTRIBUTING.md](CONTRIBUTING.md)를 읽고 규칙을 따릅니다.
-
-## PR 작성
-
-PR 생성 전 반드시 [CONTRIBUTING.md](CONTRIBUTING.md)를 읽고 규칙을 따릅니다.
+커밋·PR 생성 전 반드시 [CONTRIBUTING.md](CONTRIBUTING.md)를 읽고 규칙을 따릅니다.
