@@ -28,15 +28,49 @@
   - **Port**: 홈어시스턴트 서버에 연결된 USB 시리얼 디바이스 경로를 입력합니다. (예: `/dev/ttyUSB0`)
 
 ### 3. Enabled Devices
-월패드 제어 대상 기기를 활성화하는 설정입니다. (활성화할 기기는 `true`로 설정)
-- **light**: 조명
-- **plug**: 플러그(대기전력콘센트)
-- **thermostat**: 난방(온도조절기)
+방 개념이 없는 집 전체 단위 기기를 활성화하는 설정입니다. (활성화할 기기는 `true`로 설정)
 - **fan**: 환기팬
 - **gas**: 가스 밸브
 - **elevator**: 엘리베이터 호출
 
-### 4. Ventilator
+> **조명 · 플러그 · 난방**은 아래 `Rooms` 설정에서 방별로 구성합니다.
+
+### 4. Rooms
+방마다 설치된 기기 구성을 입력합니다. `wallpad` 섹션 하위에 위치합니다.
+
+각 방은 다음 항목으로 구성됩니다.
+
+| 항목 | 설명 |
+|------|------|
+| **name** | 방 이름 (예: `livingroom`, `bedroom`, `kitchen`) |
+| **room_no** | 조명·콘센트 패킷 번호 (0부터 시작). 생략 시 조명·콘센트 없음 |
+| **light_count** | 조명 개수 |
+| **plug_count** | 콘센트 개수 |
+| **thermo_no** | 난방 패킷 번호. 조명과 다를 수 있음. 생략 시 난방 없음 |
+
+> **패킷 번호 확인 방법**: 월패드에서 직접 기기를 조작하면서 RS485 패킷을 캡쳐하면 방별 번호를 확인할 수 있습니다. `room_no`와 `thermo_no`가 다른 것은 코콤 배선 특성으로 정상입니다.
+
+설정 예시:
+```yaml
+rooms:
+  - name: livingroom
+    room_no: 0       # 조명/콘센트 패킷 주소 → "00"
+    light_count: 3
+    plug_count: 2
+    thermo_no: 0     # 난방 패킷 주소 → "00"
+  - name: room1
+    room_no: 3       # 조명 패킷 주소 → "03"
+    light_count: 2
+    plug_count: 2
+    thermo_no: 2     # 난방 패킷 주소 → "02" (조명과 다름)
+  - name: kitchen
+    room_no: 4
+    light_count: 3
+    plug_count: 2
+    # thermo_no 생략 → 이 방은 난방 없음
+```
+
+### 5. Ventilator
 전열교환기(환기장치) 연동 설정입니다.
 - **Manufacturer**: 전열교환기 제조사 선택 (`None`, `Grex` 중 선택. 기본값: `None`)
 - **Connection Type**: 전열교환기 연결 방식 선택 (`Serial` 또는 `Socket`)
