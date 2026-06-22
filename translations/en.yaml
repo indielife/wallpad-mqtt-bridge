@@ -4,7 +4,7 @@ configuration:
     description: MQTT broker connection settings
   mqtt_broker.host:
     name: Host
-    description: MQTT broker hostname or IP address
+    description: MQTT broker hostname or IP address (use core-mosquitto for HA built-in Mosquitto)
   mqtt_broker.username:
     name: Username
     description: MQTT broker username
@@ -41,16 +41,7 @@ configuration:
     description: Serial device path (e.g. /dev/ttyUSB0)
   wallpad.enabled_devices:
     name: Enabled Devices
-    description: Select which wallpad devices to expose to Home Assistant
-  wallpad.enabled_devices.light:
-    name: Light
-    description: Enable light control
-  wallpad.enabled_devices.plug:
-    name: Plug
-    description: Enable smart plug control
-  wallpad.enabled_devices.thermostat:
-    name: Thermostat
-    description: Enable thermostat control
+    description: Activate home-wide devices without room concept (lights/plugs/thermostat are configured per room in Rooms)
   wallpad.enabled_devices.fan:
     name: Fan
     description: Enable fan control
@@ -60,6 +51,24 @@ configuration:
   wallpad.enabled_devices.elevator:
     name: Elevator
     description: Enable elevator call button
+  wallpad.rooms:
+    name: Rooms
+    description: Configure lights, plugs, and thermostat for each room
+  wallpad.rooms.name:
+    name: Room Name
+    description: Room identifier (e.g. livingroom, bedroom, kitchen)
+  wallpad.rooms.room_no:
+    name: Room Number (Light/Plug)
+    description: Packet index for lights and plugs (starting from 0). Omit if the room has no lights or plugs
+  wallpad.rooms.light_count:
+    name: Light Count
+    description: Number of light switches in this room
+  wallpad.rooms.plug_count:
+    name: Plug Count
+    description: Number of smart plugs in this room
+  wallpad.rooms.thermo_no:
+    name: Thermostat Room Number
+    description: Packet index for the thermostat. May differ from room_no. Omit if the room has no thermostat
 
   advanced:
     name: Advanced
@@ -79,19 +88,6 @@ configuration:
   advanced.loglevel:
     name: Log Level
     description: Logging verbosity (debug, info, warn, error, critical)
-
-  kocom_light_size:
-    name: Light Count per Room
-    description: Number of light switches in each room
-  kocom_plug_size:
-    name: Plug Count per Room
-    description: Number of smart plugs in each room
-  kocom_room:
-    name: Room List
-    description: List of all rooms in the home
-  kocom_room_thermostat:
-    name: Thermostat Rooms
-    description: Rooms that have a thermostat installed
 
   ventilator:
     name: Ventilator
