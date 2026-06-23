@@ -138,6 +138,8 @@ def panel_instance(mock_config):
         panel.device_states[device] = rooms
 
     # command_registry / device_map 구성 (parse_message 라우팅에 필요)
+    from wallpad.panel.topic import TopicBuilder
+
     _pb = MagicMock()
     _sw = "0.1.0"
     _name = "kocom"
@@ -149,6 +151,7 @@ def panel_instance(mock_config):
                 sub_device=f"light{i}",
                 sw_version=_sw,
                 packet_builder=_pb,
+                topics=TopicBuilder.for_light("livingroom", f"light{i}"),
             )
             for i in range(4)
         ],
@@ -159,13 +162,35 @@ def panel_instance(mock_config):
                 sub_device=f"plug{i}",
                 sw_version=_sw,
                 packet_builder=_pb,
+                topics=TopicBuilder.for_plug("livingroom", f"plug{i}"),
             )
             for i in range(3)
         ],
-        Thermostat(name_prefix=_name, room="livingroom", sw_version=_sw, packet_builder=_pb),
-        Gas(name_prefix=_name, sw_version=_sw, packet_builder=_pb),
-        Elevator(name_prefix=_name, sw_version=_sw, packet_builder=_pb),
-        Fan(name_prefix=_name, sw_version=_sw, packet_builder=_pb),
+        Thermostat(
+            name_prefix=_name,
+            room="livingroom",
+            sw_version=_sw,
+            packet_builder=_pb,
+            topics=TopicBuilder.for_thermostat("livingroom"),
+        ),
+        Gas(
+            name_prefix=_name,
+            sw_version=_sw,
+            packet_builder=_pb,
+            topics=TopicBuilder.for_gas("wallpad", "gas"),
+        ),
+        Elevator(
+            name_prefix=_name,
+            sw_version=_sw,
+            packet_builder=_pb,
+            topics=TopicBuilder.for_elevator("wallpad", "elevator"),
+        ),
+        Fan(
+            name_prefix=_name,
+            sw_version=_sw,
+            packet_builder=_pb,
+            topics=TopicBuilder.for_fan("wallpad", "fan"),
+        ),
     ]
     panel.command_registry = {
         topic: device for device in _devices for topic in device.get_command_topics()

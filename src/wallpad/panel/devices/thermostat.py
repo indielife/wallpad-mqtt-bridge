@@ -3,6 +3,7 @@ import json
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.mqtt import HA_CLIMATE, HA_PREFIX
+from wallpad.panel.topic import TopicContext
 from wallpad.protocol.kocom.constants import DEVICE_THERMOSTAT
 
 
@@ -13,6 +14,7 @@ class Thermostat(BaseDevice):
         room: str,
         sw_version: str,
         packet_builder: PacketBuilder | None = None,
+        topics: TopicContext | None = None,
     ):
         super().__init__(
             name_prefix=name_prefix,
@@ -20,22 +22,23 @@ class Thermostat(BaseDevice):
             sub_device="thermostat",
             sw_version=sw_version,
             packet_builder=packet_builder,
+            topics=topics,
         )
 
     def get_discovery_payloads(self, remove: bool = False) -> list[tuple[str, str]]:
-        topic = f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/config"
+        topic = self.topics.config_topic
         if remove:
             return [(topic, "")]
 
         payload = {
             "name": f"{self.name_prefix}_{self.room}_{self.sub_device}",
-            "mode_command_topic": f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/mode",
-            "mode_state_topic": f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/state",
+            "mode_command_topic": self.topics.mode_command_topic,
+            "mode_state_topic": self.topics.mode_state_topic,
             "mode_state_template": "{{ value_json.mode }}",
-            "temperature_command_topic": f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/target_temp",
-            "temperature_state_topic": f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/state",
+            "temperature_command_topic": self.topics.temperature_command_topic,
+            "temperature_state_topic": self.topics.temperature_state_topic,
             "temperature_state_template": "{{ value_json.target_temp }}",
-            "current_temperature_topic": f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/state",
+            "current_temperature_topic": self.topics.current_temperature_topic,
             "current_temperature_template": "{{ value_json.current_temp }}",
             "min_temp": 5,
             "max_temp": 40,
@@ -47,19 +50,7 @@ class Thermostat(BaseDevice):
         return [(topic, json.dumps(payload))]
 
     def get_ha_state_messages(self, value) -> list[tuple[str, dict]]:
-        return [(f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/state", value)]
-
-    def get_subscribe_topics(self) -> list[str]:
-        topic = f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/config"
-        mode_command_topic = f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/mode"
-        temperature_command_topic = f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/target_temp"
-        return [topic, mode_command_topic, temperature_command_topic]
-
-    def get_command_topics(self) -> list[str]:
-        return [
-            f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/mode",
-            f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/target_temp",
-        ]
+        return [(self.topics.state_topic, value)]
 
     def resolve_command(self, _command: str, payload: str) -> tuple[str, str, str, str] | None:
         return (DEVICE_THERMOSTAT, self.room, "", payload)

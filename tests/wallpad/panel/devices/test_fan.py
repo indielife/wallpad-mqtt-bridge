@@ -3,12 +3,14 @@ import json
 import pytest
 
 from wallpad.panel.devices.fan import HA_FAN, HA_PREFIX, Fan
+from wallpad.panel.topic import TopicBuilder
 
 
 @pytest.fixture
 def fan_device():
     """테스트에 사용할 Fan 인스턴스를 제공하는 픽스처입니다."""
-    return Fan(name_prefix="test_kocom", sw_version="1.0.0")
+    topics = TopicBuilder.for_fan(room="wallpad", sub_device="fan")
+    return Fan(name_prefix="test_kocom", sw_version="1.0.0", topics=topics)
 
 
 def test_fan_init(fan_device):

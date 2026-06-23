@@ -2,6 +2,7 @@ from wallpad.config import AppConfig
 from wallpad.devices.base import BaseDevice
 from wallpad.panel.devices import Elevator, Fan, Gas, Light, Plug, Thermostat
 from wallpad.panel.state import DeviceState, KocomStateManager, RoomState, SubDeviceState
+from wallpad.panel.topic import TopicBuilder
 from wallpad.protocol.kocom.constants import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
@@ -43,11 +44,13 @@ class DeviceFactory:
         devices: list[BaseDevice],
         states: KocomStateManager,
     ) -> None:
+        topics = TopicBuilder.for_elevator(room="wallpad", sub_device="elevator")
         devices.append(
             Elevator(
                 name_prefix=name_prefix,
                 sw_version=config.sw_version,
                 packet_builder=packet_builder,
+                topics=topics,
             )
         )
         device_state = DeviceState()
@@ -64,11 +67,13 @@ class DeviceFactory:
         devices: list[BaseDevice],
         states: KocomStateManager,
     ) -> None:
+        topics = TopicBuilder.for_gas(room="wallpad", sub_device="gas")
         devices.append(
             Gas(
                 name_prefix=name_prefix,
                 sw_version=config.sw_version,
                 packet_builder=packet_builder,
+                topics=topics,
             )
         )
         device_state = DeviceState()
@@ -85,11 +90,13 @@ class DeviceFactory:
         devices: list[BaseDevice],
         states: KocomStateManager,
     ) -> None:
+        topics = TopicBuilder.for_fan(room="wallpad", sub_device="fan")
         devices.append(
             Fan(
                 name_prefix=name_prefix,
                 sw_version=config.sw_version,
                 packet_builder=packet_builder,
+                topics=topics,
             )
         )
         device_state = DeviceState()
@@ -133,13 +140,16 @@ class DeviceFactory:
             room_state = RoomState()
             for i in range(room.light_count + 1):
                 room_state[DEVICE_LIGHT + str(i)] = SubDeviceState(state="off", set_val="off")
+                sub_device_name = DEVICE_LIGHT + str(i)
+                topics = TopicBuilder.for_light(room=room.name, sub_device=sub_device_name)
                 devices.append(
                     Light(
                         name_prefix=name_prefix,
                         room=room.name,
-                        sub_device=DEVICE_LIGHT + str(i),
+                        sub_device=sub_device_name,
                         sw_version=config.sw_version,
                         packet_builder=packet_builder,
+                        topics=topics,
                     )
                 )
             device_state[room.name] = room_state
@@ -159,13 +169,16 @@ class DeviceFactory:
             room_state = RoomState()
             for i in range(room.plug_count + 1):
                 room_state[DEVICE_PLUG + str(i)] = SubDeviceState(state="on", set_val="on")
+                sub_device_name = DEVICE_PLUG + str(i)
+                topics = TopicBuilder.for_plug(room=room.name, sub_device=sub_device_name)
                 devices.append(
                     Plug(
                         name_prefix=name_prefix,
                         room=room.name,
-                        sub_device=DEVICE_PLUG + str(i),
+                        sub_device=sub_device_name,
                         sw_version=config.sw_version,
                         packet_builder=packet_builder,
+                        topics=topics,
                     )
                 )
             device_state[room.name] = room_state
@@ -189,12 +202,14 @@ class DeviceFactory:
                 state=config.init_temp, set_val=config.init_temp
             )
             device_state[room.name] = room_state
+            topics = TopicBuilder.for_thermostat(room=room.name)
             devices.append(
                 Thermostat(
                     name_prefix=name_prefix,
                     room=room.name,
                     sw_version=config.sw_version,
                     packet_builder=packet_builder,
+                    topics=topics,
                 )
             )
         return device_state
