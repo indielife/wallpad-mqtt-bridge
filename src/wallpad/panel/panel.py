@@ -5,13 +5,7 @@ import time
 
 from wallpad.config import AppConfig
 from wallpad.devices.base import BaseDevice
-from wallpad.mqtt import (
-    HA_CLIMATE,
-    HA_FAN,
-    HA_LIGHT,
-    HA_SWITCH,
-    MqttClient,
-)
+from wallpad.mqtt import MqttClient
 from wallpad.panel.devices import (
     Elevator,
     Fan,
@@ -302,92 +296,33 @@ class WallpadPanel:
         if self.ha_registry is not False and self.ha_registry == msg.topic and self.kocom_scan:
             self.kocom_scan = False
 
-    def parse_message(self, topic, payload):  # noqa: C901
-        device = topic[1]
-        command = topic[3]
-
-        if command == "config":
+    def parse_message(self, topic_parts: list[str], payload: str) -> None:
+        topic_str = "/".join(topic_parts)
+        device = self.command_registry.get(topic_str)
+        if device is None:
             return
-
-        if device in (HA_LIGHT, HA_SWITCH):
-            room_device = topic[2].rsplit("_", 1)
-            room = room_device[0]
-            sub_device = room_device[1]
-            if sub_device.find(DEVICE_LIGHT) != -1:
-                device = DEVICE_LIGHT
-            if sub_device.find(DEVICE_PLUG) != -1:
-                device = DEVICE_PLUG
-            if sub_device.find(DEVICE_ELEVATOR) != -1:
-                device = DEVICE_ELEVATOR
-            if sub_device.find(DEVICE_GAS) != -1:
-                device = DEVICE_GAS
-            try:
-                if device == DEVICE_GAS:
-                    if payload == "on":
-                        payload = "off"
-                        logger.warning("Cannot set GAS to ON from HA")
-                    else:
-                        self.device_states.update_from_ha(
-                            device, room, sub_device, command, payload, self.default_speed
-                        )
-                elif device == DEVICE_ELEVATOR:
-                    self.device_states.update_from_ha(
-                        device, room, sub_device, command, payload, self.default_speed
-                    )
-                    if payload == "off":
-                        self.publish_state_to_ha(device, DEVICE_WALLPAD, payload)
-                else:
-                    self.device_states.update_from_ha(
-                        device, room, sub_device, command, payload, self.default_speed
-                    )
-                logger.info("[From HA]%s/%s/%s/%s = %s", device, room, sub_device, command, payload)
-            except Exception as e:
-                logger.error("[From HA] %s = %s, %r", topic, payload, e)
-        elif device == HA_CLIMATE:
-            device = DEVICE_THERMOSTAT
-            room = topic[2]
-            try:
-                self.device_states.update_from_ha(
-                    device, room, "", command, payload, self.default_speed
-                )
-                room_state = self.device_states[device][room]
-                ha_payload = {
-                    "mode": room_state["mode"]["set"],
-                    "target_temp": room_state["target_temp"]["set"],
-                    "current_temp": room_state["current_temp"]["state"],
-                }
-                logger.info(
-                    "[From HA]%s/%s/set = [mode=%s, target_temp=%s]",
-                    device,
-                    room,
-                    room_state["mode"]["set"],
-                    room_state["target_temp"]["set"],
-                )
-                self.publish_state_to_ha(device, room, ha_payload)
-            except Exception as e:
-                logger.error("[From HA] %s = %s, %r", topic, payload, e)
-        elif device == HA_FAN:
-            device = DEVICE_FAN
-            room = topic[2]
-            try:
-                self.device_states.update_from_ha(
-                    device, room, "", command, payload, self.default_speed
-                )
-                room_state = self.device_states[device][room]
-                ha_payload = {
-                    "mode": room_state["mode"]["set"],
-                    "speed": room_state["speed"]["set"],
-                }
-                logger.info(
-                    "[From HA]%s/%s/set = [mode=%s, speed=%s]",
-                    device,
-                    room,
-                    room_state["mode"]["set"],
-                    room_state["speed"]["set"],
-                )
-                self.publish_state_to_ha(device, room, ha_payload)
-            except Exception as e:
-                logger.error("[From HA] %s = %s, %r", topic, payload, e)
+        command = topic_parts[-1]
+        result = device.resolve_command(command, payload)
+        if result is None:
+            return
+        device_type, room, sub_device, processed_payload = result
+        try:
+            self.device_states.update_from_ha(
+                device_type, room, sub_device, command, processed_payload, self.default_speed
+            )
+            logger.info(
+                "[From HA]%s/%s/%s/%s = %s",
+                device_type,
+                room,
+                sub_device,
+                command,
+                processed_payload,
+            )
+            immediate = device.get_optimistic_state(self.device_states)
+            if immediate is not None:
+                self.publish_state_to_ha(device_type, room, immediate)
+        except Exception as e:
+            logger.error("[From HA] %s = %s, %r", topic_parts, payload, e)
 
     def publish_state_to_ha(self, device_type: str, room: str, value):
         target = self.device_map.get((device_type, room))

@@ -3,6 +3,7 @@ import json
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.mqtt import HA_PREFIX, HA_SWITCH
+from wallpad.protocol.kocom.constants import DEVICE_PLUG
 
 
 class Plug(BaseDevice):
@@ -50,6 +51,9 @@ class Plug(BaseDevice):
 
     def get_command_topics(self) -> list[str]:
         return [f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/set"]
+
+    def resolve_command(self, _command: str, payload: str) -> tuple[str, str, str, str] | None:
+        return (DEVICE_PLUG, self.room, self.sub_device, payload)
 
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs

@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from wallpad.panel.devices import Elevator, Fan, Gas, Light, Plug, Thermostat
 from wallpad.panel.panel import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
@@ -135,5 +136,41 @@ def panel_instance(mock_config):
     }
     for device, rooms in initial_states.items():
         panel.device_states[device] = rooms
+
+    # command_registry / device_map 구성 (parse_message 라우팅에 필요)
+    _pb = MagicMock()
+    _sw = "0.1.0"
+    _name = "kocom"
+    _devices = [
+        *[
+            Light(
+                name_prefix=_name,
+                room="livingroom",
+                sub_device=f"light{i}",
+                sw_version=_sw,
+                packet_builder=_pb,
+            )
+            for i in range(4)
+        ],
+        *[
+            Plug(
+                name_prefix=_name,
+                room="livingroom",
+                sub_device=f"plug{i}",
+                sw_version=_sw,
+                packet_builder=_pb,
+            )
+            for i in range(3)
+        ],
+        Thermostat(name_prefix=_name, room="livingroom", sw_version=_sw, packet_builder=_pb),
+        Gas(name_prefix=_name, sw_version=_sw, packet_builder=_pb),
+        Elevator(name_prefix=_name, sw_version=_sw, packet_builder=_pb),
+        Fan(name_prefix=_name, sw_version=_sw, packet_builder=_pb),
+    ]
+    panel.command_registry = {
+        topic: device for device in _devices for topic in device.get_command_topics()
+    }
+    panel.device_map = {(type(d).__name__.lower(), d.room): d for d in _devices}
+    panel.mqtt_client = MagicMock()
 
     return panel

@@ -1,8 +1,12 @@
 import json
+import logging
 
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.mqtt import HA_PREFIX, HA_SENSOR, HA_SWITCH
+from wallpad.protocol.kocom.constants import DEVICE_GAS
+
+logger = logging.getLogger(__name__)
 
 
 class Gas(BaseDevice):
@@ -71,6 +75,12 @@ class Gas(BaseDevice):
 
     def get_command_topics(self) -> list[str]:
         return [f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/set"]
+
+    def resolve_command(self, _command: str, payload: str) -> tuple[str, str, str, str] | None:
+        if payload == "on":
+            logger.warning("Cannot set GAS to ON from HA")
+            return None
+        return (DEVICE_GAS, self.room, self.sub_device, payload)
 
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs

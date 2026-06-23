@@ -3,6 +3,7 @@ import json
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.mqtt import HA_PREFIX, HA_SWITCH
+from wallpad.protocol.kocom.constants import DEVICE_ELEVATOR
 
 
 class Elevator(BaseDevice):
@@ -46,6 +47,14 @@ class Elevator(BaseDevice):
 
     def get_command_topics(self) -> list[str]:
         return [f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/set"]
+
+    def resolve_command(self, _command: str, payload: str) -> tuple[str, str, str, str] | None:
+        return (DEVICE_ELEVATOR, self.room, self.sub_device, payload)
+
+    def get_optimistic_state(self, device_states) -> object | None:
+        # "off" 명령은 RS485 ack가 없으므로 즉시 publish
+        set_val = device_states[DEVICE_ELEVATOR][self.room][self.sub_device]["set"]
+        return set_val if set_val == "off" else None
 
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs

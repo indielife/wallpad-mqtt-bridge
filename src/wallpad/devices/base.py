@@ -50,6 +50,20 @@ class BaseDevice:
         """
         raise NotImplementedError
 
+    def resolve_command(self, command: str, payload: str) -> tuple[str, str, str, str] | None:
+        """
+        HA 명령을 (device_type, room, sub_device, processed_payload)로 변환합니다.
+        None 반환 시 parse_message가 처리를 스킵합니다.
+        """
+        raise NotImplementedError
+
+    def get_optimistic_state(self, device_states) -> object | None:
+        """
+        update_from_ha 직후 즉시 publish할 HA 상태를 반환합니다.
+        None 반환 시 publish 스킵 (RS485 ack 후 publish).
+        """
+        return None
+
     def get_ha_state_messages(self, value) -> list[tuple[str, dict]]:
         """
         HA에 발행할 (topic, payload) 튜플 리스트를 반환합니다.

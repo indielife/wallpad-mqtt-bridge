@@ -3,6 +3,7 @@ import json
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.mqtt import HA_CLIMATE, HA_PREFIX
+from wallpad.protocol.kocom.constants import DEVICE_THERMOSTAT
 
 
 class Thermostat(BaseDevice):
@@ -59,6 +60,17 @@ class Thermostat(BaseDevice):
             f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/mode",
             f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/target_temp",
         ]
+
+    def resolve_command(self, _command: str, payload: str) -> tuple[str, str, str, str] | None:
+        return (DEVICE_THERMOSTAT, self.room, "", payload)
+
+    def get_optimistic_state(self, device_states) -> dict | None:
+        room_state = device_states[DEVICE_THERMOSTAT][self.room]
+        return {
+            "mode": room_state["mode"]["set"],
+            "target_temp": room_state["target_temp"]["set"],
+            "current_temp": room_state["current_temp"]["state"],
+        }
 
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs
