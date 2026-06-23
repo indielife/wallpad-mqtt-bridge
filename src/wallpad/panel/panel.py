@@ -4,6 +4,7 @@ import logging
 import time
 
 from wallpad.config import AppConfig
+from wallpad.devices.base import BaseDevice
 from wallpad.mqtt import (
     HA_CLIMATE,
     HA_FAN,
@@ -43,15 +44,6 @@ from wallpad.transport import BaseTransport
 
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
 
-_DEVICE_TYPE_MAP = {
-    DEVICE_LIGHT: Light,
-    DEVICE_PLUG: Plug,
-    DEVICE_THERMOSTAT: Thermostat,
-    DEVICE_ELEVATOR: Elevator,
-    DEVICE_GAS: Gas,
-    DEVICE_FAN: Fan,
-}
-
 
 class WallpadPanel:
     def __init__(
@@ -87,6 +79,9 @@ class WallpadPanel:
         self.devices = []
         self._init_global_devices(config)
         self._init_room_devices(config)
+        self.device_map: dict[tuple[str, str], BaseDevice] = {
+            (type(d).__name__.lower(), d.room): d for d in self.devices
+        }
 
         self._loop: asyncio.AbstractEventLoop | None = None
         self.mqtt_client.register_connect_callback(self.on_connect)
@@ -390,14 +385,8 @@ class WallpadPanel:
             except Exception as e:
                 logger.error("[From HA] %s = %s, %r", topic, payload, e)
 
-    def _find_device(self, device_type: str, room: str):
-        cls = _DEVICE_TYPE_MAP.get(device_type)
-        if cls is None:
-            return None
-        return next((d for d in self.devices if isinstance(d, cls) and d.room == room), None)
-
     def publish_state_to_ha(self, device_type: str, room: str, value):
-        target = self._find_device(device_type, room)
+        target = self.device_map.get((device_type, room))
         if target is None:
             return
         for topic, payload in target.get_ha_state_messages(value):
