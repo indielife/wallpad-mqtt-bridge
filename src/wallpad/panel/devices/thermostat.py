@@ -54,6 +54,12 @@ class Thermostat(BaseDevice):
         temperature_command_topic = f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/target_temp"
         return [topic, mode_command_topic, temperature_command_topic]
 
+    def get_command_topics(self) -> list[str]:
+        return [
+            f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/mode",
+            f"{HA_PREFIX}/{HA_CLIMATE}/{self.room}/target_temp",
+        ]
+
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs
     ) -> str | None:

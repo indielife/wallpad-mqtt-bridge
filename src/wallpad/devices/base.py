@@ -44,6 +44,12 @@ class BaseDevice:
         """
         raise NotImplementedError
 
+    def get_command_topics(self) -> list[str]:
+        """
+        HA에서 수신할 command topic 문자열 리스트를 반환합니다. config topic은 제외합니다.
+        """
+        raise NotImplementedError
+
     def get_ha_state_messages(self, value) -> list[tuple[str, dict]]:
         """
         HA에 발행할 (topic, payload) 튜플 리스트를 반환합니다.

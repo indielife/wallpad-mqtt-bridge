@@ -47,6 +47,12 @@ class Fan(BaseDevice):
         spd_cmd_t = f"{HA_PREFIX}/{HA_FAN}/{self.room}/speed"
         return [topic, command_topic, spd_cmd_t]
 
+    def get_command_topics(self) -> list[str]:
+        return [
+            f"{HA_PREFIX}/{HA_FAN}/{self.room}/mode",
+            f"{HA_PREFIX}/{HA_FAN}/{self.room}/speed",
+        ]
+
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs
     ) -> str | None:

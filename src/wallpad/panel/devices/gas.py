@@ -69,6 +69,9 @@ class Gas(BaseDevice):
         sensor_topic = f"{HA_PREFIX}/{HA_SENSOR}/{self.room}_{self.sub_device}/config"
         return [switch_topic, command_topic, sensor_topic]
 
+    def get_command_topics(self) -> list[str]:
+        return [f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/set"]
+
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs
     ) -> str | None:

@@ -47,6 +47,9 @@ class Light(BaseDevice):
         command_topic = f"{HA_PREFIX}/{HA_LIGHT}/{self.room}_{self.sub_device}/set"
         return [topic, command_topic]
 
+    def get_command_topics(self) -> list[str]:
+        return [f"{HA_PREFIX}/{HA_LIGHT}/{self.room}_{self.sub_device}/set"]
+
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs
     ) -> str | None:

@@ -82,6 +82,10 @@ class WallpadPanel:
         self.device_map: dict[tuple[str, str], BaseDevice] = {
             (type(d).__name__.lower(), d.room): d for d in self.devices
         }
+        self.command_registry: dict[str, BaseDevice] = {
+            topic: device for device in self.devices for topic in device.get_command_topics()
+        }
+        logger.debug("[Init] command_registry keys: %s", list(self.command_registry.keys()))
 
         self._loop: asyncio.AbstractEventLoop | None = None
         self.mqtt_client.register_connect_callback(self.on_connect)
