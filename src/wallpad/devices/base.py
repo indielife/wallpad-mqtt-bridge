@@ -1,3 +1,5 @@
+from wallpad.panel.topic import TopicContext
+
 from .packet_builder import PacketBuilder
 
 
@@ -13,12 +15,14 @@ class BaseDevice:
         sub_device: str,
         sw_version: str,
         packet_builder: PacketBuilder | None = None,
+        topics: TopicContext | None = None,
     ):
         self.name_prefix = name_prefix
         self.room = room
         self.sub_device = sub_device
         self.sw_version = sw_version
         self.packet_builder = packet_builder
+        self.topics = topics
 
     @property
     def device_info(self) -> dict:
@@ -42,7 +46,31 @@ class BaseDevice:
         """
         해당 기기를 제어하기 위해 subscribe 해야 하는 토픽 문자열 리스트를 반환합니다.
         """
+        if self.topics:
+            return self.topics.config_topics + self.topics.command_topics
         raise NotImplementedError
+
+    def get_command_topics(self) -> list[str]:
+        """
+        HA에서 수신할 command topic 문자열 리스트를 반환합니다. config topic은 제외합니다.
+        """
+        if self.topics:
+            return self.topics.command_topics
+        raise NotImplementedError
+
+    def resolve_command(self, command: str, payload: str) -> tuple[str, str, str, str] | None:
+        """
+        HA 명령을 (device_type, room, sub_device, processed_payload)로 변환합니다.
+        None 반환 시 parse_message가 처리를 스킵합니다.
+        """
+        raise NotImplementedError
+
+    def get_optimistic_state(self, device_states) -> object | None:
+        """
+        update_from_ha 직후 즉시 publish할 HA 상태를 반환합니다.
+        None 반환 시 publish 스킵 (RS485 ack 후 publish).
+        """
+        return None
 
     def get_ha_state_messages(self, value) -> list[tuple[str, dict]]:
         """

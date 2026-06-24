@@ -3,12 +3,20 @@ import json
 import pytest
 
 from wallpad.panel.devices.plug import HA_PREFIX, HA_SWITCH, Plug
+from wallpad.panel.topic import TopicBuilder
 
 
 @pytest.fixture
 def plug_device():
     """테스트에 사용할 Plug 인스턴스를 제공하는 픽스처입니다."""
-    return Plug(name_prefix="test_kocom", room="room1", sub_device="plug1", sw_version="1.0.0")
+    topics = TopicBuilder.for_plug(room="room1", sub_device="plug1")
+    return Plug(
+        name_prefix="test_kocom",
+        room="room1",
+        sub_device="plug1",
+        sw_version="1.0.0",
+        topics=topics,
+    )
 
 
 def test_plug_init(plug_device):

@@ -4,22 +4,10 @@ import logging
 import time
 
 from wallpad.config import AppConfig
-from wallpad.mqtt import (
-    HA_CLIMATE,
-    HA_FAN,
-    HA_LIGHT,
-    HA_SWITCH,
-    MqttClient,
-)
-from wallpad.panel.devices import (
-    Elevator,
-    Fan,
-    Gas,
-    Light,
-    Plug,
-    Thermostat,
-)
-from wallpad.panel.state import DeviceState, KocomStateManager, RoomState, ScanState, SubDeviceState
+from wallpad.devices.base import BaseDevice
+from wallpad.mqtt import MqttClient
+from wallpad.panel.factory import DeviceFactory
+from wallpad.panel.state import RoomState, ScanState, SubDeviceState
 from wallpad.protocol.kocom.constants import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
@@ -42,15 +30,6 @@ from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 from wallpad.transport import BaseTransport
 
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
-
-_DEVICE_TYPE_MAP = {
-    DEVICE_LIGHT: Light,
-    DEVICE_PLUG: Plug,
-    DEVICE_THERMOSTAT: Thermostat,
-    DEVICE_ELEVATOR: Elevator,
-    DEVICE_GAS: Gas,
-    DEVICE_FAN: Fan,
-}
 
 
 class WallpadPanel:
@@ -78,143 +57,21 @@ class WallpadPanel:
         self.scan_packet_buf = []
 
         self.tick = time.time()
-        self.device_states = KocomStateManager()
-        self.fan_enabled = config.fan_enabled
-        self.gas_enabled = config.gas_enabled
-        self.elevator_enabled = config.elevator_enabled
-
         self.packet_builder = KocomPacketBuilder()
-        self.devices = []
-        self._init_global_devices(config)
-        self._init_room_devices(config)
+        self.devices, self.device_states = DeviceFactory.build(
+            config, self.name, self.packet_builder
+        )
+        self.device_map: dict[tuple[str, str], BaseDevice] = {
+            (type(d).__name__.lower(), d.room): d for d in self.devices
+        }
+        self.command_registry: dict[str, BaseDevice] = {
+            topic: device for device in self.devices for topic in device.get_command_topics()
+        }
+        logger.debug("[Init] command_registry keys: %s", list(self.command_registry.keys()))
 
         self._loop: asyncio.AbstractEventLoop | None = None
         self.mqtt_client.register_connect_callback(self.on_connect)
         self.mqtt_client.register_message_callback(self.on_message)
-
-    def _init_global_devices(self, config: AppConfig) -> None:
-        if self.elevator_enabled:
-            self._init_elevator(config)
-        if self.gas_enabled:
-            self._init_gas(config)
-        if self.fan_enabled:
-            self._init_fan(config)
-
-    def _init_elevator(self, config: AppConfig) -> None:
-        self.devices.append(
-            Elevator(
-                name_prefix=self.name,
-                sw_version=config.sw_version,
-                packet_builder=self.packet_builder,
-            )
-        )
-        device_state = DeviceState()
-        room_state = RoomState()
-        room_state[DEVICE_ELEVATOR] = SubDeviceState(state="off", set_val="off")
-        device_state[DEVICE_WALLPAD] = room_state
-        self.device_states[DEVICE_ELEVATOR] = device_state
-
-    def _init_gas(self, config: AppConfig) -> None:
-        self.devices.append(
-            Gas(
-                name_prefix=self.name,
-                sw_version=config.sw_version,
-                packet_builder=self.packet_builder,
-            )
-        )
-        device_state = DeviceState()
-        room_state = RoomState()
-        room_state[DEVICE_GAS] = SubDeviceState(state="off", set_val="off")
-        device_state[DEVICE_WALLPAD] = room_state
-        self.device_states[DEVICE_GAS] = device_state
-
-    def _init_fan(self, config: AppConfig) -> None:
-        self.devices.append(
-            Fan(
-                name_prefix=self.name,
-                sw_version=config.sw_version,
-                packet_builder=self.packet_builder,
-            )
-        )
-        device_state = DeviceState()
-        room_state = RoomState()
-        room_state["mode"] = SubDeviceState(state="off", set_val="off")
-        room_state["speed"] = SubDeviceState(state="off", set_val="off")
-        device_state[DEVICE_WALLPAD] = room_state
-        self.device_states[DEVICE_FAN] = device_state
-
-    def _init_room_devices(self, config: AppConfig) -> None:
-        light_state = self._init_lights(config)
-        plug_state = self._init_plugs(config)
-        thermo_state = self._init_thermostats(config)
-        if light_state:
-            self.device_states[DEVICE_LIGHT] = light_state
-        if plug_state:
-            self.device_states[DEVICE_PLUG] = plug_state
-        if thermo_state:
-            self.device_states[DEVICE_THERMOSTAT] = thermo_state
-
-    def _init_lights(self, config: AppConfig) -> DeviceState:
-        device_state = DeviceState()
-        for room in config.rooms:
-            if room.light_addr is None or room.light_count == 0:
-                continue
-            room_state = RoomState()
-            for i in range(room.light_count + 1):
-                room_state[DEVICE_LIGHT + str(i)] = SubDeviceState(state="off", set_val="off")
-                self.devices.append(
-                    Light(
-                        name_prefix=self.name,
-                        room=room.name,
-                        sub_device=DEVICE_LIGHT + str(i),
-                        sw_version=config.sw_version,
-                        packet_builder=self.packet_builder,
-                    )
-                )
-            device_state[room.name] = room_state
-        return device_state
-
-    def _init_plugs(self, config: AppConfig) -> DeviceState:
-        device_state = DeviceState()
-        for room in config.rooms:
-            if room.light_addr is None or room.plug_count == 0:
-                continue
-            room_state = RoomState()
-            for i in range(room.plug_count + 1):
-                room_state[DEVICE_PLUG + str(i)] = SubDeviceState(state="on", set_val="on")
-                self.devices.append(
-                    Plug(
-                        name_prefix=self.name,
-                        room=room.name,
-                        sub_device=DEVICE_PLUG + str(i),
-                        sw_version=config.sw_version,
-                        packet_builder=self.packet_builder,
-                    )
-                )
-            device_state[room.name] = room_state
-        return device_state
-
-    def _init_thermostats(self, config: AppConfig) -> DeviceState:
-        device_state = DeviceState()
-        for room in config.rooms:
-            if room.thermo_addr is None:
-                continue
-            room_state = RoomState()
-            room_state["mode"] = SubDeviceState(state="off", set_val="off")
-            room_state["current_temp"] = SubDeviceState(state=0, set_val=0)
-            room_state["target_temp"] = SubDeviceState(
-                state=config.init_temp, set_val=config.init_temp
-            )
-            device_state[room.name] = room_state
-            self.devices.append(
-                Thermostat(
-                    name_prefix=self.name,
-                    room=room.name,
-                    sw_version=config.sw_version,
-                    packet_builder=self.packet_builder,
-                )
-            )
-        return device_state
 
     async def start(self) -> list[asyncio.Task]:
         self._loop = asyncio.get_running_loop()
@@ -303,101 +160,36 @@ class WallpadPanel:
         if self.ha_registry is not False and self.ha_registry == msg.topic and self.kocom_scan:
             self.kocom_scan = False
 
-    def parse_message(self, topic, payload):  # noqa: C901
-        device = topic[1]
-        command = topic[3]
-
-        if command == "config":
+    def parse_message(self, topic_parts: list[str], payload: str) -> None:
+        topic_str = "/".join(topic_parts)
+        device = self.command_registry.get(topic_str)
+        if device is None:
             return
-
-        if device in (HA_LIGHT, HA_SWITCH):
-            room_device = topic[2].rsplit("_", 1)
-            room = room_device[0]
-            sub_device = room_device[1]
-            if sub_device.find(DEVICE_LIGHT) != -1:
-                device = DEVICE_LIGHT
-            if sub_device.find(DEVICE_PLUG) != -1:
-                device = DEVICE_PLUG
-            if sub_device.find(DEVICE_ELEVATOR) != -1:
-                device = DEVICE_ELEVATOR
-            if sub_device.find(DEVICE_GAS) != -1:
-                device = DEVICE_GAS
-            try:
-                if device == DEVICE_GAS:
-                    if payload == "on":
-                        payload = "off"
-                        logger.warning("Cannot set GAS to ON from HA")
-                    else:
-                        self.device_states.update_from_ha(
-                            device, room, sub_device, command, payload, self.default_speed
-                        )
-                elif device == DEVICE_ELEVATOR:
-                    self.device_states.update_from_ha(
-                        device, room, sub_device, command, payload, self.default_speed
-                    )
-                    if payload == "off":
-                        self.publish_state_to_ha(device, DEVICE_WALLPAD, payload)
-                else:
-                    self.device_states.update_from_ha(
-                        device, room, sub_device, command, payload, self.default_speed
-                    )
-                logger.info("[From HA]%s/%s/%s/%s = %s", device, room, sub_device, command, payload)
-            except Exception as e:
-                logger.error("[From HA] %s = %s, %r", topic, payload, e)
-        elif device == HA_CLIMATE:
-            device = DEVICE_THERMOSTAT
-            room = topic[2]
-            try:
-                self.device_states.update_from_ha(
-                    device, room, "", command, payload, self.default_speed
-                )
-                room_state = self.device_states[device][room]
-                ha_payload = {
-                    "mode": room_state["mode"]["set"],
-                    "target_temp": room_state["target_temp"]["set"],
-                    "current_temp": room_state["current_temp"]["state"],
-                }
-                logger.info(
-                    "[From HA]%s/%s/set = [mode=%s, target_temp=%s]",
-                    device,
-                    room,
-                    room_state["mode"]["set"],
-                    room_state["target_temp"]["set"],
-                )
-                self.publish_state_to_ha(device, room, ha_payload)
-            except Exception as e:
-                logger.error("[From HA] %s = %s, %r", topic, payload, e)
-        elif device == HA_FAN:
-            device = DEVICE_FAN
-            room = topic[2]
-            try:
-                self.device_states.update_from_ha(
-                    device, room, "", command, payload, self.default_speed
-                )
-                room_state = self.device_states[device][room]
-                ha_payload = {
-                    "mode": room_state["mode"]["set"],
-                    "speed": room_state["speed"]["set"],
-                }
-                logger.info(
-                    "[From HA]%s/%s/set = [mode=%s, speed=%s]",
-                    device,
-                    room,
-                    room_state["mode"]["set"],
-                    room_state["speed"]["set"],
-                )
-                self.publish_state_to_ha(device, room, ha_payload)
-            except Exception as e:
-                logger.error("[From HA] %s = %s, %r", topic, payload, e)
-
-    def _find_device(self, device_type: str, room: str):
-        cls = _DEVICE_TYPE_MAP.get(device_type)
-        if cls is None:
-            return None
-        return next((d for d in self.devices if isinstance(d, cls) and d.room == room), None)
+        command = topic_parts[-1]
+        result = device.resolve_command(command, payload)
+        if result is None:
+            return
+        device_type, room, sub_device, processed_payload = result
+        try:
+            self.device_states.update_from_ha(
+                device_type, room, sub_device, command, processed_payload, self.default_speed
+            )
+            logger.info(
+                "[From HA]%s/%s/%s/%s = %s",
+                device_type,
+                room,
+                sub_device,
+                command,
+                processed_payload,
+            )
+            immediate = device.get_optimistic_state(self.device_states)
+            if immediate is not None:
+                self.publish_state_to_ha(device_type, room, immediate)
+        except Exception as e:
+            logger.error("[From HA] %s = %s, %r", topic_parts, payload, e)
 
     def publish_state_to_ha(self, device_type: str, room: str, value):
-        target = self._find_device(device_type, room)
+        target = self.device_map.get((device_type, room))
         if target is None:
             return
         for topic, payload in target.get_ha_state_messages(value):

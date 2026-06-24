@@ -3,6 +3,8 @@ import json
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.mqtt import HA_LIGHT, HA_PREFIX
+from wallpad.panel.topic import TopicContext
+from wallpad.protocol.kocom.constants import DEVICE_LIGHT
 
 
 class Light(BaseDevice):
@@ -13,6 +15,7 @@ class Light(BaseDevice):
         sub_device: str,
         sw_version: str,
         packet_builder: PacketBuilder | None = None,
+        topics: TopicContext | None = None,
     ):
         super().__init__(
             name_prefix=name_prefix,
@@ -20,17 +23,18 @@ class Light(BaseDevice):
             sub_device=sub_device,
             sw_version=sw_version,
             packet_builder=packet_builder,
+            topics=topics,
         )
 
     def get_discovery_payloads(self, remove: bool = False) -> list[tuple[str, str]]:
-        topic = f"{HA_PREFIX}/{HA_LIGHT}/{self.room}_{self.sub_device}/config"
+        topic = self.topics.config_topic
         if remove:
             return [(topic, "")]
 
         payload = {
             "name": f"{self.name_prefix}_{self.room}_{self.sub_device}",
-            "command_topic": f"{HA_PREFIX}/{HA_LIGHT}/{self.room}_{self.sub_device}/set",
-            "state_topic": f"{HA_PREFIX}/{HA_LIGHT}/{self.room}/state",
+            "command_topic": self.topics.command_topic,
+            "state_topic": self.topics.state_topic,
             "value_template": f"{{{{ value_json.{self.sub_device} }}}}",
             "payload_on": "on",
             "payload_off": "off",
@@ -40,12 +44,10 @@ class Light(BaseDevice):
         return [(topic, json.dumps(payload))]
 
     def get_ha_state_messages(self, value) -> list[tuple[str, dict]]:
-        return [(f"{HA_PREFIX}/{HA_LIGHT}/{self.room}/state", value)]
+        return [(self.topics.state_topic, value)]
 
-    def get_subscribe_topics(self) -> list[str]:
-        topic = f"{HA_PREFIX}/{HA_LIGHT}/{self.room}_{self.sub_device}/config"
-        command_topic = f"{HA_PREFIX}/{HA_LIGHT}/{self.room}_{self.sub_device}/set"
-        return [topic, command_topic]
+    def resolve_command(self, _command: str, payload: str) -> tuple[str, str, str, str] | None:
+        return (DEVICE_LIGHT, self.room, self.sub_device, payload)
 
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs

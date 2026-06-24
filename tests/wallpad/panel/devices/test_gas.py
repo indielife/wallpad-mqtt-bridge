@@ -3,12 +3,14 @@ import json
 import pytest
 
 from wallpad.panel.devices.gas import HA_PREFIX, HA_SENSOR, HA_SWITCH, Gas
+from wallpad.panel.topic import TopicBuilder
 
 
 @pytest.fixture
 def gas_device():
     """테스트에 사용할 Gas 인스턴스를 제공하는 픽스처입니다."""
-    return Gas(name_prefix="test_kocom", sw_version="1.0.0")
+    topics = TopicBuilder.for_gas(room="wallpad", sub_device="gas")
+    return Gas(name_prefix="test_kocom", sw_version="1.0.0", topics=topics)
 
 
 def test_gas_init(gas_device):
@@ -91,6 +93,6 @@ def test_gas_get_subscribe_topics(gas_device):
 
     assert topics == [
         f"{HA_PREFIX}/{HA_SWITCH}/wallpad_gas/config",
-        f"{HA_PREFIX}/{HA_SWITCH}/wallpad_gas/set",
         f"{HA_PREFIX}/{HA_SENSOR}/wallpad_gas/config",
+        f"{HA_PREFIX}/{HA_SWITCH}/wallpad_gas/set",
     ]

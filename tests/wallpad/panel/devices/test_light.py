@@ -3,12 +3,20 @@ import json
 import pytest
 
 from wallpad.panel.devices.light import HA_LIGHT, HA_PREFIX, Light
+from wallpad.panel.topic import TopicBuilder
 
 
 @pytest.fixture
 def light_device():
     """테스트에 사용할 Light 인스턴스를 제공하는 픽스처입니다."""
-    return Light(name_prefix="test_kocom", room="room1", sub_device="light1", sw_version="1.0.0")
+    topics = TopicBuilder.for_light(room="room1", sub_device="light1")
+    return Light(
+        name_prefix="test_kocom",
+        room="room1",
+        sub_device="light1",
+        sw_version="1.0.0",
+        topics=topics,
+    )
 
 
 def test_light_init(light_device):

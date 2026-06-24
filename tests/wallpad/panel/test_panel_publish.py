@@ -82,28 +82,28 @@ def panel_factory(mock_config):
 
 
 # ---------------------------------------------------------------------------
-# _find_device
+# device_map
 # ---------------------------------------------------------------------------
 
 
-def test_find_device_returns_correct_instance(panel_factory):
-    """`_find_device`가 타입과 room이 일치하는 device를 반환하는지 검증합니다."""
+def test_device_map_returns_correct_instance(panel_factory):
+    """`device_map`이 타입과 room이 일치하는 device를 반환하는지 검증합니다."""
     panel, _ = panel_factory("light")
-    device = panel._find_device(DEVICE_LIGHT, "room1")
+    device = panel.device_map.get((DEVICE_LIGHT, "room1"))
     assert device is not None
     assert device.room == "room1"
 
 
-def test_find_device_returns_none_for_unknown_type(panel_factory):
+def test_device_map_returns_none_for_unknown_type(panel_factory):
     """등록되지 않은 device_type에 대해 None을 반환하는지 검증합니다."""
     panel, _ = panel_factory("light")
-    assert panel._find_device("unknown_device", "room1") is None
+    assert panel.device_map.get(("unknown_device", "room1")) is None
 
 
-def test_find_device_returns_none_when_device_disabled(panel_factory):
+def test_device_map_returns_none_when_device_disabled(panel_factory):
     """비활성화된 device에 대해 None을 반환하는지 검증합니다."""
     panel, _ = panel_factory("light")
-    assert panel._find_device(DEVICE_GAS, "wallpad") is None
+    assert panel.device_map.get((DEVICE_GAS, "wallpad")) is None
 
 
 # ---------------------------------------------------------------------------

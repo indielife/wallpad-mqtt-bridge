@@ -1,13 +1,22 @@
 import json
+import logging
 
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.mqtt import HA_PREFIX, HA_SENSOR, HA_SWITCH
+from wallpad.panel.topic import TopicContext
+from wallpad.protocol.kocom.constants import DEVICE_GAS
+
+logger = logging.getLogger(__name__)
 
 
 class Gas(BaseDevice):
     def __init__(
-        self, name_prefix: str, sw_version: str, packet_builder: PacketBuilder | None = None
+        self,
+        name_prefix: str,
+        sw_version: str,
+        packet_builder: PacketBuilder | None = None,
+        topics: TopicContext | None = None,
     ):
         # 가스 밸브도 엘리베이터처럼 'wallpad' 방에 종속된 'gas' 장치입니다.
         super().__init__(
@@ -16,19 +25,20 @@ class Gas(BaseDevice):
             sub_device="gas",
             sw_version=sw_version,
             packet_builder=packet_builder,
+            topics=topics,
         )
 
     def get_discovery_payloads(self, remove: bool = False) -> list[tuple[str, str]]:
-        switch_topic = f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/config"
-        sensor_topic = f"{HA_PREFIX}/{HA_SENSOR}/{self.room}_{self.sub_device}/config"
+        switch_topic = self.topics.switch_config_topic
+        sensor_topic = self.topics.sensor_config_topic
 
         if remove:
             return [(switch_topic, ""), (sensor_topic, "")]
 
         switch_payload = {
             "name": f"{self.name_prefix}_{self.room}_{self.sub_device}",
-            "command_topic": f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/set",
-            "state_topic": f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/state",
+            "command_topic": self.topics.command_topic,
+            "state_topic": self.topics.switch_state_topic,
             "value_template": f"{{{{ value_json.{self.sub_device} }}}}",
             "icon": "mdi:gas-cylinder",
             "payload_on": "on",
@@ -44,7 +54,7 @@ class Gas(BaseDevice):
         # 유지 중이며, 추후 메이저 업데이트 시 _switch, _sensor 접미사를 붙여 수정해야 합니다.
         sensor_payload = {
             "name": f"{self.name_prefix}_{self.room}_{self.sub_device}",
-            "state_topic": f"{HA_PREFIX}/{HA_SENSOR}/{self.room}_{self.sub_device}/state",
+            "state_topic": self.topics.sensor_state_topic,
             "value_template": f"{{{{ value_json.{self.sub_device} }}}}",
             "icon": "mdi:gas-cylinder",
             # TODO: 동일 ID 사용 중 (수정 필요)
@@ -59,15 +69,15 @@ class Gas(BaseDevice):
     def get_ha_state_messages(self, value) -> list[tuple[str, dict]]:
         data = {self.sub_device: value}
         return [
-            (f"{HA_PREFIX}/{HA_SENSOR}/{self.room}_{self.sub_device}/state", data),
-            (f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/state", data),
+            (self.topics.sensor_state_topic, data),
+            (self.topics.switch_state_topic, data),
         ]
 
-    def get_subscribe_topics(self) -> list[str]:
-        switch_topic = f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/config"
-        command_topic = f"{HA_PREFIX}/{HA_SWITCH}/{self.room}_{self.sub_device}/set"
-        sensor_topic = f"{HA_PREFIX}/{HA_SENSOR}/{self.room}_{self.sub_device}/config"
-        return [switch_topic, command_topic, sensor_topic]
+    def resolve_command(self, _command: str, payload: str) -> tuple[str, str, str, str] | None:
+        if payload == "on":
+            logger.warning("Cannot set GAS to ON from HA")
+            return None
+        return (DEVICE_GAS, self.room, self.sub_device, payload)
 
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs

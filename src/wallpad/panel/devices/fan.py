@@ -3,11 +3,17 @@ import json
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.mqtt import HA_FAN, HA_PREFIX
+from wallpad.panel.topic import TopicContext
+from wallpad.protocol.kocom.constants import DEVICE_FAN
 
 
 class Fan(BaseDevice):
     def __init__(
-        self, name_prefix: str, sw_version: str, packet_builder: PacketBuilder | None = None
+        self,
+        name_prefix: str,
+        sw_version: str,
+        packet_builder: PacketBuilder | None = None,
+        topics: TopicContext | None = None,
     ):
         super().__init__(
             name_prefix=name_prefix,
@@ -15,19 +21,20 @@ class Fan(BaseDevice):
             sub_device="fan",
             sw_version=sw_version,
             packet_builder=packet_builder,
+            topics=topics,
         )
 
     def get_discovery_payloads(self, remove: bool = False) -> list[tuple[str, str]]:
-        topic = f"{HA_PREFIX}/{HA_FAN}/{self.room}_{self.sub_device}/config"
+        topic = self.topics.config_topic
         if remove:
             return [(topic, "")]
 
         payload = {
             "name": f"{self.name_prefix}_{self.room}_{self.sub_device}",
-            "command_topic": f"{HA_PREFIX}/{HA_FAN}/{self.room}/mode",
-            "state_topic": f"{HA_PREFIX}/{HA_FAN}/{self.room}/state",
-            "spd_cmd_t": f"{HA_PREFIX}/{HA_FAN}/{self.room}/speed",
-            "spd_stat_t": f"{HA_PREFIX}/{HA_FAN}/{self.room}/state",
+            "command_topic": self.topics.mode_command_topic,
+            "state_topic": self.topics.state_topic,
+            "spd_cmd_t": self.topics.speed_command_topic,
+            "spd_stat_t": self.topics.speed_state_topic,
             "state_value_template": "{{ value_json.mode }}",
             "spd_val_tpl": "{{ value_json.speed }}",
             "payload_on": "on",
@@ -39,13 +46,17 @@ class Fan(BaseDevice):
         return [(topic, json.dumps(payload))]
 
     def get_ha_state_messages(self, value) -> list[tuple[str, dict]]:
-        return [(f"{HA_PREFIX}/{HA_FAN}/{self.room}/state", value)]
+        return [(self.topics.state_topic, value)]
 
-    def get_subscribe_topics(self) -> list[str]:
-        topic = f"{HA_PREFIX}/{HA_FAN}/{self.room}_{self.sub_device}/config"
-        command_topic = f"{HA_PREFIX}/{HA_FAN}/{self.room}/mode"
-        spd_cmd_t = f"{HA_PREFIX}/{HA_FAN}/{self.room}/speed"
-        return [topic, command_topic, spd_cmd_t]
+    def resolve_command(self, _command: str, payload: str) -> tuple[str, str, str, str] | None:
+        return (DEVICE_FAN, self.room, "", payload)
+
+    def get_optimistic_state(self, device_states) -> dict | None:
+        room_state = device_states[DEVICE_FAN][self.room]
+        return {
+            "mode": room_state["mode"]["set"],
+            "speed": room_state["speed"]["set"],
+        }
 
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs

@@ -230,11 +230,11 @@
       0,
     ),
     tuple(
-      'homeassistant/switch/wallpad_gas/set',
+      'homeassistant/sensor/wallpad_gas/config',
       0,
     ),
     tuple(
-      'homeassistant/sensor/wallpad_gas/config',
+      'homeassistant/switch/wallpad_gas/set',
       0,
     ),
   ])

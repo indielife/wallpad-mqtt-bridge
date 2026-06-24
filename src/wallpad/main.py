@@ -92,14 +92,15 @@ async def main():
     setup_logging(log_path, config.log_level)
 
     logger.info("========================================================")
-    logger.info("    KOCOM Wallpad RS485 Controller Add-on  %s", SW_VERSION)
+    logger.info("    [fix] KOCOM Wallpad RS485 Controller Add-on  %s", SW_VERSION)
     logger.info("========================================================")
 
     mqtt_client = MqttClient(config.mqtt_config)
-    mqtt_client.connect()
 
     tasks = await run_wallpad(config, mqtt_client)
     tasks += await run_ventilator(config, mqtt_client)
+
+    mqtt_client.connect()
 
     if not tasks:
         logger.error("실행할 기기가 없습니다. 종료합니다.")
