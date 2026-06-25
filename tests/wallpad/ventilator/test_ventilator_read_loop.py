@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from wallpad.protocol.grex.parser import GrexPacketParser
 from wallpad.ventilator.ventilator import Ventilator
 
 # d0 8a 00 00 01 00 01 01 00 00 → sum(bytes[1..9])=141=0x8d
@@ -25,6 +26,7 @@ def _byte_seq(hex_str: str, stop: Exception | None = None) -> list:
 def ventilator():
     v = Ventilator.__new__(Ventilator)
     v.packet_parsing = AsyncMock()
+    v._parser = GrexPacketParser()
     return v
 
 
