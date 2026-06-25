@@ -60,10 +60,10 @@ class Ventilator:
         await self.controller_transport.connect()
         await self.ventilator_transport.connect()
         self._task_ctrl = asyncio.create_task(
-            self.get_serial(self.controller_transport, "grex_controller", 11)
+            self._read_loop(self.controller_transport, "grex_controller", 11)
         )
         self._task_vent = asyncio.create_task(
-            self.get_serial(self.ventilator_transport, "grex_ventilator", 12)
+            self._read_loop(self.ventilator_transport, "grex_ventilator", 12)
         )
         return [self._task_ctrl, self._task_vent]
 
@@ -114,7 +114,7 @@ class Ventilator:
             self.mqtt_client.publish_json(topic, value)
             logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
 
-    async def get_serial(self, transport, packet_name, packet_len):
+    async def _read_loop(self, transport, packet_name, packet_len):
         buf = []
         start_flag = False
         while True:
@@ -147,7 +147,7 @@ class Ventilator:
             await self.controller_transport.write(bytearray.fromhex(m_packet))
         logger.debug("[From Grex]error code : E1")
 
-    async def _handle_d08a(self, packet, packet_name):  # noqa: C901
+    async def _handle_d08a(self, packet, source):  # noqa: C901
         control_packet = ""
         response_packet = ""
         p_mode = packet[8:12]
@@ -161,7 +161,7 @@ class Ventilator:
             self.grex_cont["speed"] = self.SPEED[p_speed]
             logger.info(
                 "[From %s]mode:%s / speed:%s",
-                packet_name,
+                source,
                 self.grex_cont["mode"],
                 self.grex_cont["speed"],
             )
@@ -216,11 +216,11 @@ class Ventilator:
         if control_packet != "":
             await self.ventilator_transport.write(bytearray.fromhex(control_packet))
 
-    def _handle_d18b(self, packet, packet_name):  # noqa: C901
+    def _handle_d18b(self, packet, source):  # noqa: C901
         p_speed = packet[8:12]
         if self.vent_cont["speed"] != self.SPEED[p_speed]:
             self.vent_cont["speed"] = self.SPEED[p_speed]
-            logger.info("[From %s]speed:%s", packet_name, self.vent_cont["speed"])
+            logger.info("[From %s]speed:%s", source, self.vent_cont["speed"])
 
             send_to_ha_fan = {"mode": "off", "speed": "off"}
             if self.grex_cont["mode"] != "off" or (
@@ -252,15 +252,15 @@ class Ventilator:
                     send_to_ha_sensor["fan_speed"] = "대기"
             self.publish_state_to_ha(HA_SENSOR, send_to_ha_sensor)
 
-    async def packet_parsing(self, packet, packet_name):
+    async def packet_parsing(self, packet, source):
         p_prefix = packet[:4]
 
         if p_prefix == "d00a":
             await self._handle_d00a()
         elif p_prefix == "d08a":
-            await self._handle_d08a(packet, packet_name)
+            await self._handle_d08a(packet, source)
         elif p_prefix == "d18b":
-            self._handle_d18b(packet, packet_name)
+            self._handle_d18b(packet, source)
 
     def hex_to_list(self, hex_string):
         slide_windows = 2

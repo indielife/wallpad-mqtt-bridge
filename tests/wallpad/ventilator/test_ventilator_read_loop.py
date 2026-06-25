@@ -36,7 +36,7 @@ async def test_read_loop_grex_controller_dispatches_valid_packet(vent_read):
     vent_read.packet_parsing = AsyncMock()
 
     with pytest.raises(asyncio.CancelledError):
-        await vent_read.get_serial(transport, "grex_controller", 11)
+        await vent_read._read_loop(transport, "grex_controller", 11)
 
     vent_read.packet_parsing.assert_awaited_once_with(
         VALID_GREX_CONTROLLER_PACKET, "grex_controller"
@@ -49,7 +49,7 @@ async def test_read_loop_grex_ventilator_dispatches_valid_packet(vent_read):
     vent_read.packet_parsing = AsyncMock()
 
     with pytest.raises(asyncio.CancelledError):
-        await vent_read.get_serial(transport, "grex_ventilator", 12)
+        await vent_read._read_loop(transport, "grex_ventilator", 12)
 
     vent_read.packet_parsing.assert_awaited_once_with(
         VALID_GREX_VENTILATOR_PACKET, "grex_ventilator"
@@ -62,7 +62,7 @@ async def test_read_loop_ignores_bytes_before_start_byte(vent_read):
     vent_read.packet_parsing = AsyncMock()
 
     with pytest.raises(asyncio.CancelledError):
-        await vent_read.get_serial(transport, "grex_controller", 11)
+        await vent_read._read_loop(transport, "grex_controller", 11)
 
     vent_read.packet_parsing.assert_awaited_once_with(
         VALID_GREX_CONTROLLER_PACKET, "grex_controller"
@@ -75,6 +75,6 @@ async def test_read_loop_skips_packet_with_invalid_checksum(vent_read):
     vent_read.packet_parsing = AsyncMock()
 
     with pytest.raises(asyncio.CancelledError):
-        await vent_read.get_serial(transport, "grex_controller", 11)
+        await vent_read._read_loop(transport, "grex_controller", 11)
 
     vent_read.packet_parsing.assert_not_awaited()

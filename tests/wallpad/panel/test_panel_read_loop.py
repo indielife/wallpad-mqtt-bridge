@@ -33,7 +33,7 @@ async def test_read_loop_dispatches_valid_packet(panel_read):
 
     with patch.object(panel_read, "packet_parsing") as mock_parse:
         with pytest.raises(asyncio.CancelledError):
-            await panel_read.get_serial("kocom", 42)
+            await panel_read._read_loop("kocom", 42)
 
     mock_parse.assert_called_once_with(VALID_KOCOM_PACKET)
 
@@ -44,7 +44,7 @@ async def test_read_loop_ignores_bytes_before_start_byte(panel_read):
 
     with patch.object(panel_read, "packet_parsing") as mock_parse:
         with pytest.raises(asyncio.CancelledError):
-            await panel_read.get_serial("kocom", 42)
+            await panel_read._read_loop("kocom", 42)
 
     mock_parse.assert_called_once_with(VALID_KOCOM_PACKET)
 
@@ -55,6 +55,6 @@ async def test_read_loop_skips_packet_with_invalid_checksum(panel_read):
 
     with patch.object(panel_read, "packet_parsing") as mock_parse:
         with pytest.raises(asyncio.CancelledError):
-            await panel_read.get_serial("kocom", 42)
+            await panel_read._read_loop("kocom", 42)
 
     mock_parse.assert_not_called()
