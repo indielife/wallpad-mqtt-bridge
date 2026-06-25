@@ -60,10 +60,10 @@ class Ventilator:
         await self.controller_transport.connect()
         await self.ventilator_transport.connect()
         self._task_ctrl = asyncio.create_task(
-            self.get_serial(self.controller_transport, "grex_controller", 11)
+            self._read_loop(self.controller_transport, "grex_controller", 11)
         )
         self._task_vent = asyncio.create_task(
-            self.get_serial(self.ventilator_transport, "grex_ventilator", 12)
+            self._read_loop(self.ventilator_transport, "grex_ventilator", 12)
         )
         return [self._task_ctrl, self._task_vent]
 
@@ -114,18 +114,18 @@ class Ventilator:
             self.mqtt_client.publish_json(topic, value)
             logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
 
-    async def get_serial(self, transport, packet_name, packet_len):
+    async def _read_loop(self, transport, source, packet_len):
         buf = []
         start_flag = False
         while True:
             row_data = await transport.read(1)
             hex_d = row_data.hex()
             start_hex = ""
-            if packet_name == "kocom":
+            if source == "kocom":
                 start_hex = "aa"
-            elif packet_name == "grex_ventilator":
+            elif source == "grex_ventilator":
                 start_hex = "d1"
-            elif packet_name == "grex_controller":
+            elif source == "grex_controller":
                 start_hex = "d0"
             if hex_d == start_hex:
                 start_flag = True
@@ -136,7 +136,7 @@ class Ventilator:
                 joindata = "".join(buf)
                 chksum = self.validate_checksum(joindata, packet_len - 1)
                 if chksum[0]:
-                    await self.packet_parsing(joindata, packet_name)
+                    await self.packet_parsing(joindata, source)
                 buf = []
                 start_flag = False
 
@@ -252,15 +252,15 @@ class Ventilator:
                     send_to_ha_sensor["fan_speed"] = "대기"
             self.publish_state_to_ha(HA_SENSOR, send_to_ha_sensor)
 
-    async def packet_parsing(self, packet, packet_name):
+    async def packet_parsing(self, packet, source):
         p_prefix = packet[:4]
 
         if p_prefix == "d00a":
             await self._handle_d00a()
         elif p_prefix == "d08a":
-            await self._handle_d08a(packet, packet_name)
+            await self._handle_d08a(packet, source)
         elif p_prefix == "d18b":
-            self._handle_d18b(packet, packet_name)
+            self._handle_d18b(packet, source)
 
     def hex_to_list(self, hex_string):
         slide_windows = 2

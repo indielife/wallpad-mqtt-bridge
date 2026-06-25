@@ -76,7 +76,7 @@ class WallpadPanel:
     async def start(self) -> list[asyncio.Task]:
         self._loop = asyncio.get_running_loop()
         await self.transport.connect()
-        self._task_read = asyncio.create_task(self.get_serial(self.name, 42))
+        self._task_read = asyncio.create_task(self._read_loop(self.name, 42))
         self._task_scan = asyncio.create_task(self.scan_list())
         return [self._task_read, self._task_scan]
 
@@ -140,7 +140,7 @@ class WallpadPanel:
                 logger.info("[From HA]HomeAssistant Scan")
                 return
             elif _topic[3] == "packet":
-                self.packet_parsing(_payload.lower(), name="HA")
+                self.packet_parsing(_payload.lower(), source="HA")
                 return
             elif _topic[3] == "check_sum":
                 chksum = self.check_sum(_payload.lower())
@@ -196,7 +196,7 @@ class WallpadPanel:
             self.mqtt_client.publish_json(topic, payload)
             logger.info("[To HA] %s = %s", topic, json.dumps(payload, ensure_ascii=False))
 
-    async def get_serial(self, packet_name, packet_len):
+    async def _read_loop(self, source, packet_len):
         packet = ""
         start_flag = False
         while True:
@@ -204,11 +204,11 @@ class WallpadPanel:
             hex_d = row_data.hex()
 
             start_hex = ""
-            if packet_name == "kocom":
+            if source == "kocom":
                 start_hex = "aa"
-            elif packet_name == "grex_ventilator":
+            elif source == "grex_ventilator":
                 start_hex = "d1"
-            elif packet_name == "grex_controller":
+            elif source == "grex_controller":
                 start_hex = "d0"
 
             if hex_d == start_hex:
@@ -221,7 +221,7 @@ class WallpadPanel:
                 chksum = self.check_sum(packet)
                 if chksum[0]:
                     self.tick = time.time()
-                    logger.debug("[From %s]%s", packet_name, packet)
+                    logger.debug("[From %s]%s", source, packet)
                     self.packet_parsing(packet)
                 packet = ""
                 start_flag = False
@@ -303,19 +303,18 @@ class WallpadPanel:
             )
             self.tick = time.time()
 
-    def packet_parsing(self, packet, name="kocom", from_to="From"):
+    def packet_parsing(self, packet, source="kocom"):
         p = self.parse_packet(packet)
         v = self.value_packet(p)
 
         try:
             if v["command"] == "조회" and v["src_device"] == DEVICE_WALLPAD:
-                if name == "HA":
+                if source == "HA":
                     packet = self.make_packet(v["dst_device"], v["dst_room"], "조회", "", "")
                     self._schedule_write(packet)
                 logger.debug(
-                    "[%s %s]%s(%s) %s(%s) -> %s(%s)",
-                    from_to,
-                    name,
+                    "[From %s]%s(%s) %s(%s) -> %s(%s)",
+                    source,
                     v["type"],
                     v["command"],
                     v["src_device"],
@@ -325,9 +324,8 @@ class WallpadPanel:
                 )
             else:
                 logger.debug(
-                    "[%s %s]%s(%s) %s(%s) -> %s(%s) = %s",
-                    from_to,
-                    name,
+                    "[From %s]%s(%s) %s(%s) -> %s(%s) = %s",
+                    source,
                     v["type"],
                     v["command"],
                     v["src_device"],
@@ -355,10 +353,9 @@ class WallpadPanel:
                     self.publish_state_to_ha(v["src_device"], v["src_room"], v["value"])
         except Exception as e:
             logger.error(
-                "Error parsing packet %s (%s %s): %r",
+                "Error parsing packet %s (From %s): %r",
                 packet,
-                from_to,
-                name,
+                source,
                 e,
             )
 
