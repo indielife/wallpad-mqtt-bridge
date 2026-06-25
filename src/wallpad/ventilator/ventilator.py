@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-from typing import ClassVar
 
 from wallpad.config import AppConfig
 from wallpad.mqtt import (
@@ -10,8 +9,9 @@ from wallpad.mqtt import (
     HA_SENSOR,
     MqttClient,
 )
-from wallpad.protocol.grex.constants import DEVICE_FAN, MODE, SPEED
+from wallpad.protocol.grex.constants import DEVICE_FAN
 from wallpad.protocol.grex.packet_builder import GrexPacketBuilder
+from wallpad.protocol.grex.parser import GrexPacketParser
 from wallpad.transport import BaseTransport
 from wallpad.ventilator.devices import GrexVentilator
 
@@ -19,10 +19,6 @@ logger = logging.getLogger(__name__)
 
 
 class Ventilator:
-    # GREX 전열교환기 패킷 기본정보
-    MODE: ClassVar[dict[str, str]] = MODE
-    SPEED: ClassVar[dict[str, str]] = SPEED
-
     def __init__(
         self,
         config: AppConfig,
@@ -50,6 +46,7 @@ class Ventilator:
         self.mqtt_client.register_connect_callback(self.on_connect)
         self.mqtt_client.register_message_callback(self.on_message)
         self.packet_builder = GrexPacketBuilder()
+        self._parser = GrexPacketParser()
         self.device = GrexVentilator(
             name_prefix=self.name,
             sw_version=self.config.sw_version,
@@ -134,31 +131,32 @@ class Ventilator:
 
             if len(buf) >= packet_len:
                 joindata = "".join(buf)
-                chksum = self.validate_checksum(joindata, packet_len - 1)
-                if chksum[0]:
+                is_valid, _ = self._parser.validate_checksum(joindata)
+                if is_valid:
                     await self.packet_parsing(joindata, packet_name)
                 buf = []
                 start_flag = False
 
     async def _handle_d00a(self):
         m_packet = self.device.build_response_packet("off", "off")
-        m_chksum = self.validate_checksum(m_packet, 11)
-        if m_chksum[0]:
+        is_valid, _ = self._parser.validate_checksum(m_packet)
+        if is_valid:
             await self.controller_transport.write(bytearray.fromhex(m_packet))
         logger.debug("[From Grex]error code : E1")
 
     async def _handle_d08a(self, packet, packet_name):  # noqa: C901
         control_packet = ""
         response_packet = ""
-        p_mode = packet[8:12]
-        p_speed = packet[12:16]
+        frame = self._parser.parse_frame(packet)
+        p_mode = frame["mode"]
+        p_speed = frame["speed"]
 
         if (
-            self.grex_cont["mode"] != self.MODE[p_mode]
-            or self.grex_cont["speed"] != self.SPEED[p_speed]
+            self.grex_cont["mode"] != p_mode
+            or self.grex_cont["speed"] != p_speed
         ):
-            self.grex_cont["mode"] = self.MODE[p_mode]
-            self.grex_cont["speed"] = self.SPEED[p_speed]
+            self.grex_cont["mode"] = p_mode
+            self.grex_cont["speed"] = p_speed
             logger.info(
                 "[From %s]mode:%s / speed:%s",
                 packet_name,
@@ -217,9 +215,10 @@ class Ventilator:
             await self.ventilator_transport.write(bytearray.fromhex(control_packet))
 
     def _handle_d18b(self, packet, packet_name):  # noqa: C901
-        p_speed = packet[8:12]
-        if self.vent_cont["speed"] != self.SPEED[p_speed]:
-            self.vent_cont["speed"] = self.SPEED[p_speed]
+        frame = self._parser.parse_frame(packet)
+        p_speed = frame["speed"]
+        if self.vent_cont["speed"] != p_speed:
+            self.vent_cont["speed"] = p_speed
             logger.info("[From %s]speed:%s", packet_name, self.vent_cont["speed"])
 
             send_to_ha_fan = {"mode": "off", "speed": "off"}
@@ -262,26 +261,3 @@ class Ventilator:
         elif p_prefix == "d18b":
             self._handle_d18b(packet, packet_name)
 
-    def hex_to_list(self, hex_string):
-        slide_windows = 2
-        start = 0
-        buf = []
-        for _ in range(int(len(hex_string) / 2)):
-            buf.append(f"0x{hex_string[start:slide_windows].lower()}")
-            slide_windows += 2
-            start += 2
-        return buf
-
-    def validate_checksum(self, packet, length):
-        hex_list = self.hex_to_list(packet)
-        sum_buf = 0
-        for ix, x in enumerate(hex_list):
-            if ix > 0:
-                hex_int = int(x, 16)
-                if ix == length:
-                    chksum_hex = f"0x{(sum_buf % 256):02x}"
-                    if hex_list[ix] == chksum_hex:
-                        return (True, hex_list[ix])
-                    else:
-                        return (False, hex_list[ix])
-                sum_buf += hex_int
