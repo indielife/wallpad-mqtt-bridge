@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from wallpad.panel.panel import WallpadPanel
+from wallpad.protocol.kocom.parser import KocomPacketParser
 
 # sum(bytes[:17])=1016, v_sum=0, checksum=(1016+1+0)%256=0xf9
 VALID_PACKET = "aa5530bc000e00010000ffff000000000000f90d0d"
@@ -24,6 +25,8 @@ def panel():
     p.tick = 0.0
     p.transport = AsyncMock()
     p.packet_parsing = MagicMock()
+    cfg = MagicMock()
+    p._parser = KocomPacketParser(cfg)
     return p
 
 
