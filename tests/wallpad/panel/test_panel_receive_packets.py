@@ -1,4 +1,5 @@
-"""WallpadPanel._read_loop 수신 루프 단위 테스트."""
+"""WallpadPanel.receive_packets 단위 테스트."""
+
 import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
@@ -35,7 +36,7 @@ async def test_valid_packet_dispatched(panel):
     panel.transport.read.side_effect = _byte_seq(VALID_PACKET, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await panel._read_loop("kocom", 42)
+        await panel.receive_packets("kocom", 42)
 
     panel.packet_parsing.assert_called_once_with(VALID_PACKET)
 
@@ -46,7 +47,7 @@ async def test_garbage_before_start_byte_ignored(panel):
     panel.transport.read.side_effect = _byte_seq(garbage + VALID_PACKET, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await panel._read_loop("kocom", 42)
+        await panel.receive_packets("kocom", 42)
 
     panel.packet_parsing.assert_called_once_with(VALID_PACKET)
 
@@ -56,7 +57,7 @@ async def test_invalid_checksum_not_dispatched(panel):
     panel.transport.read.side_effect = _byte_seq(INVALID_CHECKSUM, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await panel._read_loop("kocom", 42)
+        await panel.receive_packets("kocom", 42)
 
     panel.packet_parsing.assert_not_called()
 
@@ -66,6 +67,6 @@ async def test_two_valid_packets_dispatched(panel):
     panel.transport.read.side_effect = _byte_seq(VALID_PACKET * 2, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await panel._read_loop("kocom", 42)
+        await panel.receive_packets("kocom", 42)
 
     assert panel.packet_parsing.call_count == 2

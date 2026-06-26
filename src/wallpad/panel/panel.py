@@ -74,7 +74,7 @@ class WallpadPanel:
     async def start(self) -> list[asyncio.Task]:
         self._loop = asyncio.get_running_loop()
         await self.transport.connect()
-        self._task_read = asyncio.create_task(self._read_loop(self.name, 42))
+        self._task_read = asyncio.create_task(self.receive_packets(self.name, 42))
         self._task_scan = asyncio.create_task(self.scan_list())
         return [self._task_read, self._task_scan]
 
@@ -194,7 +194,7 @@ class WallpadPanel:
             self.mqtt_client.publish_json(topic, payload)
             logger.info("[To HA] %s = %s", topic, json.dumps(payload, ensure_ascii=False))
 
-    async def _read_loop(self, source, packet_len):
+    async def receive_packets(self, source, packet_len):
         packet = ""
         start_flag = False
         while True:
@@ -464,4 +464,3 @@ class WallpadPanel:
             )
 
         return None
-

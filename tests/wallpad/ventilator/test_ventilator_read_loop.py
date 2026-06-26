@@ -1,4 +1,5 @@
-"""Ventilator._read_loop 수신 루프 단위 테스트."""
+"""Ventilator.receive_packets 수신 루프 단위 테스트."""
+
 import asyncio
 from unittest.mock import AsyncMock
 
@@ -36,7 +37,7 @@ async def test_grex_controller_valid_packet_dispatched(ventilator):
     transport.read.side_effect = _byte_seq(VALID_D08A, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await ventilator._read_loop(transport, "grex_controller", 11)
+        await ventilator.receive_packets(transport, "grex_controller", 11)
 
     ventilator.packet_parsing.assert_called_once_with(VALID_D08A, "grex_controller")
 
@@ -47,7 +48,7 @@ async def test_grex_ventilator_valid_packet_dispatched(ventilator):
     transport.read.side_effect = _byte_seq(VALID_D18B, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await ventilator._read_loop(transport, "grex_ventilator", 12)
+        await ventilator.receive_packets(transport, "grex_ventilator", 12)
 
     ventilator.packet_parsing.assert_called_once_with(VALID_D18B, "grex_ventilator")
 
@@ -59,7 +60,7 @@ async def test_garbage_before_start_byte_ignored(ventilator):
     transport.read.side_effect = _byte_seq(garbage + VALID_D08A, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await ventilator._read_loop(transport, "grex_controller", 11)
+        await ventilator.receive_packets(transport, "grex_controller", 11)
 
     ventilator.packet_parsing.assert_called_once_with(VALID_D08A, "grex_controller")
 
@@ -70,6 +71,6 @@ async def test_invalid_checksum_not_dispatched(ventilator):
     transport.read.side_effect = _byte_seq(INVALID_D08A, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await ventilator._read_loop(transport, "grex_controller", 11)
+        await ventilator.receive_packets(transport, "grex_controller", 11)
 
     ventilator.packet_parsing.assert_not_called()

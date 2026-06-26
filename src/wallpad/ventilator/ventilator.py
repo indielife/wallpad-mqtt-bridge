@@ -57,10 +57,10 @@ class Ventilator:
         await self.controller_transport.connect()
         await self.ventilator_transport.connect()
         self._task_ctrl = asyncio.create_task(
-            self._read_loop(self.controller_transport, "grex_controller", 11)
+            self.receive_packets(self.controller_transport, "grex_controller", 11)
         )
         self._task_vent = asyncio.create_task(
-            self._read_loop(self.ventilator_transport, "grex_ventilator", 12)
+            self.receive_packets(self.ventilator_transport, "grex_ventilator", 12)
         )
         return [self._task_ctrl, self._task_vent]
 
@@ -111,7 +111,7 @@ class Ventilator:
             self.mqtt_client.publish_json(topic, value)
             logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
 
-    async def _read_loop(self, transport, source, packet_len):
+    async def receive_packets(self, transport, source, packet_len):
         buf = []
         start_flag = False
         while True:
@@ -150,10 +150,7 @@ class Ventilator:
         p_mode = packet[8:12]
         p_speed = packet[12:16]
 
-        if (
-            self.grex_cont["mode"] != MODE[p_mode]
-            or self.grex_cont["speed"] != SPEED[p_speed]
-        ):
+        if self.grex_cont["mode"] != MODE[p_mode] or self.grex_cont["speed"] != SPEED[p_speed]:
             self.grex_cont["mode"] = MODE[p_mode]
             self.grex_cont["speed"] = SPEED[p_speed]
             logger.info(
@@ -258,4 +255,3 @@ class Ventilator:
             await self._handle_d08a(packet, source)
         elif p_prefix == "d18b":
             self._handle_d18b(packet, source)
-
