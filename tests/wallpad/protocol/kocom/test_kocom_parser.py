@@ -1,4 +1,5 @@
 """KocomPacketParser 단위 테스트."""
+
 from unittest.mock import MagicMock
 
 import pytest

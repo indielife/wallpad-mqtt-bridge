@@ -46,7 +46,7 @@ class Ventilator:
         self.mqtt_client.register_connect_callback(self.on_connect)
         self.mqtt_client.register_message_callback(self.on_message)
         self.packet_builder = GrexPacketBuilder()
-        self._parser = GrexPacketParser()
+        self.parser = GrexPacketParser()
         self.device = GrexVentilator(
             name_prefix=self.name,
             sw_version=self.config.sw_version,
@@ -131,7 +131,7 @@ class Ventilator:
 
             if len(buf) >= packet_len:
                 joindata = "".join(buf)
-                chksum = self._parser.validate_checksum(joindata)
+                chksum = self.parser.validate_checksum(joindata)
                 if chksum[0]:
                     await self.packet_parsing(joindata, source)
                 buf = []
@@ -139,7 +139,7 @@ class Ventilator:
 
     async def _handle_d00a(self):
         m_packet = self.device.build_response_packet("off", "off")
-        m_chksum = self._parser.validate_checksum(m_packet)
+        m_chksum = self.parser.validate_checksum(m_packet)
         if m_chksum[0]:
             await self.controller_transport.write(bytearray.fromhex(m_packet))
         logger.debug("[From Grex]error code : E1")

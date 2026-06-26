@@ -27,7 +27,7 @@ def panel():
     p.transport = AsyncMock()
     p.packet_parsing = MagicMock()
     cfg = MagicMock()
-    p._parser = KocomPacketParser(cfg)
+    p.parser = KocomPacketParser(cfg)
     return p
 
 

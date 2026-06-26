@@ -55,7 +55,7 @@ class WallpadPanel:
 
         self.tick = time.time()
         self.packet_builder = KocomPacketBuilder()
-        self._parser = KocomPacketParser(config)
+        self.parser = KocomPacketParser(config)
         self.devices, self.device_states = DeviceFactory.build(
             config, self.name, self.packet_builder
         )
@@ -141,7 +141,7 @@ class WallpadPanel:
                 self.packet_parsing(_payload.lower(), source="HA")
                 return
             elif _topic[3] == "check_sum":
-                chksum = self._parser.validate_checksum(_payload.lower())
+                chksum = self.parser.validate_checksum(_payload.lower())
                 logger.info("[From HA]%s = %s(%s)", _payload, chksum[0], chksum[1])
                 return
         elif not self.kocom_scan:
@@ -216,7 +216,7 @@ class WallpadPanel:
                 packet += hex_d
 
             if len(packet) >= packet_len:
-                chksum = self._parser.validate_checksum(packet)
+                chksum = self.parser.validate_checksum(packet)
                 if chksum[0]:
                     self.tick = time.time()
                     logger.debug("[From %s]%s", source, packet)
@@ -232,7 +232,7 @@ class WallpadPanel:
             self.tick = time.time()
 
     def packet_parsing(self, packet, source="kocom"):
-        v = self._parser.parse_frame(packet, self.device_states)
+        v = self.parser.parse_frame(packet, self.device_states)
 
         if v is None:
             return
@@ -387,7 +387,7 @@ class WallpadPanel:
         if not packet:
             return
 
-        v = self._parser.parse_frame(packet, self.device_states)
+        v = self.parser.parse_frame(packet, self.device_states)
 
         logger.debug("[To %s]%s", self.name, packet)
         if v["command"] == "조회" and v["src_device"] == DEVICE_WALLPAD:

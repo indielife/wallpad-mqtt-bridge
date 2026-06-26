@@ -1,4 +1,5 @@
 """GrexPacketParser 단위 테스트."""
+
 import pytest
 
 from wallpad.protocol.grex.parser import GrexPacketParser
