@@ -1,19 +1,5 @@
 import pytest
 
-from wallpad.protocol.grex.packet_builder import GrexPacketBuilder
-from wallpad.ventilator.devices import GrexVentilator
-from wallpad.ventilator.ventilator import Ventilator
-
-
-@pytest.fixture
-def ventilator_instance():
-    """무거운 초기화를 우회한 Ventilator 인스턴스"""
-    ventilator = Ventilator.__new__(Ventilator)
-    ventilator.device = GrexVentilator(
-        name_prefix="test_grex", sw_version="0.1.0", packet_builder=GrexPacketBuilder()
-    )
-    return ventilator
-
 
 @pytest.mark.parametrize(
     "mode, speed, expected_prefix",

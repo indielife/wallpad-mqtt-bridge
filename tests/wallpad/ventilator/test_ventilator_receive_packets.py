@@ -5,9 +5,6 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from wallpad.protocol.grex.parser import GrexPacketParser
-from wallpad.ventilator.ventilator import Ventilator
-
 # d0 8a 00 00 01 00 01 01 00 00 → sum(bytes[1..9])=141=0x8d
 VALID_D08A = "d08a00000100010100008d"  # grex_controller (11 bytes)
 INVALID_D08A = "d08a00000100010100000d"  # wrong checksum
@@ -24,11 +21,9 @@ def _byte_seq(hex_str: str, stop: Exception | None = None) -> list:
 
 
 @pytest.fixture
-def ventilator():
-    v = Ventilator.__new__(Ventilator)
-    v.packet_parsing = AsyncMock()
-    v._parser = GrexPacketParser()
-    return v
+def ventilator(ventilator_instance):
+    ventilator_instance.packet_parsing = AsyncMock()
+    return ventilator_instance
 
 
 async def test_grex_controller_valid_packet_dispatched(ventilator):
