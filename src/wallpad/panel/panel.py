@@ -201,13 +201,7 @@ class WallpadPanel:
             row_data = await self.transport.read(1)
             hex_d = row_data.hex()
 
-            start_hex = ""
-            if source == "kocom":
-                start_hex = "aa"
-            elif source == "grex_ventilator":
-                start_hex = "d1"
-            elif source == "grex_controller":
-                start_hex = "d0"
+            start_hex = self.parser.START_BYTE
 
             if hex_d == start_hex:
                 start_flag = True
