@@ -55,8 +55,10 @@ jobs:
 
       - name: Check PR title (squash merge commit message)
         env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-        run: echo "$PR_TITLE" | uv run cz check --commit-msg-file /dev/stdin
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_TITLE=$(gh pr view ${{ github.event.pull_request.number }} --json title --jq '.title')
+          echo "$PR_TITLE" | uv run cz check --commit-msg-file /dev/stdin
 
   test:
     name: Test (pytest)
