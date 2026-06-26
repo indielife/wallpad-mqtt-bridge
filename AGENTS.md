@@ -26,6 +26,11 @@ git checkout -b <branch-name>
 - Python 버전: 3.12 이상
 - 린트/포맷: `.venv/bin/ruff check` 및 `.venv/bin/ruff format` 통과 필수
 
+## Python 코딩 스타일
+
+- 메서드·속성에 `_` 접두사를 붙이지 않습니다. 기존 코드베이스 전체가 이 스타일로 작성되어 있습니다.
+- 진짜 이름 숨김이 필요한 경우에만 `__` (네임 맹글링)을 사용합니다.
+
 ## 커밋 및 PR
 
 커밋·PR 생성 전 반드시 [CONTRIBUTING.md](CONTRIBUTING.md)를 읽고 규칙을 따릅니다.
