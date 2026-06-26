@@ -210,7 +210,7 @@ class WallpadPanel:
                 packet = "".join(buf)
                 if self.parser.validate_checksum(packet)[0]:
                     self.tick = time.time()
-                    logger.debug("[From %s]%s", self.name, packet)
+                    logger.debug("[From RS485] %s", packet)
                     self.packet_parsing(packet)
                 buf = []
                 frame_len = None
@@ -380,7 +380,7 @@ class WallpadPanel:
 
         v = self.parser.parse_frame(packet, self.device_states)
 
-        logger.debug("[To %s]%s", self.name, packet)
+        logger.debug("[To RS485] %s", packet)
         if v["command"] == "조회" and v["src_device"] == DEVICE_WALLPAD:
             logger.debug(
                 "[To %s]%s(%s) %s(%s) -> %s(%s)",

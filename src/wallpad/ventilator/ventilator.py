@@ -135,7 +135,7 @@ class Ventilator:
         m_chksum = self.parser.validate_checksum(m_packet)
         if m_chksum[0]:
             await self.controller_transport.write(bytearray.fromhex(m_packet))
-        logger.debug("[From Grex]error code : E1")
+        logger.debug("[From RS485] error code: E1")
 
     async def _handle_d08a(self, packet, packet_name):  # noqa: C901
         control_packet = ""
@@ -147,7 +147,7 @@ class Ventilator:
             self.grex_cont["mode"] = MODE[p_mode]
             self.grex_cont["speed"] = SPEED[p_speed]
             logger.info(
-                "[From %s]mode:%s / speed:%s",
+                "[From RS485][%s] mode:%s / speed:%s",
                 packet_name,
                 self.grex_cont["mode"],
                 self.grex_cont["speed"],
@@ -207,7 +207,7 @@ class Ventilator:
         p_speed = packet[8:12]
         if self.vent_cont["speed"] != SPEED[p_speed]:
             self.vent_cont["speed"] = SPEED[p_speed]
-            logger.info("[From %s]speed:%s", packet_name, self.vent_cont["speed"])
+            logger.info("[From RS485][%s] speed:%s", packet_name, self.vent_cont["speed"])
 
             send_to_ha_fan = {"mode": "off", "speed": "off"}
             if self.grex_cont["mode"] != "off" or (
