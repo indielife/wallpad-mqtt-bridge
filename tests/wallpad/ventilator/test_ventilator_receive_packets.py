@@ -32,7 +32,7 @@ async def test_grex_controller_valid_packet_dispatched(ventilator):
     transport.read.side_effect = _byte_seq(VALID_D08A, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await ventilator.receive_packets(transport, "grex_controller", 11)
+        await ventilator.receive_packets(transport, "grex_controller")
 
     ventilator.packet_parsing.assert_called_once_with(VALID_D08A, "grex_controller")
 
@@ -43,7 +43,7 @@ async def test_grex_ventilator_valid_packet_dispatched(ventilator):
     transport.read.side_effect = _byte_seq(VALID_D18B, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await ventilator.receive_packets(transport, "grex_ventilator", 12)
+        await ventilator.receive_packets(transport, "grex_ventilator")
 
     ventilator.packet_parsing.assert_called_once_with(VALID_D18B, "grex_ventilator")
 
@@ -55,7 +55,7 @@ async def test_garbage_before_start_byte_ignored(ventilator):
     transport.read.side_effect = _byte_seq(garbage + VALID_D08A, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await ventilator.receive_packets(transport, "grex_controller", 11)
+        await ventilator.receive_packets(transport, "grex_controller")
 
     ventilator.packet_parsing.assert_called_once_with(VALID_D08A, "grex_controller")
 
@@ -66,6 +66,19 @@ async def test_invalid_checksum_not_dispatched(ventilator):
     transport.read.side_effect = _byte_seq(INVALID_D08A, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await ventilator.receive_packets(transport, "grex_controller", 11)
+        await ventilator.receive_packets(transport, "grex_controller")
 
     ventilator.packet_parsing.assert_not_called()
+
+
+async def test_mixed_d0_d1_packets_on_single_transport(ventilator):
+    """단일 transport에서 d0, d1 패킷이 섞여 와도 각각 올바르게 dispatch된다."""
+    transport = AsyncMock()
+    transport.read.side_effect = _byte_seq(VALID_D08A + VALID_D18B, asyncio.CancelledError())
+
+    with pytest.raises(asyncio.CancelledError):
+        await ventilator.receive_packets(transport, "grex")
+
+    assert ventilator.packet_parsing.call_count == 2
+    ventilator.packet_parsing.assert_any_call(VALID_D08A, "grex")
+    ventilator.packet_parsing.assert_any_call(VALID_D18B, "grex")

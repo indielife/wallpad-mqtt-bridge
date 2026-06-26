@@ -1,4 +1,5 @@
 import logging
+from typing import ClassVar
 
 from wallpad.protocol.base import PacketParser
 from wallpad.protocol.kocom.constants import (
@@ -19,8 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 class KocomPacketParser(PacketParser):
+    PACKET_FRAMES: ClassVar[dict[str, int]] = {"aa": 21}
     PACKET_LENGTH = 42
-    START_BYTE = "aa"
 
     def __init__(self, config) -> None:
         self._config = config

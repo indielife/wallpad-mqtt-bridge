@@ -24,6 +24,7 @@ def _byte_seq(hex_str: str, stop: Exception | None = None) -> list:
 def panel():
     p = WallpadPanel.__new__(WallpadPanel)
     p.tick = 0.0
+    p.name = "kocom"
     p.transport = AsyncMock()
     p.packet_parsing = MagicMock()
     cfg = MagicMock()
@@ -36,7 +37,7 @@ async def test_valid_packet_dispatched(panel):
     panel.transport.read.side_effect = _byte_seq(VALID_PACKET, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await panel.receive_packets("kocom", 42)
+        await panel.receive_packets()
 
     panel.packet_parsing.assert_called_once_with(VALID_PACKET)
 
@@ -47,7 +48,7 @@ async def test_garbage_before_start_byte_ignored(panel):
     panel.transport.read.side_effect = _byte_seq(garbage + VALID_PACKET, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await panel.receive_packets("kocom", 42)
+        await panel.receive_packets()
 
     panel.packet_parsing.assert_called_once_with(VALID_PACKET)
 
@@ -57,7 +58,7 @@ async def test_invalid_checksum_not_dispatched(panel):
     panel.transport.read.side_effect = _byte_seq(INVALID_CHECKSUM, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await panel.receive_packets("kocom", 42)
+        await panel.receive_packets()
 
     panel.packet_parsing.assert_not_called()
 
@@ -67,6 +68,6 @@ async def test_two_valid_packets_dispatched(panel):
     panel.transport.read.side_effect = _byte_seq(VALID_PACKET * 2, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await panel.receive_packets("kocom", 42)
+        await panel.receive_packets()
 
     assert panel.packet_parsing.call_count == 2

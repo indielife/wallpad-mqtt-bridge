@@ -1,8 +1,12 @@
+from typing import ClassVar
+
 from wallpad.protocol.base import PacketParser
 from wallpad.protocol.grex.constants import MODE, SPEED
 
 
 class GrexPacketParser(PacketParser):
+    PACKET_FRAMES: ClassVar[dict[str, int]] = {"d0": 11, "d1": 12}
+
     def validate_checksum(self, packet: str) -> tuple[bool, str]:
         n = len(packet) // 2
         length = n - 1

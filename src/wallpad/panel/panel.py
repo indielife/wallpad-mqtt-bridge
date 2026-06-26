@@ -74,7 +74,7 @@ class WallpadPanel:
     async def start(self) -> list[asyncio.Task]:
         self._loop = asyncio.get_running_loop()
         await self.transport.connect()
-        self._task_read = asyncio.create_task(self.receive_packets(self.name, 42))
+        self._task_read = asyncio.create_task(self.receive_packets())
         self._task_scan = asyncio.create_task(self.scan_list())
         return [self._task_read, self._task_scan]
 
@@ -194,29 +194,26 @@ class WallpadPanel:
             self.mqtt_client.publish_json(topic, payload)
             logger.info("[To HA] %s = %s", topic, json.dumps(payload, ensure_ascii=False))
 
-    async def receive_packets(self, source, packet_len):
-        packet = ""
-        start_flag = False
+    async def receive_packets(self):
+        buf = []
+        frame_len = None
         while True:
-            row_data = await self.transport.read(1)
-            hex_d = row_data.hex()
+            hex_d = (await self.transport.read(1)).hex()
 
-            start_hex = self.parser.START_BYTE
+            if hex_d in self.parser.PACKET_FRAMES:
+                buf = [hex_d]
+                frame_len = self.parser.PACKET_FRAMES[hex_d]
+            elif frame_len is not None:
+                buf.append(hex_d)
 
-            if hex_d == start_hex:
-                start_flag = True
-
-            if start_flag:
-                packet += hex_d
-
-            if len(packet) >= packet_len:
-                chksum = self.parser.validate_checksum(packet)
-                if chksum[0]:
+            if frame_len is not None and len(buf) >= frame_len:
+                packet = "".join(buf)
+                if self.parser.validate_checksum(packet)[0]:
                     self.tick = time.time()
-                    logger.debug("[From %s]%s", source, packet)
+                    logger.debug("[From %s]%s", self.name, packet)
                     self.packet_parsing(packet)
-                packet = ""
-                start_flag = False
+                buf = []
+                frame_len = None
 
     def _schedule_write(self, data: str) -> None:
         if data and self._loop:

@@ -57,10 +57,10 @@ class Ventilator:
         await self.controller_transport.connect()
         await self.ventilator_transport.connect()
         self._task_ctrl = asyncio.create_task(
-            self.receive_packets(self.controller_transport, "grex_controller", 11)
+            self.receive_packets(self.controller_transport, "grex_controller")
         )
         self._task_vent = asyncio.create_task(
-            self.receive_packets(self.ventilator_transport, "grex_ventilator", 12)
+            self.receive_packets(self.ventilator_transport, "grex_ventilator")
         )
         return [self._task_ctrl, self._task_vent]
 
@@ -111,31 +111,24 @@ class Ventilator:
             self.mqtt_client.publish_json(topic, value)
             logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
 
-    async def receive_packets(self, transport, source, packet_len):
+    async def receive_packets(self, transport, source):
         buf = []
-        start_flag = False
+        frame_len = None
         while True:
-            row_data = await transport.read(1)
-            hex_d = row_data.hex()
-            start_hex = ""
-            if source == "kocom":
-                start_hex = "aa"
-            elif source == "grex_ventilator":
-                start_hex = "d1"
-            elif source == "grex_controller":
-                start_hex = "d0"
-            if hex_d == start_hex:
-                start_flag = True
-            if start_flag:
+            hex_d = (await transport.read(1)).hex()
+
+            if hex_d in self.parser.PACKET_FRAMES:
+                buf = [hex_d]
+                frame_len = self.parser.PACKET_FRAMES[hex_d]
+            elif frame_len is not None:
                 buf.append(hex_d)
 
-            if len(buf) >= packet_len:
+            if frame_len is not None and len(buf) >= frame_len:
                 joindata = "".join(buf)
-                chksum = self.parser.validate_checksum(joindata)
-                if chksum[0]:
+                if self.parser.validate_checksum(joindata)[0]:
                     await self.packet_parsing(joindata, source)
                 buf = []
-                start_flag = False
+                frame_len = None
 
     async def _handle_d00a(self):
         m_packet = self.device.build_response_packet("off", "off")
