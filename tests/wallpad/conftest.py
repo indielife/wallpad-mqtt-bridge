@@ -2,17 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from wallpad.panel.devices import Elevator, Fan, Gas, Light, Plug, Thermostat
-from wallpad.panel.panel import (
-    DEVICE_ELEVATOR,
-    DEVICE_FAN,
-    DEVICE_GAS,
-    DEVICE_LIGHT,
-    DEVICE_PLUG,
-    DEVICE_THERMOSTAT,
-    WallpadPanel,
-)
-from wallpad.panel.state import KocomStateManager
+from wallpad.panel.panel import WallpadPanel
 
 
 def _make_room(name, room_no=None, light_count=0, plug_count=0, thermo_no=None):
@@ -46,10 +36,10 @@ def mock_config():
         _make_room("livingroom", room_no=0, light_count=3, plug_count=2, thermo_no=0),
     ]
 
-    # 집 전체 단위 기기 활성화 (기본값: 모두 비활성)
-    config.fan_enabled = False
-    config.gas_enabled = False
-    config.elevator_enabled = False
+    # 집 전체 단위 기기 활성화
+    config.fan_enabled = True
+    config.gas_enabled = True
+    config.elevator_enabled = True
 
     # 패킷 빌딩/파싱용 파생 매핑
     config.kocom_room_rev = {
@@ -77,125 +67,6 @@ def mock_config():
 
 @pytest.fixture
 def panel_instance(mock_config):
-    """상위 흐름 테스트를 위해 최소한의 상태만 구성한 WallpadPanel 인스턴스"""
-    panel = WallpadPanel.__new__(WallpadPanel)
-    panel.config = mock_config
-    panel.default_speed = "low"
-    panel.ha_registry = False
+    panel = WallpadPanel(mock_config, MagicMock(), MagicMock())
     panel.kocom_scan = False
-    panel.name = "kocom"
-
-    # MQTT 모킹
-    panel.d_mqtt = MagicMock()
-
-    # device_states 초기화 (KocomStateManager 구조)
-    panel.device_states = KocomStateManager()
-    initial_states = {
-        DEVICE_LIGHT: {
-            "livingroom": {
-                "scan": {"tick": 0.0, "count": 0, "last": 0.0},
-                "light1": {"state": "off", "set": "off", "last": "state", "count": 0},
-                "light2": {"state": "off", "set": "off", "last": "state", "count": 0},
-                "light3": {"state": "off", "set": "off", "last": "state", "count": 0},
-            }
-        },
-        DEVICE_PLUG: {
-            "livingroom": {
-                "scan": {"tick": 0.0, "count": 0, "last": 0.0},
-                "plug1": {"state": "on", "set": "on", "last": "state", "count": 0},
-                "plug2": {"state": "on", "set": "on", "last": "state", "count": 0},
-            }
-        },
-        DEVICE_THERMOSTAT: {
-            "livingroom": {
-                "scan": {"tick": 0.0, "count": 0, "last": 0.0},
-                "mode": {"state": "off", "set": "off", "last": "state", "count": 0},
-                "current_temp": {"state": 0, "set": 0, "last": "state", "count": 0},
-                "target_temp": {"state": 22, "set": 22, "last": "state", "count": 0},
-            }
-        },
-        DEVICE_FAN: {
-            "wallpad": {
-                "scan": {"tick": 0.0, "count": 0, "last": 0.0},
-                "mode": {"state": "off", "set": "off", "last": "state", "count": 0},
-                "speed": {"state": "off", "set": "off", "last": "state", "count": 0},
-            }
-        },
-        DEVICE_GAS: {
-            "wallpad": {
-                "scan": {"tick": 0.0, "count": 0, "last": 0.0},
-                "gas": {"state": "off", "set": "off", "last": "state", "count": 0},
-            }
-        },
-        DEVICE_ELEVATOR: {
-            "wallpad": {
-                "scan": {"tick": 0.0, "count": 0, "last": 0.0},
-                "elevator": {"state": "off", "set": "off", "last": "state", "count": 0},
-            }
-        },
-    }
-    for device, rooms in initial_states.items():
-        panel.device_states[device] = rooms
-
-    # command_registry / device_map 구성 (parse_message 라우팅에 필요)
-    from wallpad.panel.topic import TopicBuilder
-
-    _pb = MagicMock()
-    _sw = "0.1.0"
-    _name = "kocom"
-    _devices = [
-        *[
-            Light(
-                name_prefix=_name,
-                room="livingroom",
-                sub_device=f"light{i}",
-                sw_version=_sw,
-                packet_builder=_pb,
-                topics=TopicBuilder.for_light("livingroom", f"light{i}"),
-            )
-            for i in range(4)
-        ],
-        *[
-            Plug(
-                name_prefix=_name,
-                room="livingroom",
-                sub_device=f"plug{i}",
-                sw_version=_sw,
-                packet_builder=_pb,
-                topics=TopicBuilder.for_plug("livingroom", f"plug{i}"),
-            )
-            for i in range(3)
-        ],
-        Thermostat(
-            name_prefix=_name,
-            room="livingroom",
-            sw_version=_sw,
-            packet_builder=_pb,
-            topics=TopicBuilder.for_thermostat("livingroom"),
-        ),
-        Gas(
-            name_prefix=_name,
-            sw_version=_sw,
-            packet_builder=_pb,
-            topics=TopicBuilder.for_gas("wallpad", "gas"),
-        ),
-        Elevator(
-            name_prefix=_name,
-            sw_version=_sw,
-            packet_builder=_pb,
-            topics=TopicBuilder.for_elevator("wallpad", "elevator"),
-        ),
-        Fan(
-            name_prefix=_name,
-            sw_version=_sw,
-            packet_builder=_pb,
-            topics=TopicBuilder.for_fan("wallpad", "fan"),
-        ),
-    ]
-    panel.command_registry = {
-        topic: device for device in _devices for topic in device.get_command_topics()
-    }
-    panel.device_map = {(type(d).__name__.lower(), d.room): d for d in _devices}
-    panel.mqtt_client = MagicMock()
-
     return panel
