@@ -92,7 +92,7 @@ async def main():
     setup_logging(log_path, config.log_level)
 
     logger.info("========================================================")
-    logger.info("    [fix] KOCOM Wallpad RS485 Controller Add-on  %s", SW_VERSION)
+    logger.info("    KOCOM Wallpad RS485 Controller Add-on  %s", SW_VERSION)
     logger.info("========================================================")
 
     mqtt_client = MqttClient(config.mqtt_config)

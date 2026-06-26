@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-from typing import ClassVar
 
 from wallpad.config import AppConfig
 from wallpad.mqtt import (
@@ -12,6 +11,7 @@ from wallpad.mqtt import (
 )
 from wallpad.protocol.grex.constants import DEVICE_FAN, MODE, SPEED
 from wallpad.protocol.grex.packet_builder import GrexPacketBuilder
+from wallpad.protocol.grex.parser import GrexPacketParser
 from wallpad.transport import BaseTransport
 from wallpad.ventilator.devices import GrexVentilator
 
@@ -19,10 +19,6 @@ logger = logging.getLogger(__name__)
 
 
 class Ventilator:
-    # GREX 전열교환기 패킷 기본정보
-    MODE: ClassVar[dict[str, str]] = MODE
-    SPEED: ClassVar[dict[str, str]] = SPEED
-
     def __init__(
         self,
         config: AppConfig,
@@ -50,6 +46,7 @@ class Ventilator:
         self.mqtt_client.register_connect_callback(self.on_connect)
         self.mqtt_client.register_message_callback(self.on_message)
         self.packet_builder = GrexPacketBuilder()
+        self.parser = GrexPacketParser()
         self.device = GrexVentilator(
             name_prefix=self.name,
             sw_version=self.config.sw_version,
@@ -60,10 +57,10 @@ class Ventilator:
         await self.controller_transport.connect()
         await self.ventilator_transport.connect()
         self._task_ctrl = asyncio.create_task(
-            self.get_serial(self.controller_transport, "grex_controller", 11)
+            self.receive_packets(self.controller_transport, "grex_controller")
         )
         self._task_vent = asyncio.create_task(
-            self.get_serial(self.ventilator_transport, "grex_ventilator", 12)
+            self.receive_packets(self.ventilator_transport, "grex_ventilator")
         )
         return [self._task_ctrl, self._task_vent]
 
@@ -114,38 +111,31 @@ class Ventilator:
             self.mqtt_client.publish_json(topic, value)
             logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
 
-    async def get_serial(self, transport, packet_name, packet_len):
+    async def receive_packets(self, transport, source):
         buf = []
-        start_flag = False
+        frame_len = None
         while True:
-            row_data = await transport.read(1)
-            hex_d = row_data.hex()
-            start_hex = ""
-            if packet_name == "kocom":
-                start_hex = "aa"
-            elif packet_name == "grex_ventilator":
-                start_hex = "d1"
-            elif packet_name == "grex_controller":
-                start_hex = "d0"
-            if hex_d == start_hex:
-                start_flag = True
-            if start_flag:
+            hex_d = (await transport.read(1)).hex()
+
+            if hex_d in self.parser.PACKET_FRAMES:
+                buf = [hex_d]
+                frame_len = self.parser.PACKET_FRAMES[hex_d]
+            elif frame_len is not None:
                 buf.append(hex_d)
 
-            if len(buf) >= packet_len:
+            if frame_len is not None and len(buf) >= frame_len:
                 joindata = "".join(buf)
-                chksum = self.validate_checksum(joindata, packet_len - 1)
-                if chksum[0]:
-                    await self.packet_parsing(joindata, packet_name)
+                if self.parser.validate_checksum(joindata)[0]:
+                    await self.packet_parsing(joindata, source)
                 buf = []
-                start_flag = False
+                frame_len = None
 
     async def _handle_d00a(self):
         m_packet = self.device.build_response_packet("off", "off")
-        m_chksum = self.validate_checksum(m_packet, 11)
+        m_chksum = self.parser.validate_checksum(m_packet)
         if m_chksum[0]:
             await self.controller_transport.write(bytearray.fromhex(m_packet))
-        logger.debug("[From Grex]error code : E1")
+        logger.debug("[From RS485] error code: E1")
 
     async def _handle_d08a(self, packet, packet_name):  # noqa: C901
         control_packet = ""
@@ -153,14 +143,11 @@ class Ventilator:
         p_mode = packet[8:12]
         p_speed = packet[12:16]
 
-        if (
-            self.grex_cont["mode"] != self.MODE[p_mode]
-            or self.grex_cont["speed"] != self.SPEED[p_speed]
-        ):
-            self.grex_cont["mode"] = self.MODE[p_mode]
-            self.grex_cont["speed"] = self.SPEED[p_speed]
+        if self.grex_cont["mode"] != MODE[p_mode] or self.grex_cont["speed"] != SPEED[p_speed]:
+            self.grex_cont["mode"] = MODE[p_mode]
+            self.grex_cont["speed"] = SPEED[p_speed]
             logger.info(
-                "[From %s]mode:%s / speed:%s",
+                "[From RS485][%s] mode:%s / speed:%s",
                 packet_name,
                 self.grex_cont["mode"],
                 self.grex_cont["speed"],
@@ -218,9 +205,9 @@ class Ventilator:
 
     def _handle_d18b(self, packet, packet_name):  # noqa: C901
         p_speed = packet[8:12]
-        if self.vent_cont["speed"] != self.SPEED[p_speed]:
-            self.vent_cont["speed"] = self.SPEED[p_speed]
-            logger.info("[From %s]speed:%s", packet_name, self.vent_cont["speed"])
+        if self.vent_cont["speed"] != SPEED[p_speed]:
+            self.vent_cont["speed"] = SPEED[p_speed]
+            logger.info("[From RS485][%s] speed:%s", packet_name, self.vent_cont["speed"])
 
             send_to_ha_fan = {"mode": "off", "speed": "off"}
             if self.grex_cont["mode"] != "off" or (
@@ -252,36 +239,12 @@ class Ventilator:
                     send_to_ha_sensor["fan_speed"] = "대기"
             self.publish_state_to_ha(HA_SENSOR, send_to_ha_sensor)
 
-    async def packet_parsing(self, packet, packet_name):
+    async def packet_parsing(self, packet, source):
         p_prefix = packet[:4]
 
         if p_prefix == "d00a":
             await self._handle_d00a()
         elif p_prefix == "d08a":
-            await self._handle_d08a(packet, packet_name)
+            await self._handle_d08a(packet, source)
         elif p_prefix == "d18b":
-            self._handle_d18b(packet, packet_name)
-
-    def hex_to_list(self, hex_string):
-        slide_windows = 2
-        start = 0
-        buf = []
-        for _ in range(int(len(hex_string) / 2)):
-            buf.append(f"0x{hex_string[start:slide_windows].lower()}")
-            slide_windows += 2
-            start += 2
-        return buf
-
-    def validate_checksum(self, packet, length):
-        hex_list = self.hex_to_list(packet)
-        sum_buf = 0
-        for ix, x in enumerate(hex_list):
-            if ix > 0:
-                hex_int = int(x, 16)
-                if ix == length:
-                    chksum_hex = f"0x{(sum_buf % 256):02x}"
-                    if hex_list[ix] == chksum_hex:
-                        return (True, hex_list[ix])
-                    else:
-                        return (False, hex_list[ix])
-                sum_buf += hex_int
+            self._handle_d18b(packet, source)

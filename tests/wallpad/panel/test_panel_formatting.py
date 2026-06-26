@@ -3,16 +3,17 @@ from unittest.mock import MagicMock
 from wallpad.panel.devices import Thermostat
 from wallpad.panel.panel import DEVICE_THERMOSTAT, WallpadPanel
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
+from wallpad.protocol.kocom.parser import KocomPacketParser
 
 
 def test_panel_check_sum_format():
-    """WallpadPanel 패킷의 체크섬이 2자리 16진수(02x)로 올바르게 포맷팅되는지 검증합니다."""
-    panel = WallpadPanel.__new__(WallpadPanel)  # 무거운 __init__ 을 우회하여 인스턴스 생성
+    """체크섬이 2자리 16진수(02x)로 올바르게 포맷팅되는지 검증합니다."""
+    parser = KocomPacketParser(MagicMock())
 
     # 17바이트 중 1바이트를 09로 설정. v_sum = 0.
     # sum = 9 + 1 = 10 -> "0a" (16진수 1자리일 때 앞에 0이 채워져야 함)
     packet = "0900000000000000000000000000000000" + "00" + "0a"
-    is_valid, chk_sum = panel.check_sum(packet)
+    is_valid, chk_sum = parser.validate_checksum(packet)
 
     assert is_valid is True
     assert chk_sum == "0a"

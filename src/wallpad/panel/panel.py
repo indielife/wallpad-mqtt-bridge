@@ -16,17 +16,14 @@ from wallpad.protocol.kocom.constants import (
     DEVICE_PLUG,
     DEVICE_THERMOSTAT,
     DEVICE_WALLPAD,
-    KOCOM_COMMAND,
     KOCOM_COMMAND_REV,
-    KOCOM_DEVICE,
     KOCOM_DEVICE_REV,
-    KOCOM_FAN_SPEED,
     KOCOM_FAN_SPEED_REV,
     KOCOM_INTERVAL,
-    KOCOM_TYPE,
     KOCOM_TYPE_REV,
 )
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
+from wallpad.protocol.kocom.parser import KocomPacketParser
 from wallpad.transport import BaseTransport
 
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
@@ -58,6 +55,7 @@ class WallpadPanel:
 
         self.tick = time.time()
         self.packet_builder = KocomPacketBuilder()
+        self.parser = KocomPacketParser(config)
         self.devices, self.device_states = DeviceFactory.build(
             config, self.name, self.packet_builder
         )
@@ -76,7 +74,7 @@ class WallpadPanel:
     async def start(self) -> list[asyncio.Task]:
         self._loop = asyncio.get_running_loop()
         await self.transport.connect()
-        self._task_read = asyncio.create_task(self.get_serial(self.name, 42))
+        self._task_read = asyncio.create_task(self.receive_packets())
         self._task_scan = asyncio.create_task(self.scan_list())
         return [self._task_read, self._task_scan]
 
@@ -140,10 +138,10 @@ class WallpadPanel:
                 logger.info("[From HA]HomeAssistant Scan")
                 return
             elif _topic[3] == "packet":
-                self.packet_parsing(_payload.lower(), name="HA")
+                self.packet_parsing(_payload.lower(), source="HA")
                 return
             elif _topic[3] == "check_sum":
-                chksum = self.check_sum(_payload.lower())
+                chksum = self.parser.validate_checksum(_payload.lower())
                 logger.info("[From HA]%s = %s(%s)", _payload, chksum[0], chksum[1])
                 return
         elif not self.kocom_scan:
@@ -196,105 +194,26 @@ class WallpadPanel:
             self.mqtt_client.publish_json(topic, payload)
             logger.info("[To HA] %s = %s", topic, json.dumps(payload, ensure_ascii=False))
 
-    async def get_serial(self, packet_name, packet_len):
-        packet = ""
-        start_flag = False
+    async def receive_packets(self):
+        buf = []
+        frame_len = None
         while True:
-            row_data = await self.transport.read(1)
-            hex_d = row_data.hex()
+            hex_d = (await self.transport.read(1)).hex()
 
-            start_hex = ""
-            if packet_name == "kocom":
-                start_hex = "aa"
-            elif packet_name == "grex_ventilator":
-                start_hex = "d1"
-            elif packet_name == "grex_controller":
-                start_hex = "d0"
+            if hex_d in self.parser.PACKET_FRAMES:
+                buf = [hex_d]
+                frame_len = self.parser.PACKET_FRAMES[hex_d]
+            elif frame_len is not None:
+                buf.append(hex_d)
 
-            if hex_d == start_hex:
-                start_flag = True
-
-            if start_flag:
-                packet += hex_d
-
-            if len(packet) >= packet_len:
-                chksum = self.check_sum(packet)
-                if chksum[0]:
+            if frame_len is not None and len(buf) >= frame_len:
+                packet = "".join(buf)
+                if self.parser.validate_checksum(packet)[0]:
                     self.tick = time.time()
-                    logger.debug("[From %s]%s", packet_name, packet)
+                    logger.debug("[From RS485] %s", packet)
                     self.packet_parsing(packet)
-                packet = ""
-                start_flag = False
-
-    def check_sum(self, packet):
-        sum_packet = sum(bytearray.fromhex(packet)[:17])
-        v_sum = int(packet[34:36], 16) if len(packet) >= 36 else 0
-        chk_sum = f"{(sum_packet + 1 + v_sum) % 256:02x}"
-        orgin_sum = packet[36:38] if len(packet) >= 38 else ""
-        return (True, chk_sum) if chk_sum == orgin_sum else (False, chk_sum)
-
-    def parse_packet(self, packet):
-        p = {}
-        try:
-            p["header"] = packet[:4]
-            p["type"] = packet[4:7]
-            p["order"] = packet[7:8]
-            if KOCOM_TYPE.get(p["type"]) == "send":
-                p["dst_device"] = packet[10:12]
-                p["dst_room"] = packet[12:14]
-                p["src_device"] = packet[14:16]
-                p["src_room"] = packet[16:18]
-            elif KOCOM_TYPE.get(p["type"]) == "ack":
-                p["src_device"] = packet[10:12]
-                p["src_room"] = packet[12:14]
-                p["dst_device"] = packet[14:16]
-                p["dst_room"] = packet[16:18]
-            p["command"] = packet[18:20]
-            p["value"] = packet[20:36]
-            p["checksum"] = packet[36:38]
-            p["tail"] = packet[38:42]
-            return p
-        except Exception as e:
-            logger.error("Failed to parse packet %s: %r", packet, e)
-            return False
-
-    def value_packet(self, p):
-        v = {}
-        if not p:
-            return False
-        try:
-            v["type"] = KOCOM_TYPE.get(p["type"])
-            v["command"] = KOCOM_COMMAND.get(p["command"])
-            v["src_device"] = KOCOM_DEVICE.get(p["src_device"])
-            v["src_room"] = (
-                self.config.kocom_room.get(p["src_room"])
-                if v["src_device"] != DEVICE_THERMOSTAT
-                else self.config.kocom_room_thermostat.get(p["src_room"])
-            )
-            v["dst_device"] = KOCOM_DEVICE.get(p["dst_device"])
-            v["dst_room"] = (
-                self.config.kocom_room.get(p["dst_room"])
-                if v["src_device"] != DEVICE_THERMOSTAT
-                else self.config.kocom_room_thermostat.get(p["dst_room"])
-            )
-            v["value"] = p["value"]
-            if v["src_device"] == DEVICE_FAN:
-                v["value"] = self.parse_fan(p["value"])
-            elif v["src_device"] == DEVICE_LIGHT or v["src_device"] == DEVICE_PLUG:
-                v["value"] = self.parse_switch(v["src_device"], v["src_room"], p["value"])
-            elif v["src_device"] == DEVICE_THERMOSTAT:
-                v["value"] = self.parse_thermostat(
-                    p["value"],
-                    self.device_states[v["src_device"]][v["src_room"]]["target_temp"]["state"],
-                )
-            elif v["src_device"] == DEVICE_WALLPAD and v["dst_device"] == DEVICE_ELEVATOR:
-                v["value"] = "off"
-            elif v["src_device"] == DEVICE_GAS:
-                v["value"] = v["command"]
-            return v
-        except Exception as e:
-            logger.error("Failed to parse value from packet %r: %r", p, e)
-            return False
+                buf = []
+                frame_len = None
 
     def _schedule_write(self, data: str) -> None:
         if data and self._loop:
@@ -303,19 +222,20 @@ class WallpadPanel:
             )
             self.tick = time.time()
 
-    def packet_parsing(self, packet, name="kocom", from_to="From"):
-        p = self.parse_packet(packet)
-        v = self.value_packet(p)
+    def packet_parsing(self, packet, source="kocom"):
+        v = self.parser.parse_frame(packet, self.device_states)
+
+        if v is None:
+            return
 
         try:
             if v["command"] == "조회" and v["src_device"] == DEVICE_WALLPAD:
-                if name == "HA":
+                if source == "HA":
                     packet = self.make_packet(v["dst_device"], v["dst_room"], "조회", "", "")
                     self._schedule_write(packet)
                 logger.debug(
-                    "[%s %s]%s(%s) %s(%s) -> %s(%s)",
-                    from_to,
-                    name,
+                    "[From %s]%s(%s) %s(%s) -> %s(%s)",
+                    source,
                     v["type"],
                     v["command"],
                     v["src_device"],
@@ -325,9 +245,8 @@ class WallpadPanel:
                 )
             else:
                 logger.debug(
-                    "[%s %s]%s(%s) %s(%s) -> %s(%s) = %s",
-                    from_to,
-                    name,
+                    "[From %s]%s(%s) %s(%s) -> %s(%s) = %s",
+                    source,
                     v["type"],
                     v["command"],
                     v["src_device"],
@@ -355,10 +274,9 @@ class WallpadPanel:
                     self.publish_state_to_ha(v["src_device"], v["src_room"], v["value"])
         except Exception as e:
             logger.error(
-                "Error parsing packet %s (%s %s): %r",
+                "Error parsing packet %s (From %s): %r",
                 packet,
-                from_to,
-                name,
+                source,
                 e,
             )
 
@@ -460,9 +378,9 @@ class WallpadPanel:
         if not packet:
             return
 
-        v = self.value_packet(self.parse_packet(packet))
+        v = self.parser.parse_frame(packet, self.device_states)
 
-        logger.debug("[To %s]%s", self.name, packet)
+        logger.debug("[To RS485] %s", packet)
         if v["command"] == "조회" and v["src_device"] == DEVICE_WALLPAD:
             logger.debug(
                 "[To %s]%s(%s) %s(%s) -> %s(%s)",
@@ -537,40 +455,3 @@ class WallpadPanel:
             )
 
         return None
-
-    def parse_fan(self, value="0000000000000000"):
-        fan = {}
-        fan["mode"] = "on" if value[:2] == "11" else "off"
-        fan["speed"] = KOCOM_FAN_SPEED.get(value[4:5])
-        return fan
-
-    def parse_switch(self, device, room, value="0000000000000000"):
-        switch = {}
-        on_count = 0
-        to_i = (
-            self.config.kocom_light_size.get(room, 0) + 1
-            if device == DEVICE_LIGHT
-            else self.config.kocom_plug_size.get(room, 0) + 1
-        )
-        for i in range(1, to_i):
-            switch[device + str(i)] = "off" if value[i * 2 - 2 : i * 2] == "00" else "on"
-            if value[i * 2 - 2 : i * 2] != "00":
-                on_count += 1
-        switch[device + "0"] = "on" if on_count > 0 else "off"
-        return switch
-
-    def parse_thermostat(self, value="0000000000000000", init_temp=False):
-        thermo = {}
-        heat_mode = "heat" if value[:2] == "11" else "off"
-        away_mode = "on" if value[2:4] == "01" else "off"
-        thermo["current_temp"] = int(value[8:10], 16)
-        if heat_mode == "heat" and away_mode == "on":
-            thermo["mode"] = "fan_only"
-            thermo["target_temp"] = self.config.init_temp if not init_temp else int(init_temp)
-        elif heat_mode == "heat" and away_mode == "off":
-            thermo["mode"] = "heat"
-            thermo["target_temp"] = int(value[4:6], 16)
-        elif heat_mode == "off":
-            thermo["mode"] = "off"
-            thermo["target_temp"] = self.config.init_temp if not init_temp else int(init_temp)
-        return thermo
