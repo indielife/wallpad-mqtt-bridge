@@ -73,7 +73,7 @@ def panel_gated(mock_config):
 
 @pytest.fixture
 def panel_instance(mock_config):
-    """gate 열림(HA 준비 완료) 상태의 패널 — kocom_scan=False."""
+    """gate 열림(HA 준비 완료) 상태의 패널 — ha_ready 설정."""
     panel = WallpadPanel(mock_config, MagicMock(), MagicMock())
-    panel.kocom_scan = False
+    panel.ha_ready.set()
     return panel
