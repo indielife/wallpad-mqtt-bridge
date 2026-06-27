@@ -2,7 +2,8 @@ import json
 
 import pytest
 
-from wallpad.panel.devices.plug import HA_PREFIX, HA_SWITCH, Plug
+from wallpad.mqtt import HA_PREFIX, HA_SWITCH
+from wallpad.panel.devices.plug import Plug
 from wallpad.panel.topic import TopicBuilder
 
 

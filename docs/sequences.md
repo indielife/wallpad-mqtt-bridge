@@ -14,7 +14,7 @@
 ```mermaid
 sequenceDiagram
     participant main
-    participant Panel as WallpadPanel
+    participant Panel
     participant paho as paho thread
     participant aloop as asyncio loop
     participant Broker as MQTT Broker
@@ -57,7 +57,7 @@ sequenceDiagram
     participant HA as Home Assistant
     participant Broker as MQTT Broker
     participant paho as paho thread
-    participant Panel as WallpadPanel
+    participant Panel
     participant aloop as asyncio loop
     participant RS485 as RS485 Device
 
@@ -90,7 +90,7 @@ RS485 버스에서 패킷을 수신하면 파싱 후 HA에 상태를 발행한�
 sequenceDiagram
     participant RS485 as RS485 Device
     participant aloop as asyncio loop
-    participant Panel as WallpadPanel
+    participant Panel
     participant Broker as MQTT Broker
     participant HA as Home Assistant
 

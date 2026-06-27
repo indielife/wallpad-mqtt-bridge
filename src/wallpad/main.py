@@ -6,7 +6,7 @@ import os.path
 
 from wallpad.config import AppConfig
 from wallpad.mqtt import MqttClient
-from wallpad.panel import WallpadPanel
+from wallpad.panel import Panel
 from wallpad.transport import (
     create_ventilator_transports,
     create_wallpad_transport,
@@ -53,7 +53,7 @@ async def run_wallpad(config: AppConfig, mqtt_client: MqttClient) -> list[asynci
     try:
         logger.info("Initializing Wallpad %s", config.wallpad_manufacturer)
         transport = create_wallpad_transport(config)
-        panel = WallpadPanel(config, mqtt_client, transport)
+        panel = Panel(config, mqtt_client, transport)
         return await panel.start()
     except Exception as e:
         logger.error("Failed to initialize Wallpad %s: %r", config.wallpad_manufacturer, e)

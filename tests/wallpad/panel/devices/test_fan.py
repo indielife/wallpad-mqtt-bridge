@@ -2,7 +2,8 @@ import json
 
 import pytest
 
-from wallpad.panel.devices.fan import HA_FAN, HA_PREFIX, Fan
+from wallpad.mqtt import HA_FAN, HA_PREFIX
+from wallpad.panel.devices.fan import Fan
 from wallpad.panel.topic import TopicBuilder
 
 

@@ -2,7 +2,8 @@ import json
 
 import pytest
 
-from wallpad.panel.devices.light import HA_LIGHT, HA_PREFIX, Light
+from wallpad.mqtt import HA_LIGHT, HA_PREFIX
+from wallpad.panel.devices.light import Light
 from wallpad.panel.topic import TopicBuilder
 
 

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from wallpad.mqtt import HA_CLIMATE, HA_FAN, HA_LIGHT, HA_PREFIX, HA_SENSOR, HA_SWITCH
-from wallpad.panel.panel import WallpadPanel
+from wallpad.panel.panel import Panel
 from wallpad.protocol.kocom.constants import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
@@ -44,7 +44,7 @@ def mock_config():
 
 @pytest.fixture
 def panel_factory(mock_config):
-    """활성화할 device를 지정해 WallpadPanel 인스턴스와 mock publish 검증용 리스트를 반환합니다."""
+    """활성화할 device를 지정해 Panel 인스턴스와 mock publish 검증용 리스트를 반환합니다."""
     published = []
 
     mock_mqtt = MagicMock()
@@ -74,7 +74,7 @@ def panel_factory(mock_config):
         else:
             mock_config.rooms = []
 
-        panel = WallpadPanel(mock_config, mock_mqtt, MagicMock())
+        panel = Panel(mock_config, mock_mqtt, MagicMock())
         published.clear()
         return panel, published
 

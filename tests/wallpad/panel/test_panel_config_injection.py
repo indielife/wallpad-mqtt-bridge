@@ -10,7 +10,7 @@ from wallpad.panel.panel import (
     DEVICE_LIGHT,
     DEVICE_PLUG,
     DEVICE_THERMOSTAT,
-    WallpadPanel,
+    Panel,
 )
 
 
@@ -71,7 +71,7 @@ def mock_transport():
 class TestWpListLight:
     def test_light_state_created_for_rooms(self, mock_config, mock_transport):
         """rooms에 있는 방에 대해 조명 상태가 초기화되는지 검증합니다."""
-        panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
+        panel = Panel(mock_config, MagicMock(), mock_transport)
 
         assert DEVICE_LIGHT in panel.device_states
         assert "livingroom" in panel.device_states[DEVICE_LIGHT]
@@ -80,7 +80,7 @@ class TestWpListLight:
 
     def test_light_subdevice_count_matches_light_count(self, mock_config, mock_transport):
         """light_count에 맞는 수의 서브기기(light1~N + light0)가 생성되는지 검증합니다."""
-        panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
+        panel = Panel(mock_config, MagicMock(), mock_transport)
 
         livingroom = panel.device_states[DEVICE_LIGHT]["livingroom"]
         assert "light0" in livingroom  # 전체 on/off 표시용
@@ -94,7 +94,7 @@ class TestWpListLight:
         assert "light3" not in bedroom  # light_count=2이므로 3은 없음
 
     def test_light_initial_state_is_off(self, mock_config, mock_transport):
-        panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
+        panel = Panel(mock_config, MagicMock(), mock_transport)
 
         state = panel.device_states[DEVICE_LIGHT]["livingroom"]["light1"]
         assert state["state"] == "off"
@@ -103,13 +103,13 @@ class TestWpListLight:
 
 class TestWpListPlug:
     def test_plug_state_created_for_rooms(self, mock_config, mock_transport):
-        panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
+        panel = Panel(mock_config, MagicMock(), mock_transport)
 
         assert DEVICE_PLUG in panel.device_states
         assert "livingroom" in panel.device_states[DEVICE_PLUG]
 
     def test_plug_subdevice_count_matches_plug_count(self, mock_config, mock_transport):
-        panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
+        panel = Panel(mock_config, MagicMock(), mock_transport)
 
         livingroom = panel.device_states[DEVICE_PLUG]["livingroom"]
         assert "plug0" in livingroom
@@ -119,7 +119,7 @@ class TestWpListPlug:
 
     def test_plug_initial_state_is_on(self, mock_config, mock_transport):
         """콘센트 초기 상태는 on입니다 (오작동 방지)."""
-        panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
+        panel = Panel(mock_config, MagicMock(), mock_transport)
 
         state = panel.device_states[DEVICE_PLUG]["livingroom"]["plug1"]
         assert state["state"] == "on"
@@ -129,7 +129,7 @@ class TestWpListPlug:
 class TestWpListThermostat:
     def test_thermostat_only_for_rooms_with_thermo_no(self, mock_config, mock_transport):
         """thermo_no가 있는 방만 난방 상태가 초기화되는지 검증합니다."""
-        panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
+        panel = Panel(mock_config, MagicMock(), mock_transport)
 
         assert DEVICE_THERMOSTAT in panel.device_states
         assert "livingroom" in panel.device_states[DEVICE_THERMOSTAT]
@@ -137,7 +137,7 @@ class TestWpListThermostat:
         assert "kitchen" not in panel.device_states[DEVICE_THERMOSTAT]  # thermo_no 없음
 
     def test_thermostat_initial_temp(self, mock_config, mock_transport):
-        panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
+        panel = Panel(mock_config, MagicMock(), mock_transport)
 
         state = panel.device_states[DEVICE_THERMOSTAT]["livingroom"]
         assert state["target_temp"]["state"] == mock_config.init_temp
@@ -145,22 +145,22 @@ class TestWpListThermostat:
 
 class TestGlobalDeviceStates:
     def test_gas_in_device_states_when_enabled(self, mock_config, mock_transport):
-        panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
+        panel = Panel(mock_config, MagicMock(), mock_transport)
         assert DEVICE_GAS in panel.device_states
 
     def test_fan_not_in_device_states_when_disabled(self, mock_config, mock_transport):
-        panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
+        panel = Panel(mock_config, MagicMock(), mock_transport)
         assert DEVICE_FAN not in panel.device_states
 
     def test_elevator_not_in_device_states_when_disabled(self, mock_config, mock_transport):
-        panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
+        panel = Panel(mock_config, MagicMock(), mock_transport)
         assert DEVICE_ELEVATOR not in panel.device_states
 
 
 class TestDeviceObjects:
     def test_light_objects_created_per_subdevice(self, mock_config, mock_transport):
         """light_count에 맞게 Light 객체가 방별로 생성되는지 검증합니다."""
-        panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
+        panel = Panel(mock_config, MagicMock(), mock_transport)
 
         livingroom_lights = [
             d for d in panel.devices if isinstance(d, Light) and d.room == "livingroom"
@@ -172,7 +172,7 @@ class TestDeviceObjects:
 
     def test_thermostat_objects_only_for_configured_rooms(self, mock_config, mock_transport):
         """thermo_no가 있는 방에만 Thermostat 객체가 생성되는지 검증합니다."""
-        panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
+        panel = Panel(mock_config, MagicMock(), mock_transport)
 
         thermostats = [d for d in panel.devices if isinstance(d, Thermostat)]
         thermostat_rooms = {d.room for d in thermostats}
@@ -182,13 +182,13 @@ class TestDeviceObjects:
         assert "kitchen" not in thermostat_rooms
 
     def test_gas_object_created_when_enabled(self, mock_config, mock_transport):
-        panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
+        panel = Panel(mock_config, MagicMock(), mock_transport)
 
         gas_devices = [d for d in panel.devices if isinstance(d, Gas)]
         assert len(gas_devices) == 1
 
     def test_fan_object_not_created_when_disabled(self, mock_config, mock_transport):
-        panel = WallpadPanel(mock_config, MagicMock(), mock_transport)
+        panel = Panel(mock_config, MagicMock(), mock_transport)
 
         fan_devices = [d for d in panel.devices if isinstance(d, Fan)]
         assert len(fan_devices) == 0

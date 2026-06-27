@@ -26,7 +26,7 @@ from wallpad.transport import BaseTransport
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
 
 
-class WallpadPanel:
+class Panel:
     def __init__(
         self,
         config: AppConfig,

@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from wallpad.panel.panel import WallpadPanel
+from wallpad.panel.panel import Panel
 
 
 class EarlyFiringMqttClient:
@@ -52,7 +52,7 @@ class EarlyFiringMqttClient:
 def test_on_connect_publishes_discovery_and_sets_ha_registry(mock_config):
     """on_connect 호출 후 ha_registry가 마지막 config 토픽으로 설정되는지 검증."""
     mqtt = EarlyFiringMqttClient()
-    panel = WallpadPanel(mock_config, mqtt, MagicMock())
+    panel = Panel(mock_config, mqtt, MagicMock())
 
     assert panel.ha_registry is False
 
@@ -66,7 +66,7 @@ def test_on_connect_publishes_discovery_and_sets_ha_registry(mock_config):
 def test_on_connect_subscribes_to_config_and_command_topics(mock_config):
     """on_connect 후 config 토픽과 command 토픽이 모두 구독되는지 검증."""
     mqtt = EarlyFiringMqttClient()
-    panel = WallpadPanel(mock_config, mqtt, MagicMock())
+    panel = Panel(mock_config, mqtt, MagicMock())
 
     panel.on_connect(None, None, None)
 
@@ -91,7 +91,7 @@ def _make_sync_loop():
 def test_ha_ready_set_after_retained_config_message(mock_config):
     """on_connect 이후 retained config 메시지를 수신하면 ha_ready가 설정되는지 검증."""
     mqtt = EarlyFiringMqttClient()
-    panel = WallpadPanel(mock_config, mqtt, MagicMock())
+    panel = Panel(mock_config, mqtt, MagicMock())
     panel._loop = _make_sync_loop()
 
     panel.on_connect(None, None, None)
@@ -110,7 +110,7 @@ def test_ha_ready_set_after_retained_config_message(mock_config):
 def test_ha_ready_not_set_if_wrong_topic_arrives(mock_config):
     """ha_registry와 다른 토픽이 오면 ha_ready가 설정되지 않아야 한다."""
     mqtt = EarlyFiringMqttClient()
-    panel = WallpadPanel(mock_config, mqtt, MagicMock())
+    panel = Panel(mock_config, mqtt, MagicMock())
     panel._loop = _make_sync_loop()
 
     panel.on_connect(None, None, None)
@@ -137,7 +137,7 @@ def test_connect_before_panel_init_prevents_on_connect(mock_config):
     # BUG 재현: connect()를 패널 생성 이전에 호출 (콜백 미등록 상태)
     mqtt.connect()
 
-    panel = WallpadPanel(mock_config, mqtt, MagicMock())
+    panel = Panel(mock_config, mqtt, MagicMock())
 
     # on_connect가 발화하지 않았으므로 discovery 미발행 → ha_registry 미설정
     assert panel.ha_registry is False
@@ -149,7 +149,7 @@ def test_connect_after_panel_init_enables_scan(mock_config):
     """Fix 검증: connect()를 패널 초기화 이후에 호출하면 on_connect가 정상 발화한다."""
     mqtt = EarlyFiringMqttClient()
 
-    panel = WallpadPanel(mock_config, mqtt, MagicMock())  # 콜백 등록 완료
+    panel = Panel(mock_config, mqtt, MagicMock())  # 콜백 등록 완료
     panel._loop = _make_sync_loop()
     mqtt.connect()  # 이제 on_connect 발화 → discovery 발행
 

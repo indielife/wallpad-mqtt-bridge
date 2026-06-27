@@ -1,3 +1,3 @@
-from .panel import WallpadPanel
+from .panel import Panel
 
-__all__ = ["WallpadPanel"]
+__all__ = ["Panel"]

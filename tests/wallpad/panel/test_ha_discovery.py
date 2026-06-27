@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from wallpad.mqtt import HA_PREFIX, HA_SENSOR, HA_SWITCH
-from wallpad.panel.panel import WallpadPanel
+from wallpad.panel.panel import Panel
 from wallpad.protocol.kocom.constants import DEVICE_ELEVATOR, DEVICE_GAS
 
 
@@ -37,7 +37,7 @@ def mock_config():
 @pytest.fixture
 def kocom_factory(mock_config):
     """
-    WallpadPanel 인스턴스와 mock_mqtt_instance를 생성해주는 팩토리 픽스처.
+    Panel 인스턴스와 mock_mqtt_instance를 생성해주는 팩토리 픽스처.
     활성화할 디바이스 이름을 전달받아 해당 디바이스만 설정합니다.
     """
     mock_mqtt_instance = MagicMock()
@@ -67,7 +67,7 @@ def kocom_factory(mock_config):
         else:
             mock_config.rooms = []
 
-        panel = WallpadPanel(mock_config, mock_mqtt_client, MagicMock())
+        panel = Panel(mock_config, mock_mqtt_client, MagicMock())
         return panel, mock_mqtt_instance
 
     yield _create
@@ -125,7 +125,7 @@ def kocom_factory(mock_config):
     ],
 )
 def test_publish_ha_discovery(snapshot, active_device, expected_topics, remove, kocom_factory):
-    # 1. 의존성 팩토리로 WallpadPanel 인스턴스 생성
+    # 1. 의존성 팩토리로 Panel 인스턴스 생성
     wallpad, mock_mqtt_instance = kocom_factory(active_device)
 
     # 2. 테스트할 메서드 실행

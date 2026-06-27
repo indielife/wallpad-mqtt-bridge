@@ -2,7 +2,8 @@ import json
 
 import pytest
 
-from wallpad.panel.devices.thermostat import HA_CLIMATE, HA_PREFIX, Thermostat
+from wallpad.mqtt import HA_CLIMATE, HA_PREFIX
+from wallpad.panel.devices.thermostat import Thermostat
 from wallpad.panel.topic import TopicBuilder
 
 
