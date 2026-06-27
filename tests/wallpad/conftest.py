@@ -66,7 +66,14 @@ def mock_config():
 
 
 @pytest.fixture
+def panel_gated(mock_config):
+    """gate 닫힘(초기화 미완료) 상태의 패널 — kocom_scan=True(기본값)."""
+    return WallpadPanel(mock_config, MagicMock(), MagicMock())
+
+
+@pytest.fixture
 def panel_instance(mock_config):
+    """gate 열림(HA 준비 완료) 상태의 패널 — kocom_scan=False."""
     panel = WallpadPanel(mock_config, MagicMock(), MagicMock())
     panel.kocom_scan = False
     return panel
