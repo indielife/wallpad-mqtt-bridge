@@ -72,10 +72,10 @@ class WallpadPanel:
         self.mqtt_client.register_message_callback(self.on_message)
 
     async def start(self) -> list[asyncio.Task]:
-        self._loop = asyncio.get_running_loop()
         await self.transport.connect()
         self._task_read = asyncio.create_task(self.receive_packets())
         self._task_scan = asyncio.create_task(self.scan_list())
+        self._loop = asyncio.get_running_loop()
         return [self._task_read, self._task_scan]
 
     def on_connect(self, *_):
