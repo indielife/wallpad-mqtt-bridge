@@ -1,4 +1,5 @@
 from wallpad.devices.packet_builder import PacketBuilder
+from wallpad.protocol.kocom.constants import KOCOM_COMMAND_REV, KOCOM_DEVICE_REV
 
 
 class KocomPacketBuilder(PacketBuilder):
@@ -29,18 +30,16 @@ class KocomPacketBuilder(PacketBuilder):
         self,
         device: str,
         room: str,
-        device_rev: dict,
         room_rev: dict,
         room_thermostat_rev: dict,
-        cmd_rev: dict,
     ) -> str:
         """기기 상태 조회를 위한 스캔(조회) 패킷을 생성합니다."""
-        device_hex = device_rev.get(device, "")
+        device_hex = KOCOM_DEVICE_REV.get(device, "")
         room_hex = (
             room_rev.get(room, "") if device != "thermostat" else room_thermostat_rev.get(room, "")
         )
-        dst_hex = device_rev.get("wallpad", "01") + room_rev.get("wallpad", "00")
-        cmd_hex = cmd_rev.get("조회", "3a")
+        dst_hex = KOCOM_DEVICE_REV.get("wallpad", "01") + room_rev.get("wallpad", "00")
+        cmd_hex = KOCOM_COMMAND_REV.get("조회", "3a")
         value_hex = "0000000000000000"
         return self.build(
             device_hex=device_hex,

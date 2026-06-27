@@ -2,9 +2,13 @@ import json
 
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
-from wallpad.mqtt import HA_FAN, HA_PREFIX
 from wallpad.panel.topic import TopicContext
-from wallpad.protocol.kocom.constants import DEVICE_FAN
+from wallpad.protocol.kocom.constants import (
+    DEVICE_FAN,
+    KOCOM_COMMAND_REV,
+    KOCOM_DEVICE_REV,
+    KOCOM_FAN_SPEED_REV,
+)
 
 
 class Fan(BaseDevice):
@@ -61,15 +65,12 @@ class Fan(BaseDevice):
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs
     ) -> str | None:
-        device_rev = kwargs.get("device_rev", {})
         room_rev = kwargs.get("room_rev", {})
-        cmd_rev = kwargs.get("cmd_rev", {})
-        fan_speed_rev = kwargs.get("fan_speed_rev", {})
 
-        device_hex = device_rev.get(self.sub_device, "48")
+        device_hex = KOCOM_DEVICE_REV.get(self.sub_device, "48")
         room_hex = room_rev.get(self.room, "00")
-        dst_hex = device_rev.get("wallpad", "01") + room_rev.get("wallpad", "00")
-        cmd_hex = cmd_rev.get(cmd, "00")
+        dst_hex = KOCOM_DEVICE_REV.get("wallpad", "01") + room_rev.get("wallpad", "00")
+        cmd_hex = KOCOM_COMMAND_REV.get(cmd, "00")
 
         value_hex = ""
         try:
@@ -79,7 +80,7 @@ class Fan(BaseDevice):
                 value_hex += "1100"
             elif mode == "off":
                 value_hex += "0001"
-            value_hex += fan_speed_rev.get(speed, "0")
+            value_hex += KOCOM_FAN_SPEED_REV.get(speed, "0")
             value_hex += "00000000000"
         except Exception:
             return None

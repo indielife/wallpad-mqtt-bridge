@@ -2,9 +2,8 @@ import json
 
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
-from wallpad.mqtt import HA_CLIMATE, HA_PREFIX
 from wallpad.panel.topic import TopicContext
-from wallpad.protocol.kocom.constants import DEVICE_THERMOSTAT
+from wallpad.protocol.kocom.constants import DEVICE_THERMOSTAT, KOCOM_COMMAND_REV, KOCOM_DEVICE_REV
 
 
 class Thermostat(BaseDevice):
@@ -66,14 +65,14 @@ class Thermostat(BaseDevice):
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs
     ) -> str | None:
-        device_rev = kwargs.get("device_rev", {})
         room_thermostat_rev = kwargs.get("room_thermostat_rev", {})
-        cmd_rev = kwargs.get("cmd_rev", {})
 
-        device_hex = device_rev.get(self.sub_device, "36")
+        device_hex = KOCOM_DEVICE_REV.get(self.sub_device, "36")
         room_hex = room_thermostat_rev.get(self.room, "00")
-        dst_hex = device_rev.get("wallpad", "01") + kwargs.get("room_rev", {}).get("wallpad", "00")
-        cmd_hex = cmd_rev.get(cmd, "00")
+        dst_hex = KOCOM_DEVICE_REV.get("wallpad", "01") + kwargs.get("room_rev", {}).get(
+            "wallpad", "00"
+        )
+        cmd_hex = KOCOM_COMMAND_REV.get(cmd, "00")
 
         value_hex = ""
         try:
