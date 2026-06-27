@@ -10,9 +10,9 @@
 
 ```mermaid
 graph LR
-    HA[Home Assistant] <-->|MQTT Message| Bridge[Kocom Bridge]
-    Bridge <-->|TCP Socket / Serial| EW11[EW11 Gateway]
-    EW11 <-->|RS485 Hex Packet| Wallpad[Kocom Wallpad & Devices]
+    HA[Home Assistant] <--> |MQTT| Bridge[Kocom Bridge]
+    Bridge <--> |TCP/Serial| EW11[EW11 Gateway]
+    EW11 <--> |RS485| Wallpad[Kocom Wallpad & Devices]
 ```
 
 > [!NOTE]
@@ -92,6 +92,8 @@ graph LR
 브릿지 실행 초기 혹은 HA 상태 변경 시 `publish_ha_discovery`를 실행합니다.
 - 활성화된 기기들로부터 디스커버리 정보를 취합하여 `homeassistant/<component>/<device_id>/config` 토픽으로 MQTT 메시지를 발행합니다.
 - 이 정보를 받은 Home Assistant는 별도의 수동 구성 없이 대시보드 및 기기 목록에 월패드 구성 요소를 자동으로 추가합니다.
+
+주요 시나리오별 시퀀스 다이어그램은 [sequences.md](sequences.md)를 참조합니다.
 
 ---
 
