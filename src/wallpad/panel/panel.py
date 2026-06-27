@@ -50,7 +50,7 @@ class WallpadPanel:
             self.default_speed = "low"
 
         self.ha_registry = False
-        self.kocom_scan = True
+        self.ha_ready = asyncio.Event()
         self.scan_packet_buf = []
 
         self.tick = time.time()
@@ -72,10 +72,10 @@ class WallpadPanel:
         self.mqtt_client.register_message_callback(self.on_message)
 
     async def start(self) -> list[asyncio.Task]:
-        self._loop = asyncio.get_running_loop()
         await self.transport.connect()
         self._task_read = asyncio.create_task(self.receive_packets())
         self._task_scan = asyncio.create_task(self.scan_list())
+        self._loop = asyncio.get_running_loop()
         return [self._task_read, self._task_scan]
 
     def on_connect(self, *_):
@@ -92,7 +92,7 @@ class WallpadPanel:
     def _publish_ha_discovery(self, remove=False):
         publish_list = []
         self.ha_registry = False
-        self.kocom_scan = True
+        self.ha_ready.clear()
         ha_topic = False
 
         for device in self.devices:
@@ -144,7 +144,7 @@ class WallpadPanel:
                 chksum = self.parser.validate_checksum(_payload.lower())
                 logger.info("[From HA]%s = %s(%s)", _payload, chksum[0], chksum[1])
                 return
-        elif not self.kocom_scan:
+        elif self.ha_ready.is_set():
             if len(_topic) < 4:
                 logger.warning(
                     "[MQTT] 길이가 짧은 예외 토픽 진입 차단: %s = %s", msg.topic, _payload
@@ -155,8 +155,8 @@ class WallpadPanel:
             return
         logger.info("Message: %s = %s", msg.topic, _payload)
 
-        if self.ha_registry is not False and self.ha_registry == msg.topic and self.kocom_scan:
-            self.kocom_scan = False
+        if self.ha_registry is not False and self.ha_registry == msg.topic and self._loop:
+            self._loop.call_soon_threadsafe(self.ha_ready.set)
 
     def parse_message(self, topic_parts: list[str], payload: str) -> None:
         topic_str = "/".join(topic_parts)
@@ -350,14 +350,14 @@ class WallpadPanel:
                 await self._scan_room(device, room, r_state, now)
 
     async def scan_list(self):
+        await self.ha_ready.wait()
         while True:
-            if not self.kocom_scan:
-                now = time.time()
-                if now - self.tick > KOCOM_INTERVAL / 1000:
-                    try:
-                        await self._perform_scan(now)
-                    except Exception as e:
-                        logger.debug("Scan failed: %r", e)
+            now = time.time()
+            if now - self.tick > KOCOM_INTERVAL / 1000:
+                try:
+                    await self._perform_scan(now)
+                except Exception as e:
+                    logger.debug("Scan failed: %r", e)
             await asyncio.sleep(0.2)
 
     async def set_serial(self, device, room, target, value, cmd="상태"):

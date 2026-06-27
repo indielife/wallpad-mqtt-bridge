@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import time
 from unittest.mock import AsyncMock, patch
@@ -19,6 +20,16 @@ def _stop_after_one(secs):
     """scan_list의 0.2초 슬립에서만 루프를 중단합니다."""
     if secs == 0.2:
         raise RuntimeError("stop loop")
+
+
+async def test_scan_list_blocks_until_ha_ready(panel_gated):
+    """gate 닫힘(kocom_scan=True) 상태에서 scan_list()는 블록되어야 한다."""
+    panel_gated.set_serial = AsyncMock()
+
+    with pytest.raises(asyncio.TimeoutError):
+        await asyncio.wait_for(panel_gated.scan_list(), timeout=0.1)
+
+    panel_gated.set_serial.assert_not_called()
 
 
 async def test_scan_list_periodic_scan_trigger(panel_instance, monkeypatch):

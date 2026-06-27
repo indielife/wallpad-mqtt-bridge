@@ -2,7 +2,7 @@
 on_connect 메커니즘 및 race condition regression 테스트.
 
 MQTT on_connect → _subscribe_ha_topics / _publish_ha_discovery →
-ha_registry 설정 → retained 메시지 수신 → kocom_scan = False 흐름을 검증한다.
+ha_registry 설정 → retained 메시지 수신 → ha_ready.set() 흐름을 검증한다.
 """
 
 from unittest.mock import MagicMock
@@ -77,17 +77,25 @@ def test_on_connect_subscribes_to_config_and_command_topics(mock_config):
 
 
 # ---------------------------------------------------------------------------
-# kocom_scan 해제 메커니즘
+# ha_ready 게이트 메커니즘
 # ---------------------------------------------------------------------------
 
 
-def test_kocom_scan_false_after_retained_config_message(mock_config):
-    """on_connect 이후 retained config 메시지를 수신하면 kocom_scan이 False가 되는지 검증."""
+def _make_sync_loop():
+    """call_soon_threadsafe를 동기적으로 즉시 실행하는 루프 mock."""
+    loop = MagicMock()
+    loop.call_soon_threadsafe.side_effect = lambda f: f()
+    return loop
+
+
+def test_ha_ready_set_after_retained_config_message(mock_config):
+    """on_connect 이후 retained config 메시지를 수신하면 ha_ready가 설정되는지 검증."""
     mqtt = EarlyFiringMqttClient()
     panel = WallpadPanel(mock_config, mqtt, MagicMock())
+    panel._loop = _make_sync_loop()
 
     panel.on_connect(None, None, None)
-    assert panel.kocom_scan is True  # 아직 스캔 중
+    assert not panel.ha_ready.is_set()  # 아직 준비 안 됨
     assert panel.ha_registry is not False
 
     # broker가 retained 메시지를 돌려주는 상황 시뮬레이션
@@ -96,13 +104,14 @@ def test_kocom_scan_false_after_retained_config_message(mock_config):
     msg.payload = b"{}"
     panel.on_message(None, None, msg)
 
-    assert panel.kocom_scan is False
+    assert panel.ha_ready.is_set()
 
 
-def test_kocom_scan_stays_true_if_wrong_topic_arrives(mock_config):
-    """ha_registry와 다른 토픽이 오면 kocom_scan이 해제되지 않아야 한다."""
+def test_ha_ready_not_set_if_wrong_topic_arrives(mock_config):
+    """ha_registry와 다른 토픽이 오면 ha_ready가 설정되지 않아야 한다."""
     mqtt = EarlyFiringMqttClient()
     panel = WallpadPanel(mock_config, mqtt, MagicMock())
+    panel._loop = _make_sync_loop()
 
     panel.on_connect(None, None, None)
 
@@ -113,7 +122,7 @@ def test_kocom_scan_stays_true_if_wrong_topic_arrives(mock_config):
 
     # ha_registry(마지막 config 토픽)가 아닌 메시지로는 해제 안 됨
     if panel.ha_registry != msg.topic:
-        assert panel.kocom_scan is True
+        assert not panel.ha_ready.is_set()
 
 
 # ---------------------------------------------------------------------------
@@ -132,8 +141,8 @@ def test_connect_before_panel_init_prevents_on_connect(mock_config):
 
     # on_connect가 발화하지 않았으므로 discovery 미발행 → ha_registry 미설정
     assert panel.ha_registry is False
-    # kocom_scan은 영구 True — HA 명령이 모두 무시됨
-    assert panel.kocom_scan is True
+    # ha_ready 미설정 — HA 명령이 모두 무시됨
+    assert not panel.ha_ready.is_set()
 
 
 def test_connect_after_panel_init_enables_scan(mock_config):
@@ -141,14 +150,15 @@ def test_connect_after_panel_init_enables_scan(mock_config):
     mqtt = EarlyFiringMqttClient()
 
     panel = WallpadPanel(mock_config, mqtt, MagicMock())  # 콜백 등록 완료
+    panel._loop = _make_sync_loop()
     mqtt.connect()  # 이제 on_connect 발화 → discovery 발행
 
     assert panel.ha_registry is not False
 
-    # retained 메시지 도착 → kocom_scan 해제
+    # retained 메시지 도착 → ha_ready 설정
     msg = MagicMock()
     msg.topic = panel.ha_registry
     msg.payload = b"{}"
     panel.on_message(None, None, msg)
 
-    assert panel.kocom_scan is False
+    assert panel.ha_ready.is_set()
