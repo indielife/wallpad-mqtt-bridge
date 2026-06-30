@@ -357,14 +357,12 @@ class Panel:
 
         if cmd == "상태":
             logger.info("[To %s]%s/%s/%s -> %s", self.name, device, room, target, value)
+            packet = self.make_packet(device, room, "상태", target, value)
         elif cmd == "조회":
             logger.info("[To %s]%s/%s -> 조회", self.name, device, room)
-
-        packet = (
-            self.make_packet(device, room, "상태", target, value)
-            if cmd == "상태"
-            else self.make_packet(device, room, "조회", "", "")
-        )
+            packet = self.make_packet(device, room, "조회", "", "")
+        else:
+            return
 
         if not packet:
             return
@@ -395,8 +393,10 @@ class Panel:
                 v["dst_room"],
                 v["value"],
             )
+
         if device == DEVICE_ELEVATOR:
             self.publish_state_to_ha(DEVICE_ELEVATOR, DEVICE_WALLPAD, "on")
+
         await self.transport.write(bytearray.fromhex(packet))
         self.tick = time.time()
 
