@@ -291,9 +291,6 @@ class Panel:
                 e,
             )
 
-    def _is_device_enabled(self, device: str) -> bool:
-        return device in self.device_states
-
     async def _periodic_scan_room(
         self, device: str, room: str, scan: ScanState, now: float
     ) -> None:
@@ -340,9 +337,6 @@ class Panel:
 
     async def _perform_scan(self, now: float) -> None:
         for device, d_state in self.device_states.items():
-            if not self._is_device_enabled(device):
-                continue
-
             for room, r_state in d_state.items():
                 await self._scan_room(device, room, r_state, now)
 
