@@ -203,7 +203,8 @@ class Panel:
             elif frame_len is not None:
                 buf.append(hex_d)
 
-            if frame_len is not None and len(buf) >= frame_len:
+            frame_complete = frame_len is not None and len(buf) >= frame_len
+            if frame_complete:
                 packet = "".join(buf)
                 if self.parser.validate_checksum(packet)[0]:
                     self.tick = time.time()

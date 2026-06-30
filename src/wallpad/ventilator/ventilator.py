@@ -124,7 +124,8 @@ class Ventilator:
             elif frame_len is not None:
                 buf.append(hex_d)
 
-            if frame_len is not None and len(buf) >= frame_len:
+            frame_complete = frame_len is not None and len(buf) >= frame_len
+            if frame_complete:
                 joindata = "".join(buf)
                 if self.parser.validate_checksum(joindata)[0]:
                     await self.dispatch_packet(joindata)
