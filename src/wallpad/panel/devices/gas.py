@@ -3,9 +3,8 @@ import logging
 
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
-from wallpad.mqtt import HA_PREFIX, HA_SENSOR, HA_SWITCH
 from wallpad.panel.topic import TopicContext
-from wallpad.protocol.kocom.constants import DEVICE_GAS
+from wallpad.protocol.kocom.constants import DEVICE_GAS, KOCOM_COMMAND_REV, KOCOM_DEVICE_REV
 
 logger = logging.getLogger(__name__)
 
@@ -82,14 +81,12 @@ class Gas(BaseDevice):
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs
     ) -> str | None:
-        device_rev = kwargs.get("device_rev", {})
         room_rev = kwargs.get("room_rev", {})
-        cmd_rev = kwargs.get("cmd_rev", {})
 
-        device_hex = device_rev.get(self.sub_device, "2c")
+        device_hex = KOCOM_DEVICE_REV.get(self.sub_device, "2c")
         room_hex = room_rev.get(self.room, "00")
-        dst_hex = device_rev.get("wallpad", "01") + room_rev.get("wallpad", "00")
-        cmd_hex = cmd_rev.get("off", "02")
+        dst_hex = KOCOM_DEVICE_REV.get("wallpad", "01") + room_rev.get("wallpad", "00")
+        cmd_hex = KOCOM_COMMAND_REV.get("off", "02")
         value_hex = "0000000000000000"
 
         if self.packet_builder:

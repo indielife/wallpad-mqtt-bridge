@@ -1,4 +1,5 @@
 from wallpad.devices.packet_builder import PacketBuilder
+from wallpad.protocol.grex.constants import PREFIX_CONTROL_PACKET, PREFIX_RESPONSE_PACKET
 
 
 class GrexPacketBuilder(PacketBuilder):
@@ -6,14 +7,14 @@ class GrexPacketBuilder(PacketBuilder):
 
     def build_control(self, mode_hex: str, speed_hex: str, postfix_hex: str) -> str:
         """컨트롤러에서 환기 본체로 보내는 제어 패킷을 조립합니다."""
-        prefix = "d08ae022"
+        prefix = PREFIX_CONTROL_PACKET
         packet_without_checksum = prefix + mode_hex + speed_hex + postfix_hex
         checksum = self._calculate_checksum(packet_without_checksum, length=10)
         return packet_without_checksum + checksum
 
     def build_response(self, speed_hex: str, postfix_hex: str) -> str:
         """환기 본체에서 컨트롤러로 보내는 응답 패킷을 조립합니다."""
-        prefix = "d18be021"
+        prefix = PREFIX_RESPONSE_PACKET
         packet_without_checksum = prefix + speed_hex + postfix_hex
         checksum = self._calculate_checksum(packet_without_checksum, length=11)
         return packet_without_checksum + checksum

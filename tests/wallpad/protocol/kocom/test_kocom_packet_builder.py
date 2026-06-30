@@ -26,10 +26,8 @@ def test_kocom_packet_builder_build_scan_packet():
     packet = builder.build_scan_packet(
         device="light",
         room="livingroom",
-        device_rev={"light": "0e", "wallpad": "01"},
         room_rev={"livingroom": "00", "wallpad": "00"},
         room_thermostat_rev={},
-        cmd_rev={"조회": "3a"},
     )
 
     assert packet.startswith("aa5530bc000e0001003a0000000000000000")

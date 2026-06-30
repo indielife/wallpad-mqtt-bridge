@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from wallpad.panel.panel import WallpadPanel
+from wallpad.panel.panel import Panel
 
 
 def _make_room(name, room_no=None, light_count=0, plug_count=0, thermo_no=None):
@@ -68,12 +68,12 @@ def mock_config():
 @pytest.fixture
 def panel_gated(mock_config):
     """gate 닫힘(초기화 미완료) 상태의 패널 — kocom_scan=True(기본값)."""
-    return WallpadPanel(mock_config, MagicMock(), MagicMock())
+    return Panel(mock_config, MagicMock(), MagicMock())
 
 
 @pytest.fixture
 def panel_instance(mock_config):
     """gate 열림(HA 준비 완료) 상태의 패널 — ha_ready 설정."""
-    panel = WallpadPanel(mock_config, MagicMock(), MagicMock())
+    panel = Panel(mock_config, MagicMock(), MagicMock())
     panel.ha_ready.set()
     return panel

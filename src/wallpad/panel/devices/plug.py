@@ -2,9 +2,8 @@ import json
 
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
-from wallpad.mqtt import HA_PREFIX, HA_SWITCH
 from wallpad.panel.topic import TopicContext
-from wallpad.protocol.kocom.constants import DEVICE_PLUG
+from wallpad.protocol.kocom.constants import DEVICE_PLUG, KOCOM_COMMAND_REV, KOCOM_DEVICE_REV
 
 
 class Plug(BaseDevice):
@@ -53,15 +52,13 @@ class Plug(BaseDevice):
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs
     ) -> str | None:
-        device_rev = kwargs.get("device_rev", {})
         room_rev = kwargs.get("room_rev", {})
-        cmd_rev = kwargs.get("cmd_rev", {})
 
         device_type = "plug"
-        device_hex = device_rev.get(device_type, "3b")
+        device_hex = KOCOM_DEVICE_REV.get(device_type, "3b")
         room_hex = room_rev.get(self.room, "00")
-        dst_hex = device_rev.get("wallpad", "01") + room_rev.get("wallpad", "00")
-        cmd_hex = cmd_rev.get(cmd, "00")
+        dst_hex = KOCOM_DEVICE_REV.get("wallpad", "01") + room_rev.get("wallpad", "00")
+        cmd_hex = KOCOM_COMMAND_REV.get(cmd, "00")
 
         value_hex = ""
         all_device = device_type + "0"

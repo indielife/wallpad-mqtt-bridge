@@ -9,15 +9,15 @@ from wallpad.panel.panel import (
     DEVICE_GAS,
     DEVICE_LIGHT,
     DEVICE_THERMOSTAT,
-    WallpadPanel,
+    Panel,
 )
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 
 
 @pytest.fixture
 def panel_instance():
-    """무거운 초기화를 우회하고 패킷 생성에 필요한 최소한의 상태만 구성한 WallpadPanel 인스턴스"""
-    panel = WallpadPanel.__new__(WallpadPanel)
+    """무거운 초기화를 우회하고 패킷 생성에 필요한 최소한의 상태만 구성한 Panel 인스턴스"""
+    panel = Panel.__new__(Panel)
     mock_config = MagicMock()
     mock_config.kocom_room = {
         "00": "livingroom",

@@ -2,9 +2,8 @@ import json
 
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
-from wallpad.mqtt import HA_PREFIX, HA_SWITCH
 from wallpad.panel.topic import TopicContext
-from wallpad.protocol.kocom.constants import DEVICE_ELEVATOR
+from wallpad.protocol.kocom.constants import DEVICE_ELEVATOR, KOCOM_COMMAND_REV, KOCOM_DEVICE_REV
 
 
 class Elevator(BaseDevice):
@@ -57,14 +56,12 @@ class Elevator(BaseDevice):
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs
     ) -> str | None:
-        device_rev = kwargs.get("device_rev", {})
         room_rev = kwargs.get("room_rev", {})
-        cmd_rev = kwargs.get("cmd_rev", {})
 
-        device_hex = device_rev.get("wallpad", "01")
+        device_hex = KOCOM_DEVICE_REV.get("wallpad", "01")
         room_hex = room_rev.get("wallpad", "00")
-        dst_hex = device_rev.get("elevator", "44") + room_rev.get("wallpad", "00")
-        cmd_hex = cmd_rev.get("on", "01")
+        dst_hex = KOCOM_DEVICE_REV.get("elevator", "44") + room_rev.get("wallpad", "00")
+        cmd_hex = KOCOM_COMMAND_REV.get("on", "01")
         value_hex = "0000000000000000"
 
         if self.packet_builder:

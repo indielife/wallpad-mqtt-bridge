@@ -16,9 +16,6 @@ from wallpad.protocol.kocom.constants import (
     DEVICE_PLUG,
     DEVICE_THERMOSTAT,
     DEVICE_WALLPAD,
-    KOCOM_COMMAND_REV,
-    KOCOM_DEVICE_REV,
-    KOCOM_FAN_SPEED_REV,
     KOCOM_INTERVAL,
     KOCOM_TYPE_REV,
 )
@@ -29,7 +26,7 @@ from wallpad.transport import BaseTransport
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
 
 
-class WallpadPanel:
+class Panel:
     def __init__(
         self,
         config: AppConfig,
@@ -215,13 +212,6 @@ class WallpadPanel:
                 buf = []
                 frame_len = None
 
-    def _schedule_write(self, data: str) -> None:
-        if data and self._loop:
-            asyncio.run_coroutine_threadsafe(
-                self.transport.write(bytearray.fromhex(data)), self._loop
-            )
-            self.tick = time.time()
-
     def packet_parsing(self, packet, source="kocom"):
         v = self.parser.parse_frame(packet, self.device_states)
 
@@ -280,6 +270,13 @@ class WallpadPanel:
                 e,
             )
 
+    def _schedule_write(self, data: str) -> None:
+        if data and self._loop:
+            asyncio.run_coroutine_threadsafe(
+                self.transport.write(bytearray.fromhex(data)), self._loop
+            )
+            self.tick = time.time()
+
     def set_list(self, device, room, value, name="kocom"):
         try:
             logger.info("[From %s]%s/%s/state = %s", name, device, room, value)
@@ -294,16 +291,13 @@ class WallpadPanel:
                 e,
             )
 
-    def _is_device_enabled(self, device: str) -> bool:
-        return device in self.device_states
-
     async def _periodic_scan_room(
         self, device: str, room: str, scan: ScanState, now: float
     ) -> None:
         if now - scan.last > 2:
             scan.count += 1
             scan.last = now
-            await self.set_serial(device, room, "", "", cmd="조회")
+            await self.send_packet(device, room, "", "", cmd="조회")
             await asyncio.sleep(self.config.packey_delay)
         if scan.count > 4:
             scan.tick = now
@@ -322,7 +316,7 @@ class WallpadPanel:
                 sub_v.last += 5
             elif device == DEVICE_ELEVATOR:
                 sub_v.last = "state"
-            await self.set_serial(device, room, sub_d, sub_v.set)
+            await self.send_packet(device, room, sub_d, sub_v.set)
         elif isinstance(sub_v.last, float) and now - sub_v.last > 1:
             sub_v.last = "set"
             sub_v.count += 1
@@ -343,9 +337,6 @@ class WallpadPanel:
 
     async def _perform_scan(self, now: float) -> None:
         for device, d_state in self.device_states.items():
-            if not self._is_device_enabled(device):
-                continue
-
             for room, r_state in d_state.items():
                 await self._scan_room(device, room, r_state, now)
 
@@ -360,20 +351,18 @@ class WallpadPanel:
                     logger.debug("Scan failed: %r", e)
             await asyncio.sleep(0.2)
 
-    async def set_serial(self, device, room, target, value, cmd="상태"):
+    async def send_packet(self, device, room, target, value, cmd="상태"):
         if (time.time() - self.tick) < KOCOM_INTERVAL / 1000:
             return
 
         if cmd == "상태":
             logger.info("[To %s]%s/%s/%s -> %s", self.name, device, room, target, value)
+            packet = self.make_packet(device, room, "상태", target, value)
         elif cmd == "조회":
             logger.info("[To %s]%s/%s -> 조회", self.name, device, room)
-
-        packet = (
-            self.make_packet(device, room, "상태", target, value)
-            if cmd == "상태"
-            else self.make_packet(device, room, "조회", "", "")
-        )
+            packet = self.make_packet(device, room, "조회", "", "")
+        else:
+            return
 
         if not packet:
             return
@@ -404,8 +393,10 @@ class WallpadPanel:
                 v["dst_room"],
                 v["value"],
             )
+
         if device == DEVICE_ELEVATOR:
             self.publish_state_to_ha(DEVICE_ELEVATOR, DEVICE_WALLPAD, "on")
+
         await self.transport.write(bytearray.fromhex(packet))
         self.tick = time.time()
 
@@ -434,11 +425,8 @@ class WallpadPanel:
                 target=target,
                 value=value,
                 room_state=room_state,
-                device_rev=KOCOM_DEVICE_REV,
                 room_rev=self.config.kocom_room_rev,
-                cmd_rev=KOCOM_COMMAND_REV,
                 room_thermostat_rev=self.config.kocom_room_thermostat_rev,
-                fan_speed_rev=KOCOM_FAN_SPEED_REV,
             )
             if built_packet:
                 return built_packet
@@ -448,10 +436,8 @@ class WallpadPanel:
             return self.packet_builder.build_scan_packet(
                 device=device,
                 room=room,
-                device_rev=KOCOM_DEVICE_REV,
                 room_rev=self.config.kocom_room_rev,
                 room_thermostat_rev=self.config.kocom_room_thermostat_rev,
-                cmd_rev=KOCOM_COMMAND_REV,
             )
 
         return None

@@ -1,5 +1,14 @@
 DEVICE_FAN = "fan"
 
+# 수신 패킷 프리픽스 (앞 2바이트)
+PREFIX_CONTROLLER_ERROR = "d00a"
+PREFIX_CONTROLLER_STATUS = "d08a"
+PREFIX_VENTILATOR_STATUS = "d18b"
+
+# 송신 패킷 프리픽스 (앞 4바이트)
+PREFIX_CONTROL_PACKET = "d08ae022"
+PREFIX_RESPONSE_PACKET = "d18be021"
+
 # GREX 전열교환기 패킷 기본정보 (Hex -> String)
 MODE = {
     "0100": "auto",

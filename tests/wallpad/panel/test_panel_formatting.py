@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 from wallpad.panel.devices import Thermostat
-from wallpad.panel.panel import DEVICE_THERMOSTAT, WallpadPanel
+from wallpad.panel.panel import DEVICE_THERMOSTAT, Panel
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 from wallpad.protocol.kocom.parser import KocomPacketParser
 
@@ -21,7 +21,7 @@ def test_panel_check_sum_format():
 
 def test_panel_make_packet_thermostat_temp_format():
     """보일러 목표 온도가 2자리 16진수(02x)로 올바르게 포맷팅되는지 검증합니다."""
-    panel = WallpadPanel.__new__(WallpadPanel)
+    panel = Panel.__new__(Panel)
     mock_config = MagicMock()
     mock_config.kocom_room = {
         "00": "livingroom",

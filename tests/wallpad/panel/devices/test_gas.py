@@ -2,7 +2,8 @@ import json
 
 import pytest
 
-from wallpad.panel.devices.gas import HA_PREFIX, HA_SENSOR, HA_SWITCH, Gas
+from wallpad.mqtt import HA_PREFIX, HA_SENSOR, HA_SWITCH
+from wallpad.panel.devices.gas import Gas
 from wallpad.panel.topic import TopicBuilder
 
 

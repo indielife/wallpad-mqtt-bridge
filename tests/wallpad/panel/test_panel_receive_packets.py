@@ -1,11 +1,11 @@
-"""WallpadPanel.receive_packets 단위 테스트."""
+"""Panel.receive_packets 단위 테스트."""
 
 import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from wallpad.panel.panel import WallpadPanel
+from wallpad.panel.panel import Panel
 from wallpad.protocol.kocom.parser import KocomPacketParser
 
 # sum(bytes[:17])=1016, v_sum=0, checksum=(1016+1+0)%256=0xf9
@@ -22,7 +22,7 @@ def _byte_seq(hex_str: str, stop: Exception | None = None) -> list:
 
 @pytest.fixture
 def panel():
-    p = WallpadPanel.__new__(WallpadPanel)
+    p = Panel.__new__(Panel)
     p.tick = 0.0
     p.name = "kocom"
     p.transport = AsyncMock()
