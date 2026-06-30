@@ -32,9 +32,9 @@ async def test_grex_controller_valid_packet_dispatched(ventilator):
     transport.read.side_effect = _byte_seq(VALID_D08A, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await ventilator.receive_packets(transport, "grex_controller")
+        await ventilator.receive_packets(transport)
 
-    ventilator.dispatch_packet.assert_called_once_with(VALID_D08A, "grex_controller")
+    ventilator.dispatch_packet.assert_called_once_with(VALID_D08A)
 
 
 async def test_grex_ventilator_valid_packet_dispatched(ventilator):
@@ -43,9 +43,9 @@ async def test_grex_ventilator_valid_packet_dispatched(ventilator):
     transport.read.side_effect = _byte_seq(VALID_D18B, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await ventilator.receive_packets(transport, "grex_ventilator")
+        await ventilator.receive_packets(transport)
 
-    ventilator.dispatch_packet.assert_called_once_with(VALID_D18B, "grex_ventilator")
+    ventilator.dispatch_packet.assert_called_once_with(VALID_D18B)
 
 
 async def test_garbage_before_start_byte_ignored(ventilator):
@@ -55,9 +55,9 @@ async def test_garbage_before_start_byte_ignored(ventilator):
     transport.read.side_effect = _byte_seq(garbage + VALID_D08A, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await ventilator.receive_packets(transport, "grex_controller")
+        await ventilator.receive_packets(transport)
 
-    ventilator.dispatch_packet.assert_called_once_with(VALID_D08A, "grex_controller")
+    ventilator.dispatch_packet.assert_called_once_with(VALID_D08A)
 
 
 async def test_invalid_checksum_not_dispatched(ventilator):
@@ -66,7 +66,7 @@ async def test_invalid_checksum_not_dispatched(ventilator):
     transport.read.side_effect = _byte_seq(INVALID_D08A, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await ventilator.receive_packets(transport, "grex_controller")
+        await ventilator.receive_packets(transport)
 
     ventilator.dispatch_packet.assert_not_called()
 
@@ -77,8 +77,8 @@ async def test_mixed_d0_d1_packets_on_single_transport(ventilator):
     transport.read.side_effect = _byte_seq(VALID_D08A + VALID_D18B, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
-        await ventilator.receive_packets(transport, "grex")
+        await ventilator.receive_packets(transport)
 
     assert ventilator.dispatch_packet.call_count == 2
-    ventilator.dispatch_packet.assert_any_call(VALID_D08A, "grex")
-    ventilator.dispatch_packet.assert_any_call(VALID_D18B, "grex")
+    ventilator.dispatch_packet.assert_any_call(VALID_D08A)
+    ventilator.dispatch_packet.assert_any_call(VALID_D18B)

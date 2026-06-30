@@ -1,6 +1,6 @@
 """dispatch_packet 라우팅 및 handle_* 핸들러 동작 단위 테스트."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -30,7 +30,7 @@ async def test_dispatch_routes_controller_error(ventilator_instance):
     """PREFIX_CONTROLLER_ERROR 패킷 → handle_controller_error 호출."""
     ventilator_instance.handle_controller_error = AsyncMock()
 
-    await ventilator_instance.dispatch_packet(CTRL_ERROR, "grex_controller")
+    await ventilator_instance.dispatch_packet(CTRL_ERROR)
 
     ventilator_instance.handle_controller_error.assert_called_once()
 
@@ -39,11 +39,10 @@ async def test_dispatch_routes_controller_status(ventilator_instance):
     """PREFIX_CONTROLLER_STATUS 패킷 → handle_controller_status에 parsed dict 전달."""
     ventilator_instance.handle_controller_status = AsyncMock()
 
-    await ventilator_instance.dispatch_packet(CTRL_STATUS_AUTO_LOW, "grex_controller")
+    await ventilator_instance.dispatch_packet(CTRL_STATUS_AUTO_LOW)
 
     ventilator_instance.handle_controller_status.assert_called_once_with(
         {"type": PREFIX_CONTROLLER_STATUS, "mode": "auto", "speed": "low"},
-        "grex_controller",
     )
 
 
@@ -51,11 +50,10 @@ async def test_dispatch_routes_ventilator_status(ventilator_instance):
     """PREFIX_VENTILATOR_STATUS 패킷 → handle_ventilator_status에 parsed dict 전달."""
     ventilator_instance.handle_ventilator_status = MagicMock()
 
-    await ventilator_instance.dispatch_packet(VENT_STATUS_LOW, "grex_ventilator")
+    await ventilator_instance.dispatch_packet(VENT_STATUS_LOW)
 
     ventilator_instance.handle_ventilator_status.assert_called_once_with(
         {"type": PREFIX_VENTILATOR_STATUS, "speed": "low"},
-        "grex_ventilator",
     )
 
 
@@ -66,7 +64,7 @@ async def test_dispatch_unknown_packet_early_return(ventilator_instance):
     ventilator_instance.handle_ventilator_status = MagicMock()
     ventilator_instance.parser.parse_frame = MagicMock(return_value=None)
 
-    await ventilator_instance.dispatch_packet("ffffffffffffffffffffffff", "src")
+    await ventilator_instance.dispatch_packet("ffffffffffffffffffffffff")
 
     ventilator_instance.handle_controller_error.assert_not_called()
     ventilator_instance.handle_controller_status.assert_not_called()
@@ -93,7 +91,7 @@ async def test_handle_controller_status_state_change_updates_cont(
     v = ventilator_with_mock_publish
     parsed = {"type": PREFIX_CONTROLLER_STATUS, "mode": "auto", "speed": "low"}
 
-    await v.handle_controller_status(parsed, "grex_controller")
+    await v.handle_controller_status(parsed)
 
     assert v.grex_cont == {"mode": "auto", "speed": "low"}
     assert v.publish_state_to_ha.call_count == 2
@@ -110,7 +108,7 @@ async def test_handle_controller_status_no_change_skips_publish(
     v.grex_cont = {"mode": "auto", "speed": "low"}
     parsed = {"type": PREFIX_CONTROLLER_STATUS, "mode": "auto", "speed": "low"}
 
-    await v.handle_controller_status(parsed, "grex_controller")
+    await v.handle_controller_status(parsed)
 
     v.publish_state_to_ha.assert_not_called()
 
@@ -127,7 +125,7 @@ def test_handle_ventilator_status_speed_change_updates_cont(
     v = ventilator_with_mock_publish
     parsed = {"type": PREFIX_VENTILATOR_STATUS, "speed": "medium"}
 
-    v.handle_ventilator_status(parsed, "grex_ventilator")
+    v.handle_ventilator_status(parsed)
 
     assert v.vent_cont["speed"] == "medium"
     assert v.publish_state_to_ha.call_count == 2
@@ -141,6 +139,6 @@ def test_handle_ventilator_status_no_change_skips_publish(
     v.vent_cont = {"speed": "medium"}
     parsed = {"type": PREFIX_VENTILATOR_STATUS, "speed": "medium"}
 
-    v.handle_ventilator_status(parsed, "grex_ventilator")
+    v.handle_ventilator_status(parsed)
 
     v.publish_state_to_ha.assert_not_called()
