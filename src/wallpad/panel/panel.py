@@ -192,26 +192,31 @@ class Panel:
             logger.info("[To HA] %s = %s", topic, json.dumps(payload, ensure_ascii=False))
 
     async def receive_packets(self):
-        buf = []
-        frame_len = None
+        frame_buf = []
+        frame_len = 0
+        in_frame = False
         while True:
-            hex_d = (await self.transport.read(1)).hex()
+            byte_hex = (await self.transport.read(1)).hex()
 
-            if hex_d in self.parser.PACKET_FRAMES:
-                buf = [hex_d]
-                frame_len = self.parser.PACKET_FRAMES[hex_d]
-            elif frame_len is not None:
-                buf.append(hex_d)
+            if byte_hex in self.parser.PACKET_FRAMES:
+                frame_buf = [byte_hex]
+                frame_len = self.parser.PACKET_FRAMES[byte_hex]
+                in_frame = True
+            elif in_frame:
+                frame_buf.append(byte_hex)
 
-            frame_complete = frame_len is not None and len(buf) >= frame_len
-            if frame_complete:
-                packet = "".join(buf)
-                if self.parser.validate_checksum(packet)[0]:
-                    self.tick = time.time()
-                    logger.debug("[From RS485] %s", packet)
-                    self.packet_parsing(packet)
-                buf = []
-                frame_len = None
+            if not in_frame or len(frame_buf) < frame_len:
+                continue
+
+            packet = "".join(frame_buf)
+            if self.parser.validate_checksum(packet)[0]:
+                self.tick = time.time()
+                logger.debug("[From RS485] %s", packet)
+                self.packet_parsing(packet)
+
+            frame_buf = []
+            frame_len = 0
+            in_frame = False
 
     def packet_parsing(self, packet, source="kocom"):
         v = self.parser.parse_frame(packet, self.device_states)

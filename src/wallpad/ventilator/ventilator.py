@@ -113,24 +113,41 @@ class Ventilator:
             logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
 
     async def receive_packets(self, transport):
-        buf = []
-        frame_len = None
+        frame_buf = []
+        frame_len = 0
+        in_frame = False
         while True:
-            hex_d = (await transport.read(1)).hex()
+            byte_hex = (await transport.read(1)).hex()
 
-            if hex_d in self.parser.PACKET_FRAMES:
-                buf = [hex_d]
-                frame_len = self.parser.PACKET_FRAMES[hex_d]
-            elif frame_len is not None:
-                buf.append(hex_d)
+            if byte_hex in self.parser.PACKET_FRAMES:
+                frame_buf = [byte_hex]
+                frame_len = self.parser.PACKET_FRAMES[byte_hex]
+                in_frame = True
+            elif in_frame:
+                frame_buf.append(byte_hex)
 
-            frame_complete = frame_len is not None and len(buf) >= frame_len
-            if frame_complete:
-                joindata = "".join(buf)
-                if self.parser.validate_checksum(joindata)[0]:
-                    await self.dispatch_packet(joindata)
-                buf = []
-                frame_len = None
+            if not in_frame or len(frame_buf) < frame_len:
+                continue
+
+            packet = "".join(frame_buf)
+            if self.parser.validate_checksum(packet)[0]:
+                await self.dispatch_packet(packet)
+
+            frame_buf = []
+            frame_len = 0
+            in_frame = False
+
+    async def dispatch_packet(self, packet):
+        parsed = self.parser.parse_frame(packet)
+        if parsed is None:
+            return
+
+        if parsed["type"] == PREFIX_CONTROLLER_ERROR:
+            await self.handle_controller_error()
+        elif parsed["type"] == PREFIX_CONTROLLER_STATUS:
+            await self.handle_controller_status(parsed)
+        elif parsed["type"] == PREFIX_VENTILATOR_STATUS:
+            self.handle_ventilator_status(parsed)
 
     async def handle_controller_error(self):
         m_packet = self.device.build_response_packet("off", "off")
@@ -239,15 +256,3 @@ class Ventilator:
                 elif self.vent_cont["speed"] == "off":
                     send_to_ha_sensor["fan_speed"] = "대기"
             self.publish_state_to_ha(HA_SENSOR, send_to_ha_sensor)
-
-    async def dispatch_packet(self, packet):
-        parsed = self.parser.parse_frame(packet)
-        if parsed is None:
-            return
-
-        if parsed["type"] == PREFIX_CONTROLLER_ERROR:
-            await self.handle_controller_error()
-        elif parsed["type"] == PREFIX_CONTROLLER_STATUS:
-            await self.handle_controller_status(parsed)
-        elif parsed["type"] == PREFIX_VENTILATOR_STATUS:
-            self.handle_ventilator_status(parsed)
