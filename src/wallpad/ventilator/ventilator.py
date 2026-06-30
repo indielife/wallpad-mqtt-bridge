@@ -11,11 +11,9 @@ from wallpad.mqtt import (
 )
 from wallpad.protocol.grex.constants import (
     DEVICE_FAN,
-    MODE,
     PREFIX_CONTROLLER_ERROR,
     PREFIX_CONTROLLER_STATUS,
     PREFIX_VENTILATOR_STATUS,
-    SPEED,
 )
 from wallpad.protocol.grex.packet_builder import GrexPacketBuilder
 from wallpad.protocol.grex.parser import GrexPacketParser
@@ -63,12 +61,8 @@ class Ventilator:
     async def start(self) -> list[asyncio.Task]:
         await self.controller_transport.connect()
         await self.ventilator_transport.connect()
-        self._task_ctrl = asyncio.create_task(
-            self.receive_packets(self.controller_transport, "grex_controller")
-        )
-        self._task_vent = asyncio.create_task(
-            self.receive_packets(self.ventilator_transport, "grex_ventilator")
-        )
+        self._task_ctrl = asyncio.create_task(self.receive_packets(self.controller_transport))
+        self._task_vent = asyncio.create_task(self.receive_packets(self.ventilator_transport))
         return [self._task_ctrl, self._task_vent]
 
     def on_connect(self, *_):
@@ -118,24 +112,42 @@ class Ventilator:
             self.mqtt_client.publish_json(topic, value)
             logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
 
-    async def receive_packets(self, transport, source):
-        buf = []
-        frame_len = None
+    async def receive_packets(self, transport):
+        frame_buf = []
+        frame_len = 0
+        in_frame = False
         while True:
-            hex_d = (await transport.read(1)).hex()
+            byte_hex = (await transport.read(1)).hex()
 
-            if hex_d in self.parser.PACKET_FRAMES:
-                buf = [hex_d]
-                frame_len = self.parser.PACKET_FRAMES[hex_d]
-            elif frame_len is not None:
-                buf.append(hex_d)
+            if byte_hex in self.parser.PACKET_FRAMES:
+                frame_buf = [byte_hex]
+                frame_len = self.parser.PACKET_FRAMES[byte_hex]
+                in_frame = True
+            elif in_frame:
+                frame_buf.append(byte_hex)
 
-            if frame_len is not None and len(buf) >= frame_len:
-                joindata = "".join(buf)
-                if self.parser.validate_checksum(joindata)[0]:
-                    await self.packet_parsing(joindata, source)
-                buf = []
-                frame_len = None
+            if not in_frame or len(frame_buf) < frame_len:
+                continue
+
+            packet = "".join(frame_buf)
+            if self.parser.validate_checksum(packet)[0]:
+                await self.dispatch_packet(packet)
+
+            frame_buf = []
+            frame_len = 0
+            in_frame = False
+
+    async def dispatch_packet(self, packet):
+        parsed = self.parser.parse_frame(packet)
+        if parsed is None:
+            return
+
+        if parsed["type"] == PREFIX_CONTROLLER_ERROR:
+            await self.handle_controller_error()
+        elif parsed["type"] == PREFIX_CONTROLLER_STATUS:
+            await self.handle_controller_status(parsed)
+        elif parsed["type"] == PREFIX_VENTILATOR_STATUS:
+            self.handle_ventilator_status(parsed)
 
     async def handle_controller_error(self):
         m_packet = self.device.build_response_packet("off", "off")
@@ -144,18 +156,17 @@ class Ventilator:
             await self.controller_transport.write(bytearray.fromhex(m_packet))
         logger.debug("[From RS485] error code: E1")
 
-    async def handle_controller_status(self, packet, packet_name):  # noqa: C901
+    async def handle_controller_status(self, parsed):  # noqa: C901
         control_packet = ""
         response_packet = ""
-        p_mode = packet[8:12]
-        p_speed = packet[12:16]
+        p_mode = parsed["mode"]
+        p_speed = parsed["speed"]
 
-        if self.grex_cont["mode"] != MODE[p_mode] or self.grex_cont["speed"] != SPEED[p_speed]:
-            self.grex_cont["mode"] = MODE[p_mode]
-            self.grex_cont["speed"] = SPEED[p_speed]
+        if self.grex_cont["mode"] != p_mode or self.grex_cont["speed"] != p_speed:
+            self.grex_cont["mode"] = p_mode
+            self.grex_cont["speed"] = p_speed
             logger.info(
-                "[From RS485][%s] mode:%s / speed:%s",
-                packet_name,
+                "[From RS485] mode:%s / speed:%s",
                 self.grex_cont["mode"],
                 self.grex_cont["speed"],
             )
@@ -210,11 +221,11 @@ class Ventilator:
         if control_packet != "":
             await self.ventilator_transport.write(bytearray.fromhex(control_packet))
 
-    def handle_ventilator_status(self, packet, packet_name):  # noqa: C901
-        p_speed = packet[8:12]
-        if self.vent_cont["speed"] != SPEED[p_speed]:
-            self.vent_cont["speed"] = SPEED[p_speed]
-            logger.info("[From RS485][%s] speed:%s", packet_name, self.vent_cont["speed"])
+    def handle_ventilator_status(self, parsed):  # noqa: C901
+        p_speed = parsed["speed"]
+        if self.vent_cont["speed"] != p_speed:
+            self.vent_cont["speed"] = p_speed
+            logger.info("[From RS485] speed:%s", self.vent_cont["speed"])
 
             send_to_ha_fan = {"mode": "off", "speed": "off"}
             if self.grex_cont["mode"] != "off" or (
@@ -245,13 +256,3 @@ class Ventilator:
                 elif self.vent_cont["speed"] == "off":
                     send_to_ha_sensor["fan_speed"] = "대기"
             self.publish_state_to_ha(HA_SENSOR, send_to_ha_sensor)
-
-    async def packet_parsing(self, packet, source):
-        p_prefix = packet[:4]
-
-        if p_prefix == PREFIX_CONTROLLER_ERROR:
-            await self.handle_controller_error()
-        elif p_prefix == PREFIX_CONTROLLER_STATUS:
-            await self.handle_controller_status(packet, source)
-        elif p_prefix == PREFIX_VENTILATOR_STATUS:
-            self.handle_ventilator_status(packet, source)
