@@ -211,7 +211,6 @@ class Panel:
             packet = "".join(frame_buf)
             if self.parser.validate_checksum(packet)[0]:
                 self.tick = time.time()
-                logger.debug("[From RS485] %s", packet)
                 self.packet_parsing(packet)
 
             frame_buf = []
