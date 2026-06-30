@@ -9,7 +9,14 @@ from wallpad.mqtt import (
     HA_SENSOR,
     MqttClient,
 )
-from wallpad.protocol.grex.constants import DEVICE_FAN, MODE, SPEED
+from wallpad.protocol.grex.constants import (
+    DEVICE_FAN,
+    MODE,
+    PREFIX_CONTROLLER_ERROR,
+    PREFIX_CONTROLLER_STATUS,
+    PREFIX_VENTILATOR_STATUS,
+    SPEED,
+)
 from wallpad.protocol.grex.packet_builder import GrexPacketBuilder
 from wallpad.protocol.grex.parser import GrexPacketParser
 from wallpad.transport import BaseTransport
@@ -130,14 +137,14 @@ class Ventilator:
                 buf = []
                 frame_len = None
 
-    async def _handle_d00a(self):
+    async def handle_controller_error(self):
         m_packet = self.device.build_response_packet("off", "off")
         m_chksum = self.parser.validate_checksum(m_packet)
         if m_chksum[0]:
             await self.controller_transport.write(bytearray.fromhex(m_packet))
         logger.debug("[From RS485] error code: E1")
 
-    async def _handle_d08a(self, packet, packet_name):  # noqa: C901
+    async def handle_controller_status(self, packet, packet_name):  # noqa: C901
         control_packet = ""
         response_packet = ""
         p_mode = packet[8:12]
@@ -203,7 +210,7 @@ class Ventilator:
         if control_packet != "":
             await self.ventilator_transport.write(bytearray.fromhex(control_packet))
 
-    def _handle_d18b(self, packet, packet_name):  # noqa: C901
+    def handle_ventilator_status(self, packet, packet_name):  # noqa: C901
         p_speed = packet[8:12]
         if self.vent_cont["speed"] != SPEED[p_speed]:
             self.vent_cont["speed"] = SPEED[p_speed]
@@ -242,9 +249,9 @@ class Ventilator:
     async def packet_parsing(self, packet, source):
         p_prefix = packet[:4]
 
-        if p_prefix == "d00a":
-            await self._handle_d00a()
-        elif p_prefix == "d08a":
-            await self._handle_d08a(packet, source)
-        elif p_prefix == "d18b":
-            self._handle_d18b(packet, source)
+        if p_prefix == PREFIX_CONTROLLER_ERROR:
+            await self.handle_controller_error()
+        elif p_prefix == PREFIX_CONTROLLER_STATUS:
+            await self.handle_controller_status(packet, source)
+        elif p_prefix == PREFIX_VENTILATOR_STATUS:
+            self.handle_ventilator_status(packet, source)
