@@ -22,8 +22,8 @@ dev = [
 ]
 
 [tool.commitizen]
-name = "cz_gitmoji"  # gitmoji 프리셋 사용
-version = "0.1.0"
+name = "cz_gitmoji"
+version_provider = "pep621"
 tag_format = "v$version"
 
 [tool.pytest.ini_options]
