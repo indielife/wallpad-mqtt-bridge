@@ -1,7 +1,13 @@
 from typing import ClassVar
 
 from wallpad.protocol.base import PacketParser
-from wallpad.protocol.grex.constants import MODE, SPEED
+from wallpad.protocol.grex.constants import (
+    MODE,
+    PREFIX_CONTROLLER_ERROR,
+    PREFIX_CONTROLLER_STATUS,
+    PREFIX_VENTILATOR_STATUS,
+    SPEED,
+)
 
 
 class GrexPacketParser(PacketParser):
@@ -17,17 +23,17 @@ class GrexPacketParser(PacketParser):
 
     def parse_frame(self, packet: str) -> dict | None:
         p_prefix = packet[:4]
-        if p_prefix == "d00a":
-            return {"type": "d00a"}
-        if p_prefix == "d08a":
+        if p_prefix == PREFIX_CONTROLLER_ERROR:
+            return {"type": PREFIX_CONTROLLER_ERROR}
+        if p_prefix == PREFIX_CONTROLLER_STATUS:
             return {
-                "type": "d08a",
+                "type": PREFIX_CONTROLLER_STATUS,
                 "mode": MODE.get(packet[8:12]),
                 "speed": SPEED.get(packet[12:16]),
             }
-        if p_prefix == "d18b":
+        if p_prefix == PREFIX_VENTILATOR_STATUS:
             return {
-                "type": "d18b",
+                "type": PREFIX_VENTILATOR_STATUS,
                 "speed": SPEED.get(packet[8:12]),
             }
         return None
