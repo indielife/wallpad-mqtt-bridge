@@ -24,12 +24,12 @@ def _stop_after_one(secs):
 
 async def test_scan_list_blocks_until_ha_ready(panel_gated):
     """gate 닫힘(kocom_scan=True) 상태에서 scan_list()는 블록되어야 한다."""
-    panel_gated.set_serial = AsyncMock()
+    panel_gated.send_packet = AsyncMock()
 
     with pytest.raises(asyncio.TimeoutError):
         await asyncio.wait_for(panel_gated.scan_list(), timeout=0.1)
 
-    panel_gated.set_serial.assert_not_called()
+    panel_gated.send_packet.assert_not_called()
 
 
 async def test_scan_list_periodic_scan_trigger(panel_instance, monkeypatch):
@@ -47,7 +47,7 @@ async def test_scan_list_periodic_scan_trigger(panel_instance, monkeypatch):
     panel_instance.tick = 400.0
     monkeypatch.setattr(time, "time", lambda: 500.0)
 
-    panel_instance.set_serial = AsyncMock()
+    panel_instance.send_packet = AsyncMock()
 
     with (
         patch("wallpad.panel.panel.asyncio.sleep", side_effect=_stop_after_one),
@@ -55,7 +55,7 @@ async def test_scan_list_periodic_scan_trigger(panel_instance, monkeypatch):
     ):
         await panel_instance.scan_list()
 
-    panel_instance.set_serial.assert_awaited_once_with(
+    panel_instance.send_packet.assert_awaited_once_with(
         DEVICE_LIGHT, "livingroom", "", "", cmd="조회"
     )
     assert scan_state.count == 1
@@ -77,7 +77,7 @@ async def test_scan_list_sub_device_set_retry(panel_instance, monkeypatch):
     panel_instance.tick = 400.0
     monkeypatch.setattr(time, "time", lambda: 500.0)
 
-    panel_instance.set_serial = AsyncMock()
+    panel_instance.send_packet = AsyncMock()
 
     with (
         patch("wallpad.panel.panel.asyncio.sleep", side_effect=_stop_after_one),
@@ -85,7 +85,7 @@ async def test_scan_list_sub_device_set_retry(panel_instance, monkeypatch):
     ):
         await panel_instance.scan_list()
 
-    panel_instance.set_serial.assert_awaited_once_with(DEVICE_LIGHT, "livingroom", "light1", "on")
+    panel_instance.send_packet.assert_awaited_once_with(DEVICE_LIGHT, "livingroom", "light1", "on")
     assert light1.last == 500.0
 
 
@@ -104,7 +104,7 @@ async def test_scan_list_sub_device_float_retry(panel_instance, monkeypatch):
     panel_instance.tick = 400.0
     monkeypatch.setattr(time, "time", lambda: 500.0)
 
-    panel_instance.set_serial = AsyncMock()
+    panel_instance.send_packet = AsyncMock()
 
     with (
         patch("wallpad.panel.panel.asyncio.sleep", side_effect=_stop_after_one),
@@ -112,7 +112,7 @@ async def test_scan_list_sub_device_float_retry(panel_instance, monkeypatch):
     ):
         await panel_instance.scan_list()
 
-    panel_instance.set_serial.assert_not_called()
+    panel_instance.send_packet.assert_not_called()
     assert light1.last == "set"
     assert light1.count == 1
 
@@ -133,7 +133,7 @@ async def test_scan_list_elevator_trigger(panel_instance, monkeypatch):
     panel_instance.tick = 400.0
     monkeypatch.setattr(time, "time", lambda: 500.0)
 
-    panel_instance.set_serial = AsyncMock()
+    panel_instance.send_packet = AsyncMock()
 
     with (
         patch("wallpad.panel.panel.asyncio.sleep", side_effect=_stop_after_one),
@@ -141,6 +141,8 @@ async def test_scan_list_elevator_trigger(panel_instance, monkeypatch):
     ):
         await panel_instance.scan_list()
 
-    panel_instance.set_serial.assert_awaited_once_with(DEVICE_ELEVATOR, "wallpad", "elevator", "on")
+    panel_instance.send_packet.assert_awaited_once_with(
+        DEVICE_ELEVATOR, "wallpad", "elevator", "on"
+    )
     assert scan_state.count == 0
     assert elevator.last == "state"

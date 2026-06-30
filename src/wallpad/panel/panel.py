@@ -297,7 +297,7 @@ class Panel:
         if now - scan.last > 2:
             scan.count += 1
             scan.last = now
-            await self.set_serial(device, room, "", "", cmd="조회")
+            await self.send_packet(device, room, "", "", cmd="조회")
             await asyncio.sleep(self.config.packey_delay)
         if scan.count > 4:
             scan.tick = now
@@ -316,7 +316,7 @@ class Panel:
                 sub_v.last += 5
             elif device == DEVICE_ELEVATOR:
                 sub_v.last = "state"
-            await self.set_serial(device, room, sub_d, sub_v.set)
+            await self.send_packet(device, room, sub_d, sub_v.set)
         elif isinstance(sub_v.last, float) and now - sub_v.last > 1:
             sub_v.last = "set"
             sub_v.count += 1
@@ -351,7 +351,7 @@ class Panel:
                     logger.debug("Scan failed: %r", e)
             await asyncio.sleep(0.2)
 
-    async def set_serial(self, device, room, target, value, cmd="상태"):
+    async def send_packet(self, device, room, target, value, cmd="상태"):
         if (time.time() - self.tick) < KOCOM_INTERVAL / 1000:
             return
 
