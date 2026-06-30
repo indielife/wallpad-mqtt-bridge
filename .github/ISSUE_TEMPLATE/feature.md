@@ -1,7 +1,7 @@
 ---
 name: Feature
 about: Propose a new feature for wallpad-mqtt-bridge
-title: "[feat] "
+title: "feat: "
 labels: ["type:feat"]
 ---
 

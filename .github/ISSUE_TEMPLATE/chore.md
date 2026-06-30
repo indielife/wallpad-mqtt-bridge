@@ -1,7 +1,7 @@
 ---
 name: Chore
 about: Maintenance, configuration, dependency updates, or other miscellaneous work
-title: "[chore] "
+title: "chore: "
 labels: ["type:chore"]
 ---
 

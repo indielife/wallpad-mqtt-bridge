@@ -1,7 +1,7 @@
 ---
 name: Refactor
 about: Improve code structure or design without changing external behavior
-title: "[refactor] "
+title: "refactor: "
 labels: ["type:refactor"]
 ---
 

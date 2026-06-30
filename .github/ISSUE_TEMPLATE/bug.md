@@ -1,7 +1,7 @@
 ---
 name: Bug
 about: Report a defect or unexpected behavior
-title: "[fix] "
+title: "fix: "
 labels: ["type:fix"]
 ---
 
