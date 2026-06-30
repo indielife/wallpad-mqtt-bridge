@@ -28,7 +28,7 @@ labels: ["type:fix"]
 
 ### Environment
 
-- wallpad-mqtt-bridge version:
+- version:
 - 실행 환경: (Docker / native)
 - Commit:
 
