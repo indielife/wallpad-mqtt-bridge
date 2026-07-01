@@ -115,11 +115,11 @@ class Panel:
         ):
             if _topic[3] == "log_level":
                 if _payload == "info":
-                    logger.setLevel(logging.INFO)
+                    logging.getLogger().setLevel(logging.INFO)
                 if _payload == "debug":
-                    logger.setLevel(logging.DEBUG)
+                    logging.getLogger().setLevel(logging.DEBUG)
                 if _payload == "warn":
-                    logger.setLevel(logging.WARN)
+                    logging.getLogger().setLevel(logging.WARN)
                 logger.info("[From HA]Set Loglevel to %s", _payload)
                 return
             elif _topic[3] == "restart":

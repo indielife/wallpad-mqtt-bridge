@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 from unittest.mock import MagicMock
 
@@ -79,6 +80,36 @@ def test_parse_message_fan(panel_instance):
     assert panel_instance.device_states[DEVICE_FAN]["wallpad"]["speed"]["set"] == "low"
     assert panel_instance.device_states[DEVICE_FAN]["wallpad"]["mode"]["last"] == "set"
     assert panel_instance.device_states[DEVICE_FAN]["wallpad"]["speed"]["last"] == "set"
+
+
+@pytest.fixture
+def _restore_root_log_level():
+    """루트 로거 레벨은 전역 상태이므로 테스트 전후로 원상 복구합니다."""
+    original_level = logging.getLogger().level
+    yield
+    logging.getLogger().setLevel(original_level)
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected_level"),
+    [
+        ("debug", logging.DEBUG),
+        ("info", logging.INFO),
+        ("warn", logging.WARN),
+    ],
+)
+def test_log_level_command_changes_other_module_logger(
+    panel_instance, _restore_root_log_level, payload, expected_level
+):
+    """log_level 커맨드가 panel 모듈이 아닌 다른 모듈 로거에도 적용되는지 검증합니다."""
+    other_logger = logging.getLogger("wallpad.ventilator.ventilator")
+
+    msg = MagicMock()
+    msg.topic = "wallpad/bridge/config/log_level"
+    msg.payload = payload.encode()
+    panel_instance.on_message(None, None, msg)
+
+    assert other_logger.getEffectiveLevel() == expected_level
 
     # 환기팬 스피드 high 변경
     topic_speed = ["homeassistant", "fan", "wallpad", "speed"]
