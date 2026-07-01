@@ -156,7 +156,7 @@ class Ventilator:
             await self.controller_transport.write(bytearray.fromhex(m_packet))
         logger.debug("[From RS485] error code: E1")
 
-    async def handle_controller_status(self, parsed):  # noqa: C901
+    async def handle_controller_status(self, parsed):
         control_packet = ""
         response_packet = ""
         p_mode = parsed["mode"]
@@ -178,26 +178,9 @@ class Ventilator:
                 send_to_ha_fan["speed"] = self.grex_cont["speed"]
             self.publish_state_to_ha(HA_FAN, send_to_ha_fan)
 
-            send_to_ha_sensor = {"fan_mode": "off", "fan_speed": "off"}
-            if self.grex_cont["mode"] != "off" or (
-                self.grex_cont["mode"] == "off" and self.mqtt_cont["mode"] == "on"
-            ):
-                if self.grex_cont["mode"] == "auto":
-                    send_to_ha_sensor["fan_mode"] = "자동"
-                elif self.grex_cont["mode"] == "manual":
-                    send_to_ha_sensor["fan_mode"] = "수동"
-                elif self.grex_cont["mode"] == "sleep":
-                    send_to_ha_sensor["fan_mode"] = "취침"
-                elif self.grex_cont["mode"] == "off" and self.mqtt_cont["mode"] == "on":
-                    send_to_ha_sensor["fan_mode"] = "HA"
-                if self.grex_cont["speed"] == "low":
-                    send_to_ha_sensor["fan_speed"] = "1단"
-                elif self.grex_cont["speed"] == "medium":
-                    send_to_ha_sensor["fan_speed"] = "2단"
-                elif self.grex_cont["speed"] == "high":
-                    send_to_ha_sensor["fan_speed"] = "3단"
-                elif self.grex_cont["speed"] == "off":
-                    send_to_ha_sensor["fan_speed"] = "대기"
+            send_to_ha_sensor = self._build_ha_sensor_payload(
+                self.grex_cont["mode"], self.grex_cont["speed"]
+            )
             self.publish_state_to_ha(HA_SENSOR, send_to_ha_sensor)
 
         if self.grex_cont["mode"] == "off":
@@ -221,7 +204,7 @@ class Ventilator:
         if control_packet != "":
             await self.ventilator_transport.write(bytearray.fromhex(control_packet))
 
-    def handle_ventilator_status(self, parsed):  # noqa: C901
+    def handle_ventilator_status(self, parsed):
         p_speed = parsed["speed"]
         if self.vent_cont["speed"] != p_speed:
             self.vent_cont["speed"] = p_speed
@@ -235,24 +218,28 @@ class Ventilator:
                 send_to_ha_fan["speed"] = self.vent_cont["speed"]
             self.publish_state_to_ha(HA_FAN, send_to_ha_fan)
 
-            send_to_ha_sensor = {"fan_mode": "off", "fan_speed": "off"}
-            if self.grex_cont["mode"] != "off" or (
-                self.grex_cont["mode"] == "off" and self.mqtt_cont["mode"] == "on"
-            ):
-                if self.grex_cont["mode"] == "auto":
-                    send_to_ha_sensor["fan_mode"] = "자동"
-                elif self.grex_cont["mode"] == "manual":
-                    send_to_ha_sensor["fan_mode"] = "수동"
-                elif self.grex_cont["mode"] == "sleep":
-                    send_to_ha_sensor["fan_mode"] = "취침"
-                elif self.grex_cont["mode"] == "off" and self.mqtt_cont["mode"] == "on":
-                    send_to_ha_sensor["fan_mode"] = "HA"
-                if self.vent_cont["speed"] == "low":
-                    send_to_ha_sensor["fan_speed"] = "1단"
-                elif self.vent_cont["speed"] == "medium":
-                    send_to_ha_sensor["fan_speed"] = "2단"
-                elif self.vent_cont["speed"] == "high":
-                    send_to_ha_sensor["fan_speed"] = "3단"
-                elif self.vent_cont["speed"] == "off":
-                    send_to_ha_sensor["fan_speed"] = "대기"
+            send_to_ha_sensor = self._build_ha_sensor_payload(
+                self.grex_cont["mode"], self.vent_cont["speed"]
+            )
             self.publish_state_to_ha(HA_SENSOR, send_to_ha_sensor)
+
+    def _build_ha_sensor_payload(self, mode: str, speed: str) -> dict:
+        payload = {"fan_mode": "off", "fan_speed": "off"}
+        if mode != "off" or self.mqtt_cont["mode"] == "on":
+            if mode == "auto":
+                payload["fan_mode"] = "자동"
+            elif mode == "manual":
+                payload["fan_mode"] = "수동"
+            elif mode == "sleep":
+                payload["fan_mode"] = "취침"
+            elif mode == "off" and self.mqtt_cont["mode"] == "on":
+                payload["fan_mode"] = "HA"
+            if speed == "low":
+                payload["fan_speed"] = "1단"
+            elif speed == "medium":
+                payload["fan_speed"] = "2단"
+            elif speed == "high":
+                payload["fan_speed"] = "3단"
+            elif speed == "off":
+                payload["fan_speed"] = "대기"
+        return payload
