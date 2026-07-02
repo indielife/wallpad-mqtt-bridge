@@ -58,31 +58,14 @@
     'value_template': '{{ value_json.fan_speed }}',
   })
 # ---
-# name: test_ventilator_subscribe_ha_topics[grex_subscribe_topics]
+# name: test_ventilator_register_topic_routes[grex_registered_topics]
   list([
-    tuple(
-      'wallpad/bridge/#',
-      0,
-    ),
-    tuple(
-      'homeassistant/fan/grex_fan/config',
-      0,
-    ),
-    tuple(
-      'homeassistant/fan/grex/mode',
-      0,
-    ),
-    tuple(
-      'homeassistant/fan/grex/speed',
-      0,
-    ),
-    tuple(
-      'homeassistant/sensor/grex_fan_mode/config',
-      0,
-    ),
-    tuple(
-      'homeassistant/sensor/grex_fan_speed/config',
-      0,
-    ),
+    'homeassistant/fan/grex_fan/config',
+    'homeassistant/fan/grex/mode',
+    'homeassistant/fan/grex/speed',
+    'homeassistant/sensor/grex_fan_mode/config',
+    'homeassistant/sensor/grex_fan_speed/config',
+    'wallpad/bridge/config/restart',
+    'wallpad/bridge/config/remove',
   ])
 # ---

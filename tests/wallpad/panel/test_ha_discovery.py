@@ -47,7 +47,6 @@ def kocom_factory(mock_config):
     mock_mqtt_client.publish_json.side_effect = lambda topic, payload, retain=True: (
         mock_mqtt_instance.publish(topic, json.dumps(payload, ensure_ascii=False), retain=retain)
     )
-    mock_mqtt_client.subscribe.side_effect = mock_mqtt_instance.subscribe
 
     def _create(active_device: str):
         mock_config.mqtt_config = {"server": "test", "username": "", "password": ""}
@@ -165,12 +164,11 @@ def test_publish_ha_discovery(snapshot, active_device, expected_topics, remove, 
     "active_device",
     ["elevator", "gas", "fan", "light", "plug", "thermostat"],
 )
-def test_subscribe_ha_topics(snapshot, active_device, kocom_factory):
-    wallpad, mock_mqtt_instance = kocom_factory(active_device)
+def test_register_topic_routes(snapshot, active_device, kocom_factory):
+    """Panel 생성 시 device별 config/command 토픽과 bridge 커맨드 토픽이 등록되는지 검증."""
+    wallpad, _ = kocom_factory(active_device)
 
-    wallpad._subscribe_ha_topics()
-
-    subscribe_calls = mock_mqtt_instance.subscribe.call_args_list
-    assert len(subscribe_calls) > 0
-    subscribe_list = subscribe_calls[0][0][0]
-    assert subscribe_list == snapshot(name=f"{active_device}_subscribe_topics")
+    register_calls = wallpad.mqtt_client.register_topic_callback.call_args_list
+    assert len(register_calls) > 0
+    registered_topics = [call.args[0] for call in register_calls]
+    assert registered_topics == snapshot(name=f"{active_device}_registered_topics")

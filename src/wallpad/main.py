@@ -4,6 +4,7 @@ import logging.handlers
 import os
 import os.path
 
+from wallpad.bridge import Bridge
 from wallpad.config import AppConfig
 from wallpad.mqtt import MqttClient
 from wallpad.panel import Panel
@@ -96,6 +97,7 @@ async def main():
     logger.info("========================================================")
 
     mqtt_client = MqttClient(config.mqtt_config)
+    Bridge(mqtt_client)
 
     tasks = await run_wallpad(config, mqtt_client)
     tasks += await run_ventilator(config, mqtt_client)

@@ -183,127 +183,76 @@
     'unique_id': 'test_name_room1_thermostat',
   })
 # ---
-# name: test_subscribe_ha_topics[elevator][elevator_subscribe_topics]
+# name: test_register_topic_routes[elevator][elevator_registered_topics]
   list([
-    tuple(
-      'wallpad/bridge/#',
-      0,
-    ),
-    tuple(
-      'homeassistant/switch/wallpad_elevator/config',
-      0,
-    ),
-    tuple(
-      'homeassistant/switch/wallpad_elevator/set',
-      0,
-    ),
+    'homeassistant/switch/wallpad_elevator/set',
+    'homeassistant/switch/wallpad_elevator/config',
+    'wallpad/bridge/config/restart',
+    'wallpad/bridge/config/remove',
+    'wallpad/bridge/config/scan',
+    'wallpad/bridge/config/packet',
+    'wallpad/bridge/config/check_sum',
   ])
 # ---
-# name: test_subscribe_ha_topics[fan][fan_subscribe_topics]
+# name: test_register_topic_routes[fan][fan_registered_topics]
   list([
-    tuple(
-      'wallpad/bridge/#',
-      0,
-    ),
-    tuple(
-      'homeassistant/fan/wallpad_fan/config',
-      0,
-    ),
-    tuple(
-      'homeassistant/fan/wallpad/mode',
-      0,
-    ),
-    tuple(
-      'homeassistant/fan/wallpad/speed',
-      0,
-    ),
+    'homeassistant/fan/wallpad/mode',
+    'homeassistant/fan/wallpad/speed',
+    'homeassistant/fan/wallpad_fan/config',
+    'wallpad/bridge/config/restart',
+    'wallpad/bridge/config/remove',
+    'wallpad/bridge/config/scan',
+    'wallpad/bridge/config/packet',
+    'wallpad/bridge/config/check_sum',
   ])
 # ---
-# name: test_subscribe_ha_topics[gas][gas_subscribe_topics]
+# name: test_register_topic_routes[gas][gas_registered_topics]
   list([
-    tuple(
-      'wallpad/bridge/#',
-      0,
-    ),
-    tuple(
-      'homeassistant/switch/wallpad_gas/config',
-      0,
-    ),
-    tuple(
-      'homeassistant/sensor/wallpad_gas/config',
-      0,
-    ),
-    tuple(
-      'homeassistant/switch/wallpad_gas/set',
-      0,
-    ),
+    'homeassistant/switch/wallpad_gas/set',
+    'homeassistant/switch/wallpad_gas/config',
+    'homeassistant/sensor/wallpad_gas/config',
+    'wallpad/bridge/config/restart',
+    'wallpad/bridge/config/remove',
+    'wallpad/bridge/config/scan',
+    'wallpad/bridge/config/packet',
+    'wallpad/bridge/config/check_sum',
   ])
 # ---
-# name: test_subscribe_ha_topics[light][light_subscribe_topics]
+# name: test_register_topic_routes[light][light_registered_topics]
   list([
-    tuple(
-      'wallpad/bridge/#',
-      0,
-    ),
-    tuple(
-      'homeassistant/light/room1_light0/config',
-      0,
-    ),
-    tuple(
-      'homeassistant/light/room1_light0/set',
-      0,
-    ),
-    tuple(
-      'homeassistant/light/room1_light1/config',
-      0,
-    ),
-    tuple(
-      'homeassistant/light/room1_light1/set',
-      0,
-    ),
+    'homeassistant/light/room1_light0/set',
+    'homeassistant/light/room1_light0/config',
+    'homeassistant/light/room1_light1/set',
+    'homeassistant/light/room1_light1/config',
+    'wallpad/bridge/config/restart',
+    'wallpad/bridge/config/remove',
+    'wallpad/bridge/config/scan',
+    'wallpad/bridge/config/packet',
+    'wallpad/bridge/config/check_sum',
   ])
 # ---
-# name: test_subscribe_ha_topics[plug][plug_subscribe_topics]
+# name: test_register_topic_routes[plug][plug_registered_topics]
   list([
-    tuple(
-      'wallpad/bridge/#',
-      0,
-    ),
-    tuple(
-      'homeassistant/switch/room1_plug0/config',
-      0,
-    ),
-    tuple(
-      'homeassistant/switch/room1_plug0/set',
-      0,
-    ),
-    tuple(
-      'homeassistant/switch/room1_plug1/config',
-      0,
-    ),
-    tuple(
-      'homeassistant/switch/room1_plug1/set',
-      0,
-    ),
+    'homeassistant/switch/room1_plug0/set',
+    'homeassistant/switch/room1_plug0/config',
+    'homeassistant/switch/room1_plug1/set',
+    'homeassistant/switch/room1_plug1/config',
+    'wallpad/bridge/config/restart',
+    'wallpad/bridge/config/remove',
+    'wallpad/bridge/config/scan',
+    'wallpad/bridge/config/packet',
+    'wallpad/bridge/config/check_sum',
   ])
 # ---
-# name: test_subscribe_ha_topics[thermostat][thermostat_subscribe_topics]
+# name: test_register_topic_routes[thermostat][thermostat_registered_topics]
   list([
-    tuple(
-      'wallpad/bridge/#',
-      0,
-    ),
-    tuple(
-      'homeassistant/climate/room1/config',
-      0,
-    ),
-    tuple(
-      'homeassistant/climate/room1/mode',
-      0,
-    ),
-    tuple(
-      'homeassistant/climate/room1/target_temp',
-      0,
-    ),
+    'homeassistant/climate/room1/mode',
+    'homeassistant/climate/room1/target_temp',
+    'homeassistant/climate/room1/config',
+    'wallpad/bridge/config/restart',
+    'wallpad/bridge/config/remove',
+    'wallpad/bridge/config/scan',
+    'wallpad/bridge/config/packet',
+    'wallpad/bridge/config/check_sum',
   ])
 # ---

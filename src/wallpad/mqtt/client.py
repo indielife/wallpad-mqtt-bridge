@@ -1,4 +1,6 @@
 import logging
+import re
+from collections.abc import Callable
 
 import paho.mqtt.client as mqtt
 
@@ -25,8 +27,8 @@ class MqttClient:
         self.client.on_message = self._on_message
         self.client.on_subscribe = self._on_subscribe
         self._connect_callbacks = []
-        self._message_callbacks = []
         self._subscribe_callbacks = []
+        self._topic_callbacks: list[tuple[str, re.Pattern, Callable[[str, str], None]]] = []
         self._connected = False
 
     def connect(self) -> None:
@@ -58,6 +60,9 @@ class MqttClient:
         if rc == 0:
             logger.info("Connected successfully")
             self._connected = True
+            if self._topic_callbacks:
+                patterns = list(dict.fromkeys(pattern for pattern, _, _ in self._topic_callbacks))
+                self.subscribe([(pattern, 0) for pattern in patterns])
             for cb in self._connect_callbacks:
                 try:
                     cb(client, userdata, flags, rc)
@@ -68,11 +73,14 @@ class MqttClient:
             logger.error("[MQTT] %s: %s", int(rc), msg)
 
     def _on_message(self, client, userdata, msg):
-        for cb in self._message_callbacks:
-            try:
-                cb(client, userdata, msg)
-            except Exception as e:
-                logger.error("Error in message callback: %r", e)
+        topic = msg.topic
+        payload = msg.payload.decode()
+        for pattern, regex, cb in self._topic_callbacks:
+            if regex.match(topic):
+                try:
+                    cb(topic, payload)
+                except Exception as e:
+                    logger.error("Error in topic callback (pattern=%s): %r", pattern, e)
 
     def _on_subscribe(self, client, userdata, mid, granted_qos):
         logger.debug("Subscribed to topic. mid: %s, qos: %s", mid, granted_qos)
@@ -86,13 +94,31 @@ class MqttClient:
         """MQTT 브로커에 정상 연결(또는 재연결)되었을 때 호출될 콜백을 등록합니다."""
         self._connect_callbacks.append(callback)
 
-    def register_message_callback(self, callback) -> None:
-        """메시지가 수신되었을 때 호출될 콜백을 등록합니다."""
-        self._message_callbacks.append(callback)
-
     def register_subscribe_callback(self, callback) -> None:
         """토픽 구독이 완료되었을 때 호출될 콜백을 등록합니다."""
         self._subscribe_callbacks.append(callback)
+
+    def register_topic_callback(
+        self, topic_pattern: str, callback: Callable[[str, str], None]
+    ) -> None:
+        """토픽 패턴(`#`, `+` 와일드카드 지원) 매칭 시 `callback(topic, payload)`를 호출합니다.
+
+        등록된 패턴은 연결(재연결 포함) 시 자동으로 구독됩니다.
+        """
+        regex = self._compile_topic_pattern(topic_pattern)
+        self._topic_callbacks.append((topic_pattern, regex, callback))
+
+    @staticmethod
+    def _compile_topic_pattern(pattern: str) -> re.Pattern:
+        regex_parts = []
+        for part in pattern.split("/"):
+            if part == "#":
+                regex_parts.append(".*")
+            elif part == "+":
+                regex_parts.append("[^/]+")
+            else:
+                regex_parts.append(re.escape(part))
+        return re.compile("^" + "/".join(regex_parts) + "$")
 
     def publish(self, topic: str, payload: str, retain: bool = True) -> None:
         """MQTT 브로커로 메시지를 발행(Publish)합니다."""

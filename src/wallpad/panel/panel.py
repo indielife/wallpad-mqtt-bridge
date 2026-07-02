@@ -5,7 +5,14 @@ import time
 
 from wallpad.config import AppConfig
 from wallpad.devices.base import BaseDevice
-from wallpad.mqtt import MqttClient
+from wallpad.mqtt import (
+    TOPIC_BRIDGE_CHECKSUM,
+    TOPIC_BRIDGE_PACKET,
+    TOPIC_BRIDGE_REMOVE,
+    TOPIC_BRIDGE_RESTART,
+    TOPIC_BRIDGE_SCAN,
+    MqttClient,
+)
 from wallpad.panel.factory import DeviceFactory
 from wallpad.panel.state import RoomState, ScanState, SubDeviceState
 from wallpad.protocol.kocom.constants import (
@@ -66,7 +73,7 @@ class Panel:
 
         self._loop: asyncio.AbstractEventLoop | None = None
         self.mqtt_client.register_connect_callback(self.on_connect)
-        self.mqtt_client.register_message_callback(self.on_message)
+        self._register_topic_routes()
 
     async def start(self) -> list[asyncio.Task]:
         await self.transport.connect()
@@ -76,15 +83,23 @@ class Panel:
         return [self._task_read, self._task_scan]
 
     def on_connect(self, *_):
-        self._subscribe_ha_topics()
         self._publish_ha_discovery()
 
-    def _subscribe_ha_topics(self):
-        subscribe_list = [("wallpad/bridge/#", 0)]
+    def _register_topic_routes(self) -> None:
         for device in self.devices:
+            command_topics = device.get_command_topics()
+            for topic in command_topics:
+                self.mqtt_client.register_topic_callback(topic, self._handle_device_command)
+            command_topics_set = set(command_topics)
             for topic in device.get_subscribe_topics():
-                subscribe_list.append((topic, 0))
-        self.mqtt_client.subscribe(subscribe_list)
+                if topic not in command_topics_set:
+                    self.mqtt_client.register_topic_callback(topic, self._handle_discovery_echo)
+
+        self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_RESTART, self._handle_restart)
+        self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_REMOVE, self._handle_remove)
+        self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_SCAN, self._handle_scan)
+        self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_PACKET, self._handle_packet_debug)
+        self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_CHECKSUM, self._handle_checksum_debug)
 
     def _publish_ha_discovery(self, remove=False):
         publish_list = []
@@ -103,57 +118,34 @@ class Panel:
 
         self.ha_registry = ha_topic
 
-    def on_message(self, client, obj, msg):  # noqa: C901
-        _topic = msg.topic.split("/")
-        _payload = msg.payload.decode()
-
-        if (
-            "config" in _topic
-            and _topic[0] == "wallpad"
-            and _topic[1] == "bridge"
-            and _topic[2] == "config"
-        ):
-            if _topic[3] == "log_level":
-                if _payload == "info":
-                    logging.getLogger().setLevel(logging.INFO)
-                if _payload == "debug":
-                    logging.getLogger().setLevel(logging.DEBUG)
-                if _payload == "warn":
-                    logging.getLogger().setLevel(logging.WARN)
-                logger.info("[From HA]Set Loglevel to %s", _payload)
-                return
-            elif _topic[3] == "restart":
-                self._publish_ha_discovery()
-                logger.info("[From HA]HomeAssistant Restart")
-                return
-            elif _topic[3] == "remove":
-                self._publish_ha_discovery(remove=True)
-                logger.info("[From HA]HomeAssistant Remove")
-                return
-            elif _topic[3] == "scan":
-                self.device_states.reset_scan_states()
-                logger.info("[From HA]HomeAssistant Scan")
-                return
-            elif _topic[3] == "packet":
-                self.packet_parsing(_payload.lower(), source="HA")
-                return
-            elif _topic[3] == "check_sum":
-                chksum = self.parser.validate_checksum(_payload.lower())
-                logger.info("[From HA]%s = %s(%s)", _payload, chksum[0], chksum[1])
-                return
-        elif self.ha_ready.is_set():
-            if len(_topic) < 4:
-                logger.warning(
-                    "[MQTT] 길이가 짧은 예외 토픽 진입 차단: %s = %s", msg.topic, _payload
-                )
-                return
-
-            self.parse_message(_topic, _payload)
+    def _handle_device_command(self, topic: str, payload: str) -> None:
+        if not self.ha_ready.is_set():
             return
-        logger.info("Message: %s = %s", msg.topic, _payload)
+        self.parse_message(topic.split("/"), payload)
 
-        if self.ha_registry is not False and self.ha_registry == msg.topic and self._loop:
+    def _handle_discovery_echo(self, topic: str, payload: str) -> None:
+        logger.info("Message: %s = %s", topic, payload)
+        if self.ha_registry is not False and self.ha_registry == topic and self._loop:
             self._loop.call_soon_threadsafe(self.ha_ready.set)
+
+    def _handle_restart(self, topic: str, payload: str) -> None:
+        self._publish_ha_discovery()
+        logger.info("[From HA]HomeAssistant Restart")
+
+    def _handle_remove(self, topic: str, payload: str) -> None:
+        self._publish_ha_discovery(remove=True)
+        logger.info("[From HA]HomeAssistant Remove")
+
+    def _handle_scan(self, topic: str, payload: str) -> None:
+        self.device_states.reset_scan_states()
+        logger.info("[From HA]HomeAssistant Scan")
+
+    def _handle_packet_debug(self, topic: str, payload: str) -> None:
+        self.packet_parsing(payload.lower(), source="HA")
+
+    def _handle_checksum_debug(self, topic: str, payload: str) -> None:
+        chksum = self.parser.validate_checksum(payload.lower())
+        logger.info("[From HA]%s = %s(%s)", payload, chksum[0], chksum[1])
 
     def parse_message(self, topic_parts: list[str], payload: str) -> None:
         topic_str = "/".join(topic_parts)

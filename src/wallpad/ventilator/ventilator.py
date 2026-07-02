@@ -7,6 +7,8 @@ from wallpad.mqtt import (
     HA_FAN,
     HA_PREFIX,
     HA_SENSOR,
+    TOPIC_BRIDGE_REMOVE,
+    TOPIC_BRIDGE_RESTART,
     MqttClient,
 )
 from wallpad.protocol.grex.constants import (
@@ -48,8 +50,6 @@ class Ventilator:
             )
             self.default_speed = "low"
 
-        self.mqtt_client.register_connect_callback(self.on_connect)
-        self.mqtt_client.register_message_callback(self.on_message)
         self.packet_builder = GrexPacketBuilder()
         self.parser = GrexPacketParser()
         self.device = GrexVentilator(
@@ -57,6 +57,9 @@ class Ventilator:
             sw_version=self.config.sw_version,
             packet_builder=self.packet_builder,
         )
+
+        self.mqtt_client.register_connect_callback(self.on_connect)
+        self._register_topic_routes()
 
     async def start(self) -> list[asyncio.Task]:
         await self.controller_transport.connect()
@@ -66,41 +69,47 @@ class Ventilator:
         return [self._task_ctrl, self._task_vent]
 
     def on_connect(self, *_):
-        self._subscribe_ha_topics()
         self._publish_ha_discovery()
 
-    def _subscribe_ha_topics(self):
-        subscribe_list = [("wallpad/bridge/#", 0)]
+    def _register_topic_routes(self) -> None:
         for topic in self.device.get_subscribe_topics():
-            subscribe_list.append((topic, 0))
-        self.mqtt_client.subscribe(subscribe_list)
+            self.mqtt_client.register_topic_callback(topic, self._handle_fan_command)
+
+        self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_RESTART, self._handle_restart)
+        self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_REMOVE, self._handle_remove)
 
     def _publish_ha_discovery(self, remove=False):
         for topic, payload in self.device.get_discovery_payloads(remove=remove):
             self.mqtt_client.publish(topic, payload, retain=True)
 
-    def on_message(self, client, obj, msg):
-        _topic = msg.topic.split("/")
-        _payload = msg.payload.decode()
+    def _handle_fan_command(self, topic: str, payload: str) -> None:
+        if topic.endswith("/config"):
+            return  # discovery config 토픽 echo는 HA 명령이 아니므로 무시
 
-        if "config" in _topic:
-            if _topic[0] == "wallpad" and _topic[3] == "restart":
-                self._publish_ha_discovery()
-                return
-        elif _topic[0] == HA_PREFIX and _topic[1] == HA_FAN and _topic[2] == "grex":
-            logger.info("Message Fan: %s = %s", msg.topic, _payload)
-            if _topic[3] == "speed" or _topic[3] == "mode":
-                if (
-                    _topic[3] == "mode"
-                    and self.mqtt_cont[_topic[3]] == "off"
-                    and _payload == "on"
-                    and self.mqtt_cont["speed"] == "off"
-                ):
-                    self.mqtt_cont["speed"] = self.default_speed
-                self.mqtt_cont[_topic[3]] = _payload
+        logger.info("Message Fan: %s = %s", topic, payload)
+        key = topic.rsplit("/", 1)[-1]
+        if key not in ("speed", "mode"):
+            return
 
-                if self.mqtt_cont["mode"] == "off" and self.mqtt_cont["speed"] == "off":
-                    self.publish_state_to_ha(HA_FAN, self.mqtt_cont)
+        if (
+            key == "mode"
+            and self.mqtt_cont["mode"] == "off"
+            and payload == "on"
+            and self.mqtt_cont["speed"] == "off"
+        ):
+            self.mqtt_cont["speed"] = self.default_speed
+        self.mqtt_cont[key] = payload
+
+        if self.mqtt_cont["mode"] == "off" and self.mqtt_cont["speed"] == "off":
+            self.publish_state_to_ha(HA_FAN, self.mqtt_cont)
+
+    def _handle_restart(self, topic: str, payload: str) -> None:
+        self._publish_ha_discovery()
+        logger.info("[From HA]HomeAssistant Restart")
+
+    def _handle_remove(self, topic: str, payload: str) -> None:
+        self._publish_ha_discovery(remove=True)
+        logger.info("[From HA]HomeAssistant Remove")
 
     def publish_state_to_ha(self, target, value):
         if target == HA_FAN:
