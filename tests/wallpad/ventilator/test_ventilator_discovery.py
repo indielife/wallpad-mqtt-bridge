@@ -24,7 +24,6 @@ def ventilator_factory():
     mock_mqtt_client.publish_json.side_effect = lambda topic, payload, retain=True: (
         mock_mqtt_instance.publish(topic, json.dumps(payload, ensure_ascii=False), retain=retain)
     )
-    mock_mqtt_client.subscribe.side_effect = mock_mqtt_instance.subscribe
 
     def _create():
         mock_config = MagicMock()
@@ -76,12 +75,11 @@ def test_ventilator_publish_ha_discovery(snapshot, ventilator_factory):
     mock_mqtt_instance.subscribe.assert_not_called()
 
 
-def test_ventilator_subscribe_ha_topics(snapshot, ventilator_factory):
-    ventilator, mock_mqtt_instance = ventilator_factory()
+def test_ventilator_register_topic_routes(snapshot, ventilator_factory):
+    """Ventilator 생성 시 fan 토픽과 bridge 커맨드 토픽이 등록되는지 검증."""
+    ventilator, _ = ventilator_factory()
 
-    ventilator._subscribe_ha_topics()
-
-    subscribe_calls = mock_mqtt_instance.subscribe.call_args_list
-    assert len(subscribe_calls) > 0
-    subscribe_list = subscribe_calls[0][0][0]
-    assert subscribe_list == snapshot(name="grex_subscribe_topics")
+    register_calls = ventilator.mqtt_client.register_topic_callback.call_args_list
+    assert len(register_calls) > 0
+    registered_topics = [call.args[0] for call in register_calls]
+    assert registered_topics == snapshot(name="grex_registered_topics")
