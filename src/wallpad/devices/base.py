@@ -1,4 +1,4 @@
-from wallpad.panel.topic import TopicContext
+from wallpad.devices.topic import TopicContext
 
 from .packet_builder import PacketBuilder
 

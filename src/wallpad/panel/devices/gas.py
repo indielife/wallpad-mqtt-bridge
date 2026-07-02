@@ -3,7 +3,7 @@ import logging
 
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
-from wallpad.panel.topic import TopicContext
+from wallpad.devices.topic import TopicContext
 from wallpad.protocol.kocom.constants import DEVICE_GAS, KOCOM_COMMAND_REV, KOCOM_DEVICE_REV
 
 logger = logging.getLogger(__name__)
