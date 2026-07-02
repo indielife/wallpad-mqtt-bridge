@@ -19,7 +19,6 @@ def test_mqtt_client_init():
         assert mqtt_client.client == client_instance
         assert mqtt_client._connected is False
         assert mqtt_client._connect_callbacks == []
-        assert mqtt_client._message_callbacks == []
         assert mqtt_client._subscribe_callbacks == []
         assert mqtt_client._topic_callbacks == []
 
@@ -80,11 +79,9 @@ def test_mqtt_client_callbacks():
         mqtt_client = MqttClient(config)
 
         connect_cb = MagicMock()
-        message_cb = MagicMock()
         subscribe_cb = MagicMock()
 
         mqtt_client.register_connect_callback(connect_cb)
-        mqtt_client.register_message_callback(message_cb)
         mqtt_client.register_subscribe_callback(subscribe_cb)
 
         # Test on_connect success
@@ -96,11 +93,6 @@ def test_mqtt_client_callbacks():
         connect_cb.reset_mock()
         mqtt_client._on_connect(mqtt_client.client, None, {}, 5)
         connect_cb.assert_not_called()
-
-        # Test on_message
-        msg = MagicMock()
-        mqtt_client._on_message(mqtt_client.client, None, msg)
-        message_cb.assert_called_once_with(mqtt_client.client, None, msg)
 
         # Test on_subscribe
         mqtt_client._on_subscribe(mqtt_client.client, None, 1, [0])
@@ -145,20 +137,6 @@ def test_mqtt_client_callback_exceptions(caplog):
         assert "Error in connect callback" in caplog.text
         bad_cb.assert_called_once()
         good_cb.assert_called_once()
-
-        # For message callback exception
-        bad_msg_cb = MagicMock(side_effect=ValueError("bad msg cb"))
-        good_msg_cb = MagicMock()
-        mqtt_client.register_message_callback(bad_msg_cb)
-        mqtt_client.register_message_callback(good_msg_cb)
-
-        msg = MagicMock()
-        with caplog.at_level(logging.ERROR):
-            mqtt_client._on_message(mqtt_client.client, None, msg)
-
-        assert "Error in message callback" in caplog.text
-        bad_msg_cb.assert_called_once()
-        good_msg_cb.assert_called_once()
 
         # For subscribe callback exception
         bad_sub_cb = MagicMock(side_effect=ValueError("bad sub cb"))

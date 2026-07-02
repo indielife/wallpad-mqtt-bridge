@@ -27,7 +27,6 @@ class MqttClient:
         self.client.on_message = self._on_message
         self.client.on_subscribe = self._on_subscribe
         self._connect_callbacks = []
-        self._message_callbacks = []
         self._subscribe_callbacks = []
         self._topic_callbacks: list[tuple[str, re.Pattern, Callable[[str, str], None]]] = []
         self._connected = False
@@ -74,12 +73,6 @@ class MqttClient:
             logger.error("[MQTT] %s: %s", int(rc), msg)
 
     def _on_message(self, client, userdata, msg):
-        for cb in self._message_callbacks:
-            try:
-                cb(client, userdata, msg)
-            except Exception as e:
-                logger.error("Error in message callback: %r", e)
-
         topic = msg.topic
         payload = msg.payload.decode()
         for pattern, regex, cb in self._topic_callbacks:
@@ -100,10 +93,6 @@ class MqttClient:
     def register_connect_callback(self, callback) -> None:
         """MQTT 브로커에 정상 연결(또는 재연결)되었을 때 호출될 콜백을 등록합니다."""
         self._connect_callbacks.append(callback)
-
-    def register_message_callback(self, callback) -> None:
-        """메시지가 수신되었을 때 호출될 콜백을 등록합니다."""
-        self._message_callbacks.append(callback)
 
     def register_subscribe_callback(self, callback) -> None:
         """토픽 구독이 완료되었을 때 호출될 콜백을 등록합니다."""
