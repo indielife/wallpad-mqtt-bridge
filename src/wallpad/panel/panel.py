@@ -24,7 +24,6 @@ from wallpad.protocol.kocom.constants import (
     DEVICE_THERMOSTAT,
     DEVICE_WALLPAD,
     KOCOM_INTERVAL,
-    KOCOM_TYPE_REV,
 )
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 from wallpad.protocol.kocom.parser import KocomPacketParser
@@ -58,7 +57,9 @@ class Panel:
         self.scan_packet_buf = []
 
         self.tick = time.time()
-        self.packet_builder = KocomPacketBuilder()
+        self.packet_builder = KocomPacketBuilder(
+            room_rev=config.kocom_room_rev, room_thermostat_rev=config.kocom_room_thermostat_rev
+        )
         self.parser = KocomPacketParser(config)
         self.devices, self.device_states = DeviceFactory.build(
             config, self.name, self.packet_builder
@@ -422,19 +423,12 @@ class Panel:
                 target=target,
                 value=value,
                 room_state=room_state,
-                room_rev=self.config.kocom_room_rev,
-                room_thermostat_rev=self.config.kocom_room_thermostat_rev,
             )
             if built_packet:
                 return built_packet
 
         # 3. 객체에서 처리되지 않은 공통 명령(예: 방 전체 '조회')은 빌더를 통해 직접 생성
         if cmd == "조회":
-            return self.packet_builder.build_scan_packet(
-                device=device,
-                room=room,
-                room_rev=self.config.kocom_room_rev,
-                room_thermostat_rev=self.config.kocom_room_thermostat_rev,
-            )
+            return self.packet_builder.build_scan_packet(device=device, room=room)
 
         return None
