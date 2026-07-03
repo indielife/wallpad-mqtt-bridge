@@ -3,7 +3,7 @@ import json
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.devices.topic import TopicContext
-from wallpad.protocol.kocom.constants import DEVICE_FAN, KOCOM_FAN_SPEED_REV
+from wallpad.protocol.kocom.constants import DEVICE_FAN, KOCOM_HEX_BY_FAN_SPEED
 
 
 class Fan(BaseDevice):
@@ -68,7 +68,7 @@ class Fan(BaseDevice):
                 value_hex += "1100"
             elif mode == "off":
                 value_hex += "0001"
-            value_hex += KOCOM_FAN_SPEED_REV.get(speed, "0")
+            value_hex += KOCOM_HEX_BY_FAN_SPEED.get(speed, "0")
             value_hex += "00000000000"
         except Exception:
             return None

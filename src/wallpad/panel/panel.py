@@ -24,7 +24,6 @@ from wallpad.protocol.kocom.constants import (
     DEVICE_THERMOSTAT,
     DEVICE_WALLPAD,
     KOCOM_INTERVAL,
-    KOCOM_TYPE_REV,
 )
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 from wallpad.protocol.kocom.parser import KocomPacketParser

@@ -1,5 +1,5 @@
 from wallpad.devices.packet_builder import PacketBuilder
-from wallpad.protocol.kocom.constants import KOCOM_COMMAND_REV, KOCOM_DEVICE_REV
+from wallpad.protocol.kocom.constants import KOCOM_HEX_BY_COMMAND, KOCOM_HEX_BY_DEVICE
 
 
 class KocomPacketBuilder(PacketBuilder):
@@ -14,14 +14,14 @@ class KocomPacketBuilder(PacketBuilder):
 
     def encode(self, *, src: str, dst: str, room: str, cmd: str, value_hex: str) -> str:
         """기기 이름과 방 이름으로 Kocom 주소·명령 니블을 조립해 패킷을 생성합니다."""
-        device_hex = KOCOM_DEVICE_REV.get(src, "")
+        device_hex = KOCOM_HEX_BY_DEVICE.get(src, "")
         room_hex = (
             self.room_thermostat_rev.get(room, "")
             if src == "thermostat"
             else self.room_rev.get(room, "")
         )
-        dst_hex = KOCOM_DEVICE_REV.get(dst, "") + self.room_rev.get("wallpad", "")
-        cmd_hex = KOCOM_COMMAND_REV.get(cmd, "")
+        dst_hex = KOCOM_HEX_BY_DEVICE.get(dst, "") + self.room_rev.get("wallpad", "")
+        cmd_hex = KOCOM_HEX_BY_COMMAND.get(cmd, "")
         return self.build(
             device_hex=device_hex,
             room_hex=room_hex,

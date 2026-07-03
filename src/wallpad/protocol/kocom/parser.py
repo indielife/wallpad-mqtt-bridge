@@ -10,10 +10,10 @@ from wallpad.protocol.kocom.constants import (
     DEVICE_PLUG,
     DEVICE_THERMOSTAT,
     DEVICE_WALLPAD,
-    KOCOM_COMMAND,
-    KOCOM_DEVICE,
-    KOCOM_FAN_SPEED,
-    KOCOM_TYPE,
+    KOCOM_COMMAND_BY_HEX,
+    KOCOM_DEVICE_BY_HEX,
+    KOCOM_FAN_SPEED_BY_HEX,
+    KOCOM_TYPE_BY_HEX,
 )
 
 logger = logging.getLogger(__name__)
@@ -47,12 +47,12 @@ class KocomPacketParser(PacketParser):
             p["header"] = packet[:4]
             p["type"] = packet[4:7]
             p["order"] = packet[7:8]
-            if KOCOM_TYPE.get(p["type"]) == "send":
+            if KOCOM_TYPE_BY_HEX.get(p["type"]) == "send":
                 p["dst_device"] = packet[10:12]
                 p["dst_room"] = packet[12:14]
                 p["src_device"] = packet[14:16]
                 p["src_room"] = packet[16:18]
-            elif KOCOM_TYPE.get(p["type"]) == "ack":
+            elif KOCOM_TYPE_BY_HEX.get(p["type"]) == "ack":
                 p["src_device"] = packet[10:12]
                 p["src_room"] = packet[12:14]
                 p["dst_device"] = packet[14:16]
@@ -71,15 +71,15 @@ class KocomPacketParser(PacketParser):
     def _value_packet(self, p: dict, device_states=None) -> dict | None:
         v: dict = {}
         try:
-            v["type"] = KOCOM_TYPE.get(p["type"])
-            v["command"] = KOCOM_COMMAND.get(p["command"])
-            v["src_device"] = KOCOM_DEVICE.get(p["src_device"])
+            v["type"] = KOCOM_TYPE_BY_HEX.get(p["type"])
+            v["command"] = KOCOM_COMMAND_BY_HEX.get(p["command"])
+            v["src_device"] = KOCOM_DEVICE_BY_HEX.get(p["src_device"])
             v["src_room"] = (
                 self._config.kocom_room.get(p["src_room"])
                 if v["src_device"] != DEVICE_THERMOSTAT
                 else self._config.kocom_room_thermostat.get(p["src_room"])
             )
-            v["dst_device"] = KOCOM_DEVICE.get(p["dst_device"])
+            v["dst_device"] = KOCOM_DEVICE_BY_HEX.get(p["dst_device"])
             v["dst_room"] = (
                 self._config.kocom_room.get(p["dst_room"])
                 if v["src_device"] != DEVICE_THERMOSTAT
@@ -112,7 +112,7 @@ class KocomPacketParser(PacketParser):
     def _parse_fan(self, value: str) -> dict:
         return {
             "mode": "on" if value[:2] == "11" else "off",
-            "speed": KOCOM_FAN_SPEED.get(value[4:5]),
+            "speed": KOCOM_FAN_SPEED_BY_HEX.get(value[4:5]),
         }
 
     def _parse_switch(self, device: str, room: str, value: str) -> dict:
