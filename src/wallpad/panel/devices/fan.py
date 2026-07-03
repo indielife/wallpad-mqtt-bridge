@@ -3,12 +3,7 @@ import json
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.devices.topic import TopicContext
-from wallpad.protocol.kocom.constants import (
-    DEVICE_FAN,
-    KOCOM_COMMAND_REV,
-    KOCOM_DEVICE_REV,
-    KOCOM_FAN_SPEED_REV,
-)
+from wallpad.protocol.kocom.constants import DEVICE_FAN, KOCOM_FAN_SPEED_REV
 
 
 class Fan(BaseDevice):
@@ -65,13 +60,6 @@ class Fan(BaseDevice):
     def build_packet(
         self, cmd: str, target: str, value: str, room_state: dict, **kwargs
     ) -> str | None:
-        room_rev = kwargs.get("room_rev", {})
-
-        device_hex = KOCOM_DEVICE_REV.get(self.sub_device, "48")
-        room_hex = room_rev.get(self.room, "00")
-        dst_hex = KOCOM_DEVICE_REV.get("wallpad", "01") + room_rev.get("wallpad", "00")
-        cmd_hex = KOCOM_COMMAND_REV.get(cmd, "00")
-
         value_hex = ""
         try:
             mode = room_state.get("mode", {}).get("set", "off")
@@ -86,11 +74,11 @@ class Fan(BaseDevice):
             return None
 
         if self.packet_builder:
-            return self.packet_builder.build(
-                device_hex=device_hex,
-                room_hex=room_hex,
-                dst_hex=dst_hex,
-                cmd_hex=cmd_hex,
+            return self.packet_builder.encode(
+                src=self.sub_device,
+                dst="wallpad",
+                room=self.room,
+                cmd=cmd,
                 value_hex=value_hex,
             )
         return None

@@ -68,7 +68,10 @@ def panel_instance():
             }
         },
     }
-    panel.packet_builder = KocomPacketBuilder()
+    panel.packet_builder = KocomPacketBuilder(
+        room_rev=mock_config.kocom_room_rev,
+        room_thermostat_rev=mock_config.kocom_room_thermostat_rev,
+    )
     panel.devices = [
         Light(
             name_prefix="test",

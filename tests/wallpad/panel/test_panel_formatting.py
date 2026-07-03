@@ -54,7 +54,10 @@ def test_panel_make_packet_thermostat_temp_format():
     panel.device_states = {
         DEVICE_THERMOSTAT: {"room1": {"mode": {"set": "heat"}, "target_temp": {"set": 25.0}}}
     }
-    panel.packet_builder = KocomPacketBuilder()
+    panel.packet_builder = KocomPacketBuilder(
+        room_rev=mock_config.kocom_room_rev,
+        room_thermostat_rev=mock_config.kocom_room_thermostat_rev,
+    )
     panel.devices = [
         Thermostat(
             name_prefix="test", room="room1", sw_version="1.0", packet_builder=panel.packet_builder
