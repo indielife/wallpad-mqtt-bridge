@@ -2,7 +2,7 @@ import json
 
 from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
-from wallpad.panel.topic import TopicContext
+from wallpad.devices.topic import TopicContext
 from wallpad.protocol.kocom.constants import DEVICE_ELEVATOR, KOCOM_COMMAND_REV, KOCOM_DEVICE_REV
 
 
