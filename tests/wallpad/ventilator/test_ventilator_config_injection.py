@@ -29,11 +29,11 @@ def test_ventilator_initial_state(
     # 2. 통신 연결 정보 및 디바이스 상태 객체 검증
     assert ventilator.controller_transport == mock_controller_transport
     assert ventilator.ventilator_transport == mock_ventilator_transport
-    assert ventilator.grex_cont == {"mode": "off", "speed": "off"}
-    assert ventilator.vent_cont == {"mode": "off", "speed": "off"}
-    assert ventilator.mqtt_cont == {"mode": "off", "speed": "off"}
-    assert ventilator.device is not None
-    assert ventilator.device.name_prefix == "grex"
+    assert ventilator.state.controller_status == {"mode": "off", "speed": "off"}
+    assert ventilator.state.ventilator_status == {"mode": "off", "speed": "off"}
+    assert ventilator.state.desired == {"mode": "off", "speed": "off"}
+    assert ventilator.unit is not None
+    assert ventilator.unit.name_prefix == "grex"
 
 
 def test_ventilator_default_speed_fallback(

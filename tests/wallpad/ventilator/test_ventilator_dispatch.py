@@ -87,13 +87,13 @@ def ventilator_with_mock_publish(ventilator_instance):
 async def test_handle_controller_status_state_change_updates_cont(
     ventilator_with_mock_publish,
 ):
-    """상태 변경 시 grex_cont가 갱신되고 HA에 publish된다."""
+    """상태 변경 시 controller_status가 갱신되고 HA에 publish된다."""
     v = ventilator_with_mock_publish
     parsed = {"type": PREFIX_CONTROLLER_STATUS, "mode": "auto", "speed": "low"}
 
     await v.handle_controller_status(parsed)
 
-    assert v.grex_cont == {"mode": "auto", "speed": "low"}
+    assert v.state.controller_status == {"mode": "auto", "speed": "low"}
     assert v.publish_state_to_ha.call_count == 2
     calls = {c.args[0] for c in v.publish_state_to_ha.call_args_list}
     assert HA_FAN in calls
@@ -105,7 +105,7 @@ async def test_handle_controller_status_no_change_skips_publish(
 ):
     """이전 상태와 동일하면 publish가 발생하지 않는다."""
     v = ventilator_with_mock_publish
-    v.grex_cont = {"mode": "auto", "speed": "low"}
+    v.state.controller_status = {"mode": "auto", "speed": "low"}
     parsed = {"type": PREFIX_CONTROLLER_STATUS, "mode": "auto", "speed": "low"}
 
     await v.handle_controller_status(parsed)
@@ -121,13 +121,13 @@ async def test_handle_controller_status_no_change_skips_publish(
 def test_handle_ventilator_status_speed_change_updates_cont(
     ventilator_with_mock_publish,
 ):
-    """속도 변경 시 vent_cont가 갱신되고 HA에 publish된다."""
+    """속도 변경 시 ventilator_status가 갱신되고 HA에 publish된다."""
     v = ventilator_with_mock_publish
     parsed = {"type": PREFIX_VENTILATOR_STATUS, "speed": "medium"}
 
     v.handle_ventilator_status(parsed)
 
-    assert v.vent_cont["speed"] == "medium"
+    assert v.state.ventilator_status["speed"] == "medium"
     assert v.publish_state_to_ha.call_count == 2
 
 
@@ -136,64 +136,9 @@ def test_handle_ventilator_status_no_change_skips_publish(
 ):
     """이전 속도와 동일하면 publish가 발생하지 않는다."""
     v = ventilator_with_mock_publish
-    v.vent_cont = {"speed": "medium"}
+    v.state.ventilator_status = {"speed": "medium"}
     parsed = {"type": PREFIX_VENTILATOR_STATUS, "speed": "medium"}
 
     v.handle_ventilator_status(parsed)
 
     v.publish_state_to_ha.assert_not_called()
-
-
-# ---------------------------------------------------------------------------
-# _build_ha_sensor_payload 매핑 테스트
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize(
-    ("mode", "mqtt_mode", "expected_fan_mode"),
-    [
-        ("auto", "off", "자동"),
-        ("manual", "off", "수동"),
-        ("sleep", "off", "취침"),
-        ("off", "on", "HA"),
-        ("off", "off", "off"),
-    ],
-)
-def test_build_ha_sensor_payload_fan_mode_mapping(
-    ventilator_instance, mode, mqtt_mode, expected_fan_mode
-):
-    """mode(+ mqtt_cont 상태)가 한글 fan_mode로 매핑된다."""
-    v = ventilator_instance
-    v.mqtt_cont["mode"] = mqtt_mode
-
-    payload = v._build_ha_sensor_payload(mode, "off")
-
-    assert payload["fan_mode"] == expected_fan_mode
-
-
-@pytest.mark.parametrize(
-    ("speed", "expected_fan_speed"),
-    [
-        ("low", "1단"),
-        ("medium", "2단"),
-        ("high", "3단"),
-        ("off", "대기"),
-    ],
-)
-def test_build_ha_sensor_payload_fan_speed_mapping(ventilator_instance, speed, expected_fan_speed):
-    """speed가 한글 fan_speed로 매핑된다 (mode는 항상 통과되는 상태로 고정)."""
-    v = ventilator_instance
-
-    payload = v._build_ha_sensor_payload("manual", speed)
-
-    assert payload["fan_speed"] == expected_fan_speed
-
-
-def test_build_ha_sensor_payload_guard_blocks_when_off_and_mqtt_off(ventilator_instance):
-    """mode가 off이고 mqtt_cont도 off이면 가드에 걸려 off/off 그대로 반환한다."""
-    v = ventilator_instance
-    v.mqtt_cont["mode"] = "off"
-
-    payload = v._build_ha_sensor_payload("off", "low")
-
-    assert payload == {"fan_mode": "off", "fan_speed": "off"}

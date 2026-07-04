@@ -5,14 +5,12 @@ import logging
 from wallpad.config import AppConfig
 from wallpad.mqtt import (
     HA_FAN,
-    HA_PREFIX,
     HA_SENSOR,
     TOPIC_BRIDGE_REMOVE,
     TOPIC_BRIDGE_RESTART,
     MqttClient,
 )
 from wallpad.protocol.grex.constants import (
-    DEVICE_FAN,
     PREFIX_CONTROLLER_ERROR,
     PREFIX_CONTROLLER_STATUS,
     PREFIX_VENTILATOR_STATUS,
@@ -20,7 +18,8 @@ from wallpad.protocol.grex.constants import (
 from wallpad.protocol.grex.packet_builder import GrexPacketBuilder
 from wallpad.protocol.grex.parser import GrexPacketParser
 from wallpad.transport import BaseTransport
-from wallpad.ventilator.devices import GrexVentilator
+from wallpad.ventilator.devices import GrexVentilatorController, GrexVentilatorUnit
+from wallpad.ventilator.state import VentilatorState
 
 logger = logging.getLogger(__name__)
 
@@ -34,13 +33,10 @@ class Ventilator:
         ventilator_transport: BaseTransport,
     ):
         self.config = config
-        self.name = "grex"
         self.controller_transport = controller_transport
         self.ventilator_transport = ventilator_transport
         self.mqtt_client = mqtt_client
-        self.grex_cont = {"mode": "off", "speed": "off"}
-        self.vent_cont = {"mode": "off", "speed": "off"}
-        self.mqtt_cont = {"mode": "off", "speed": "off"}
+        self.state = VentilatorState()
 
         self.default_speed = config.ventilator_default_speed
         if self.default_speed not in ["low", "medium", "high"]:
@@ -52,11 +48,14 @@ class Ventilator:
 
         self.packet_builder = GrexPacketBuilder()
         self.parser = GrexPacketParser()
-        self.device = GrexVentilator(
-            name_prefix=self.name,
+        self.unit = GrexVentilatorUnit(
             sw_version=self.config.sw_version,
             packet_builder=self.packet_builder,
         )
+        self.controller = GrexVentilatorController(
+            sw_version=self.config.sw_version,
+        )
+        self.devices = [self.unit, self.controller]
 
         self.mqtt_client.register_connect_callback(self.on_connect)
         self._register_topic_routes()
@@ -72,36 +71,36 @@ class Ventilator:
         self._publish_ha_discovery()
 
     def _register_topic_routes(self) -> None:
-        for topic in self.device.get_subscribe_topics():
-            self.mqtt_client.register_topic_callback(topic, self._handle_fan_command)
+        for device in self.devices:
+            for topic in device.get_subscribe_topics():
+                self.mqtt_client.register_topic_callback(topic, self._handle_fan_command)
 
         self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_RESTART, self._handle_restart)
         self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_REMOVE, self._handle_remove)
 
     def _publish_ha_discovery(self, remove=False):
-        for topic, payload in self.device.get_discovery_payloads(remove=remove):
-            self.mqtt_client.publish(topic, payload, retain=True)
+        for device in self.devices:
+            for topic, payload in device.get_discovery_payloads(remove=remove):
+                self.mqtt_client.publish(topic, payload, retain=True)
 
     def _handle_fan_command(self, topic: str, payload: str) -> None:
-        if topic.endswith("/config"):
-            return  # discovery config 토픽 echo는 HA 명령이 아니므로 무시
+        key = self.unit.resolve_command_key(topic)
+        if key is None:
+            return
 
         logger.info("Message Fan: %s = %s", topic, payload)
-        key = topic.rsplit("/", 1)[-1]
-        if key not in ("speed", "mode"):
-            return
 
         if (
             key == "mode"
-            and self.mqtt_cont["mode"] == "off"
+            and self.state.desired["mode"] == "off"
             and payload == "on"
-            and self.mqtt_cont["speed"] == "off"
+            and self.state.desired["speed"] == "off"
         ):
-            self.mqtt_cont["speed"] = self.default_speed
-        self.mqtt_cont[key] = payload
+            self.state.desired["speed"] = self.default_speed
+        self.state.desired[key] = payload
 
-        if self.mqtt_cont["mode"] == "off" and self.mqtt_cont["speed"] == "off":
-            self.publish_state_to_ha(HA_FAN, self.mqtt_cont)
+        if self.state.desired["mode"] == "off" and self.state.desired["speed"] == "off":
+            self.publish_state_to_ha(HA_FAN, self.state.desired)
 
     def _handle_restart(self, topic: str, payload: str) -> None:
         self._publish_ha_discovery()
@@ -113,13 +112,13 @@ class Ventilator:
 
     def publish_state_to_ha(self, target, value):
         if target == HA_FAN:
-            topic = f"{HA_PREFIX}/{HA_FAN}/grex/state"
-            self.mqtt_client.publish_json(topic, value)
-            logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
+            topic = self.unit.state_topic
         elif target == HA_SENSOR:
-            topic = f"{HA_PREFIX}/{HA_SENSOR}/grex_{DEVICE_FAN}/state"
-            self.mqtt_client.publish_json(topic, value)
-            logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
+            topic = self.controller.state_topic
+        else:
+            return
+        self.mqtt_client.publish_json(topic, value)
+        logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
 
     async def receive_packets(self, transport):
         frame_buf = []
@@ -159,7 +158,7 @@ class Ventilator:
             self.handle_ventilator_status(parsed)
 
     async def handle_controller_error(self):
-        m_packet = self.device.build_response_packet("off", "off")
+        m_packet = self.unit.build_response_packet("off", "off")
         m_chksum = self.parser.validate_checksum(m_packet)
         if m_chksum[0]:
             await self.controller_transport.write(bytearray.fromhex(m_packet))
@@ -171,41 +170,48 @@ class Ventilator:
         p_mode = parsed["mode"]
         p_speed = parsed["speed"]
 
-        if self.grex_cont["mode"] != p_mode or self.grex_cont["speed"] != p_speed:
-            self.grex_cont["mode"] = p_mode
-            self.grex_cont["speed"] = p_speed
+        if (
+            self.state.controller_status["mode"] != p_mode
+            or self.state.controller_status["speed"] != p_speed
+        ):
+            self.state.controller_status["mode"] = p_mode
+            self.state.controller_status["speed"] = p_speed
             logger.info(
                 "[From RS485] mode:%s / speed:%s",
-                self.grex_cont["mode"],
-                self.grex_cont["speed"],
+                self.state.controller_status["mode"],
+                self.state.controller_status["speed"],
             )
             send_to_ha_fan = {"mode": "off", "speed": "off"}
-            if self.grex_cont["mode"] != "off" or (
-                self.grex_cont["mode"] == "off" and self.mqtt_cont["mode"] == "on"
+            if self.state.controller_status["mode"] != "off" or (
+                self.state.controller_status["mode"] == "off" and self.state.desired["mode"] == "on"
             ):
                 send_to_ha_fan["mode"] = "on"
-                send_to_ha_fan["speed"] = self.grex_cont["speed"]
+                send_to_ha_fan["speed"] = self.state.controller_status["speed"]
             self.publish_state_to_ha(HA_FAN, send_to_ha_fan)
 
-            send_to_ha_sensor = self._build_ha_sensor_payload(
-                self.grex_cont["mode"], self.grex_cont["speed"]
+            send_to_ha_sensor = self.controller.build_sensor_payload(
+                self.state.controller_status["mode"],
+                self.state.controller_status["speed"],
+                ha_mode_on=self.state.desired["mode"] == "on",
             )
             self.publish_state_to_ha(HA_SENSOR, send_to_ha_sensor)
 
-        if self.grex_cont["mode"] == "off":
-            response_packet = self.device.build_response_packet("off", "off")
-            if self.mqtt_cont["mode"] == "off" or (
-                self.mqtt_cont["mode"] == "on" and self.mqtt_cont["speed"] == "off"
+        if self.state.controller_status["mode"] == "off":
+            response_packet = self.unit.build_response_packet("off", "off")
+            if self.state.desired["mode"] == "off" or (
+                self.state.desired["mode"] == "on" and self.state.desired["speed"] == "off"
             ):
-                control_packet = self.device.build_control_packet("off", "off")
-            elif self.mqtt_cont["mode"] == "on" and self.mqtt_cont["speed"] != "off":
-                control_packet = self.device.build_control_packet("manual", self.mqtt_cont["speed"])
+                control_packet = self.unit.build_control_packet("off", "off")
+            elif self.state.desired["mode"] == "on" and self.state.desired["speed"] != "off":
+                control_packet = self.unit.build_control_packet(
+                    "manual", self.state.desired["speed"]
+                )
         else:
-            control_packet = self.device.build_control_packet(
-                self.grex_cont["mode"], self.grex_cont["speed"]
+            control_packet = self.unit.build_control_packet(
+                self.state.controller_status["mode"], self.state.controller_status["speed"]
             )
-            response_packet = self.device.build_response_packet(
-                self.grex_cont["mode"], self.grex_cont["speed"]
+            response_packet = self.unit.build_response_packet(
+                self.state.controller_status["mode"], self.state.controller_status["speed"]
             )
 
         if response_packet != "":
@@ -215,40 +221,21 @@ class Ventilator:
 
     def handle_ventilator_status(self, parsed):
         p_speed = parsed["speed"]
-        if self.vent_cont["speed"] != p_speed:
-            self.vent_cont["speed"] = p_speed
-            logger.info("[From RS485] speed:%s", self.vent_cont["speed"])
+        if self.state.ventilator_status["speed"] != p_speed:
+            self.state.ventilator_status["speed"] = p_speed
+            logger.info("[From RS485] speed:%s", self.state.ventilator_status["speed"])
 
             send_to_ha_fan = {"mode": "off", "speed": "off"}
-            if self.grex_cont["mode"] != "off" or (
-                self.grex_cont["mode"] == "off" and self.mqtt_cont["mode"] == "on"
+            if self.state.controller_status["mode"] != "off" or (
+                self.state.controller_status["mode"] == "off" and self.state.desired["mode"] == "on"
             ):
                 send_to_ha_fan["mode"] = "on"
-                send_to_ha_fan["speed"] = self.vent_cont["speed"]
+                send_to_ha_fan["speed"] = self.state.ventilator_status["speed"]
             self.publish_state_to_ha(HA_FAN, send_to_ha_fan)
 
-            send_to_ha_sensor = self._build_ha_sensor_payload(
-                self.grex_cont["mode"], self.vent_cont["speed"]
+            send_to_ha_sensor = self.controller.build_sensor_payload(
+                self.state.controller_status["mode"],
+                self.state.ventilator_status["speed"],
+                ha_mode_on=self.state.desired["mode"] == "on",
             )
             self.publish_state_to_ha(HA_SENSOR, send_to_ha_sensor)
-
-    def _build_ha_sensor_payload(self, mode: str, speed: str) -> dict:
-        payload = {"fan_mode": "off", "fan_speed": "off"}
-        if mode != "off" or self.mqtt_cont["mode"] == "on":
-            if mode == "auto":
-                payload["fan_mode"] = "자동"
-            elif mode == "manual":
-                payload["fan_mode"] = "수동"
-            elif mode == "sleep":
-                payload["fan_mode"] = "취침"
-            elif mode == "off" and self.mqtt_cont["mode"] == "on":
-                payload["fan_mode"] = "HA"
-            if speed == "low":
-                payload["fan_speed"] = "1단"
-            elif speed == "medium":
-                payload["fan_speed"] = "2단"
-            elif speed == "high":
-                payload["fan_speed"] = "3단"
-            elif speed == "off":
-                payload["fan_speed"] = "대기"
-        return payload
