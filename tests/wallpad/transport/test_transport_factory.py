@@ -5,6 +5,10 @@ from wallpad.transport import (
     create_panel_transport,
     create_ventilator_transports,
 )
+from wallpad.transport.bus_arbitration import (
+    DEFAULT_IDLE_INTERVAL_SECONDS,
+    BusArbitrationTransport,
+)
 from wallpad.transport.reconnect import ReconnectingTransport
 from wallpad.transport.serial import SerialTransport
 from wallpad.transport.socket import SocketTransport
@@ -57,7 +61,8 @@ SOCKET_OPTIONS_JSON = {
 
 
 def test_create_panel_transport_serial(tmp_path):
-    """Serial 설정 시 ReconnectingTransport(SerialTransport)를 반환하는지 검증합니다."""
+    """Serial 설정 시 BusArbitrationTransport(ReconnectingTransport(SerialTransport))를
+    반환하는지 검증합니다."""
     options_file = tmp_path / "options.json"
     options_file.write_text(json.dumps(SERIAL_OPTIONS_JSON))
     config = AppConfig(options_path=str(options_file))
@@ -65,13 +70,16 @@ def test_create_panel_transport_serial(tmp_path):
 
     transport = create_panel_transport(config)
 
-    assert isinstance(transport, ReconnectingTransport)
-    assert isinstance(transport._transport, SerialTransport)
-    assert transport._transport.port == "/dev/ttyUSB0"
+    assert isinstance(transport, BusArbitrationTransport)
+    assert transport._idle_interval == DEFAULT_IDLE_INTERVAL_SECONDS
+    assert isinstance(transport._transport, ReconnectingTransport)
+    assert isinstance(transport._transport._transport, SerialTransport)
+    assert transport._transport._transport.port == "/dev/ttyUSB0"
 
 
 def test_create_panel_transport_socket(tmp_path, monkeypatch):
-    """Socket 설정 시 ReconnectingTransport(SocketTransport)를 반환하는지 검증합니다."""
+    """Socket 설정 시 BusArbitrationTransport(ReconnectingTransport(SocketTransport))를
+    반환하는지 검증합니다."""
     monkeypatch.delenv("WALLPAD_HOST", raising=False)
     options_file = tmp_path / "options.json"
     options_file.write_text(json.dumps(SOCKET_OPTIONS_JSON))
@@ -80,10 +88,12 @@ def test_create_panel_transport_socket(tmp_path, monkeypatch):
 
     transport = create_panel_transport(config)
 
-    assert isinstance(transport, ReconnectingTransport)
-    assert isinstance(transport._transport, SocketTransport)
-    assert transport._transport.host == "192.168.1.200"
-    assert transport._transport.port == 8899
+    assert isinstance(transport, BusArbitrationTransport)
+    assert transport._idle_interval == DEFAULT_IDLE_INTERVAL_SECONDS
+    assert isinstance(transport._transport, ReconnectingTransport)
+    assert isinstance(transport._transport._transport, SocketTransport)
+    assert transport._transport._transport.host == "192.168.1.200"
+    assert transport._transport._transport.port == 8899
 
 
 def test_create_ventilator_transports_serial(tmp_path):

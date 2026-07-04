@@ -46,6 +46,3 @@ KOCOM_HEX_BY_DEVICE = {v: k for k, v in KOCOM_DEVICE_BY_HEX.items()}
 KOCOM_HEX_BY_COMMAND = {v: k for k, v in KOCOM_COMMAND_BY_HEX.items()}
 KOCOM_HEX_BY_TYPE = {v: k for k, v in KOCOM_TYPE_BY_HEX.items()}
 KOCOM_HEX_BY_FAN_SPEED = {v: k for k, v in KOCOM_FAN_SPEED_BY_HEX.items()}
-
-# KOCOM TIME 변수
-KOCOM_INTERVAL = 100

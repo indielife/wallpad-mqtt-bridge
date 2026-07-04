@@ -16,7 +16,7 @@ RECONCILE_RETRY_INTERVAL = 1
 GAS_CONFIRM_EXTRA_DELAY = 5
 
 SendPacket = Callable[..., Awaitable[None]]
-IsBusIdle = Callable[[float], bool]
+IsBusIdle = Callable[[], bool]
 
 
 class StateSynchronizer:
@@ -27,8 +27,8 @@ class StateSynchronizer:
     - reconcile: HA 명령으로 걸린 `set`을 디바이스가 확인해줄 때까지 재전송한다.
 
     둘 다 주입받은 send_packet 하나만 거쳐 버스에 쓰므로, 실제 버스 쓰기의
-    유일성(단일 쓰기 경로) 보장은 이 클래스가 아니라 send_packet을 소유한
-    쪽(Panel.write_to_bus)의 책임이다.
+    유일성(단일 쓰기 경로) 보장은 이 클래스가 아니라 send_packet이 내부적으로
+    위임하는 BusArbitrationTransport.write_if_idle의 책임이다.
     """
 
     def __init__(
@@ -49,7 +49,7 @@ class StateSynchronizer:
         await self.ha_ready.wait()
         while True:
             now = time.time()
-            if self.is_bus_idle(now):
+            if self.is_bus_idle():
                 try:
                     await self.sync_once(now)
                 except Exception as e:
