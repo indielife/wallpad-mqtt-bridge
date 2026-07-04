@@ -1,5 +1,5 @@
 from wallpad.devices.base import BaseDevice
-from wallpad.protocol.grex import constants as grex_const
+from wallpad.protocol.base import HardwareInfo
 from wallpad.protocol.grex.packet_builder import GrexPacketBuilder
 
 
@@ -9,6 +9,7 @@ class VentilatorDevice(BaseDevice):
     def __init__(
         self,
         sw_version: str,
+        hardware_info: HardwareInfo,
         name_prefix: str = "grex",
         packet_builder: GrexPacketBuilder | None = None,
     ):
@@ -17,16 +18,18 @@ class VentilatorDevice(BaseDevice):
             room="grex",
             sub_device="fan",
             sw_version=sw_version,
+            hardware_info=hardware_info,
             packet_builder=packet_builder,
         )
 
     @property
     def device_info(self) -> dict:
-        """Grex 고유의 기기 메타데이터를 반환합니다."""
+        """환기장치 기기 고유의 메타데이터를 반환합니다."""
+        hw = self.hardware_info
         return {
-            "name": f"{grex_const.NAME_PREFIX} Ventilator",
-            "identifiers": f"{grex_const.IDENTIFIER_PREFIX}_ventilator",
-            "manufacturer": grex_const.MANUFACTURER,
-            "model": grex_const.MODEL,
+            "name": f"{hw.name_prefix} {hw.model}",
+            "identifiers": f"{hw.identifier_prefix}_{hw.model.lower()}",
+            "manufacturer": hw.manufacturer,
+            "model": hw.model,
             "sw_version": self.sw_version,
         }

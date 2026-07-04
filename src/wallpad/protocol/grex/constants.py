@@ -1,8 +1,12 @@
+from wallpad.protocol.base import HardwareInfo
+
 # 제조사 메타데이터
-MANUFACTURER = "Grex"
-MODEL = "Ventilator"
-IDENTIFIER_PREFIX = "grex"
-NAME_PREFIX = "Grex"
+HARDWARE = HardwareInfo(
+    manufacturer="Grex",
+    model="Ventilator",
+    identifier_prefix="grex",
+    name_prefix="Grex",
+)
 
 # DEVICE 명명
 DEVICE_FAN = "fan"

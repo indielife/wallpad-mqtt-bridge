@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 
 from wallpad.panel.devices import Thermostat
 from wallpad.panel.panel import DEVICE_THERMOSTAT, Panel
+from wallpad.protocol.kocom import constants as kocom_const
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 from wallpad.protocol.kocom.parser import KocomPacketParser
 
@@ -60,7 +61,11 @@ def test_panel_make_packet_thermostat_temp_format():
     )
     panel.devices = [
         Thermostat(
-            name_prefix="test", room="room1", sw_version="1.0", packet_builder=panel.packet_builder
+            name_prefix="test",
+            room="room1",
+            sw_version="1.0",
+            hardware_info=kocom_const.HARDWARE,
+            packet_builder=panel.packet_builder,
         )
     ]
 

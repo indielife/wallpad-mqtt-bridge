@@ -3,6 +3,7 @@ import json
 import pytest
 
 from wallpad.mqtt import HA_FAN, HA_PREFIX, HA_SENSOR
+from wallpad.protocol.grex import constants as grex_const
 from wallpad.ventilator.devices import (
     VentilatorController,
     VentilatorUnit,
@@ -20,13 +21,21 @@ EXPECTED_DEVICE_INFO = {
 @pytest.fixture
 def unit():
     """HA fan 도메인을 담당하는 환기장치 본체 픽스처입니다."""
-    return VentilatorUnit(name_prefix="test_grex", sw_version="1.0.0")
+    return VentilatorUnit(
+        name_prefix="test_grex",
+        sw_version="1.0.0",
+        hardware_info=grex_const.HARDWARE,
+    )
 
 
 @pytest.fixture
 def controller():
     """HA sensor 도메인(모드/속도 표시)을 담당하는 조작기 픽스처입니다."""
-    return VentilatorController(name_prefix="test_grex", sw_version="1.0.0")
+    return VentilatorController(
+        name_prefix="test_grex",
+        sw_version="1.0.0",
+        hardware_info=grex_const.HARDWARE,
+    )
 
 
 # ---------------------------------------------------------------------------

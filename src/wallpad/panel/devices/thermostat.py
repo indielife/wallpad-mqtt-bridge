@@ -3,6 +3,7 @@ import json
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.devices.topic import TopicContext
 from wallpad.panel.devices.base import PanelDevice
+from wallpad.protocol.base import HardwareInfo
 from wallpad.protocol.kocom.constants import DEVICE_THERMOSTAT
 
 
@@ -12,6 +13,7 @@ class Thermostat(PanelDevice):
         name_prefix: str,
         room: str,
         sw_version: str,
+        hardware_info: HardwareInfo,
         packet_builder: PacketBuilder | None = None,
         topics: TopicContext | None = None,
     ):
@@ -20,6 +22,7 @@ class Thermostat(PanelDevice):
             room=room,
             sub_device="thermostat",
             sw_version=sw_version,
+            hardware_info=hardware_info,
             packet_builder=packet_builder,
             topics=topics,
         )

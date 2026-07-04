@@ -5,13 +5,19 @@ import pytest
 from wallpad.mqtt import HA_PREFIX, HA_SWITCH
 from wallpad.panel.devices.elevator import Elevator
 from wallpad.panel.topic import TopicBuilder
+from wallpad.protocol.kocom import constants as kocom_const
 
 
 @pytest.fixture
 def elevator_device():
     """테스트에 사용할 Elevator 인스턴스를 제공하는 픽스처입니다."""
     topics = TopicBuilder.for_elevator(room="wallpad", sub_device="elevator")
-    return Elevator(name_prefix="test_kocom", sw_version="1.0.0", topics=topics)
+    return Elevator(
+        name_prefix="test_kocom",
+        sw_version="1.0.0",
+        hardware_info=kocom_const.HARDWARE,
+        topics=topics,
+    )
 
 
 def test_elevator_init(elevator_device):

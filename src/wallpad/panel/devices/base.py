@@ -1,16 +1,28 @@
 from wallpad.devices.base import BaseDevice
-from wallpad.protocol.kocom import constants as kocom_const
+from wallpad.devices.packet_builder import PacketBuilder
+from wallpad.devices.topic import TopicContext
+from wallpad.protocol.base import HardwareInfo
 
 
 class PanelDevice(BaseDevice):
-    """Kocom 월패드 기기들이 공유하는 식별자·메타데이터 기반 클래스입니다."""
+    """월패드 패널 기기들이 공유하는 식별자·메타데이터 기반 클래스입니다."""
 
-    @property
-    def device_info(self) -> dict:
-        return {
-            "name": f"{kocom_const.NAME_PREFIX} {self.room}",
-            "identifiers": f"{kocom_const.IDENTIFIER_PREFIX}_{self.room}",
-            "manufacturer": kocom_const.MANUFACTURER,
-            "model": kocom_const.MODEL,
-            "sw_version": self.sw_version,
-        }
+    def __init__(
+        self,
+        name_prefix: str,
+        room: str,
+        sub_device: str,
+        sw_version: str,
+        hardware_info: HardwareInfo,
+        packet_builder: PacketBuilder | None = None,
+        topics: TopicContext | None = None,
+    ):
+        super().__init__(
+            name_prefix=name_prefix,
+            room=room,
+            sub_device=sub_device,
+            sw_version=sw_version,
+            hardware_info=hardware_info,
+            packet_builder=packet_builder,
+            topics=topics,
+        )

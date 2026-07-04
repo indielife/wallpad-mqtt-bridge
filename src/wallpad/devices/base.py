@@ -1,11 +1,11 @@
+from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.devices.topic import TopicContext
-
-from .packet_builder import PacketBuilder
+from wallpad.protocol.base import HardwareInfo
 
 
 class BaseDevice:
     """
-    모든 Kocom/Grex 디바이스의 기본이 되는 추상화 클래스입니다.
+    모든 월패드/환기장치 디바이스의 기본이 되는 추상화 클래스입니다.
     """
 
     def __init__(
@@ -14,6 +14,7 @@ class BaseDevice:
         room: str,
         sub_device: str,
         sw_version: str,
+        hardware_info: HardwareInfo,
         packet_builder: PacketBuilder | None = None,
         topics: TopicContext | None = None,
     ):
@@ -21,16 +22,21 @@ class BaseDevice:
         self.room = room
         self.sub_device = sub_device
         self.sw_version = sw_version
+        self.hardware_info = hardware_info
         self.packet_builder = packet_builder
         self.topics = topics
 
     @property
     def device_info(self) -> dict:
-        """HA Discovery에 등록될 물리적 기기(Device)의 공통 메타데이터입니다.
-
-        하위 클래스에서 각 기기 제조사/프로토콜에 맞추어 오버라이딩해야 합니다.
-        """
-        raise NotImplementedError
+        """HA Discovery에 등록될 물리적 기기(Device)의 공통 메타데이터입니다."""
+        hw = self.hardware_info
+        return {
+            "name": f"{hw.name_prefix} {self.room}",
+            "identifiers": f"{hw.identifier_prefix}_{self.room}",
+            "manufacturer": hw.manufacturer,
+            "model": hw.model,
+            "sw_version": self.sw_version,
+        }
 
     def get_discovery_payloads(self, remove: bool = False) -> list[tuple[str, str]]:
         """

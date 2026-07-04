@@ -5,13 +5,19 @@ import pytest
 from wallpad.mqtt import HA_FAN, HA_PREFIX
 from wallpad.panel.devices.fan import Fan
 from wallpad.panel.topic import TopicBuilder
+from wallpad.protocol.kocom import constants as kocom_const
 
 
 @pytest.fixture
 def fan_device():
     """테스트에 사용할 Fan 인스턴스를 제공하는 픽스처입니다."""
     topics = TopicBuilder.for_fan(room="wallpad", sub_device="fan")
-    return Fan(name_prefix="test_kocom", sw_version="1.0.0", topics=topics)
+    return Fan(
+        name_prefix="test_kocom",
+        sw_version="1.0.0",
+        hardware_info=kocom_const.HARDWARE,
+        topics=topics,
+    )
 
 
 def test_fan_init(fan_device):

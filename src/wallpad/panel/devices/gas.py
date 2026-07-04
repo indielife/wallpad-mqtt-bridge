@@ -4,6 +4,7 @@ import logging
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.devices.topic import TopicContext
 from wallpad.panel.devices.base import PanelDevice
+from wallpad.protocol.base import HardwareInfo
 from wallpad.protocol.kocom.constants import DEVICE_GAS
 
 logger = logging.getLogger(__name__)
@@ -14,6 +15,7 @@ class Gas(PanelDevice):
         self,
         name_prefix: str,
         sw_version: str,
+        hardware_info: HardwareInfo,
         packet_builder: PacketBuilder | None = None,
         topics: TopicContext | None = None,
     ):
@@ -23,6 +25,7 @@ class Gas(PanelDevice):
             room="wallpad",
             sub_device="gas",
             sw_version=sw_version,
+            hardware_info=hardware_info,
             packet_builder=packet_builder,
             topics=topics,
         )

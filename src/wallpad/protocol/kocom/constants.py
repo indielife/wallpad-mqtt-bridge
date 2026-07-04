@@ -1,8 +1,12 @@
+from wallpad.protocol.base import HardwareInfo
+
 # 제조사 메타데이터
-MANUFACTURER = "KOCOM"
-MODEL = "Wallpad"
-IDENTIFIER_PREFIX = "kocom"
-NAME_PREFIX = "Kocom"
+HARDWARE = HardwareInfo(
+    manufacturer="KOCOM",
+    model="Wallpad",
+    identifier_prefix="kocom",
+    name_prefix="Kocom",
+)
 
 # DEVICE 명명
 DEVICE_WALLPAD = "wallpad"

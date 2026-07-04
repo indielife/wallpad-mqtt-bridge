@@ -10,6 +10,7 @@ from wallpad.mqtt import (
     TOPIC_BRIDGE_RESTART,
     MqttClient,
 )
+from wallpad.protocol.grex import constants as grex_const
 from wallpad.protocol.grex.constants import (
     PREFIX_CONTROLLER_ERROR,
     PREFIX_CONTROLLER_STATUS,
@@ -50,10 +51,12 @@ class Ventilator:
         self.parser = GrexPacketParser()
         self.unit = VentilatorUnit(
             sw_version=self.config.sw_version,
+            hardware_info=grex_const.HARDWARE,
             packet_builder=self.packet_builder,
         )
         self.controller = VentilatorController(
             sw_version=self.config.sw_version,
+            hardware_info=grex_const.HARDWARE,
         )
         self.devices = [self.unit, self.controller]
 

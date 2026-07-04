@@ -5,13 +5,20 @@ import pytest
 from wallpad.mqtt import HA_CLIMATE, HA_PREFIX
 from wallpad.panel.devices.thermostat import Thermostat
 from wallpad.panel.topic import TopicBuilder
+from wallpad.protocol.kocom import constants as kocom_const
 
 
 @pytest.fixture
 def thermostat_device():
     """테스트에 사용할 Thermostat 인스턴스를 제공하는 픽스처입니다."""
     topics = TopicBuilder.for_thermostat(room="room1")
-    return Thermostat(name_prefix="test_kocom", room="room1", sw_version="1.0.0", topics=topics)
+    return Thermostat(
+        name_prefix="test_kocom",
+        room="room1",
+        sw_version="1.0.0",
+        hardware_info=kocom_const.HARDWARE,
+        topics=topics,
+    )
 
 
 def test_thermostat_init(thermostat_device):
