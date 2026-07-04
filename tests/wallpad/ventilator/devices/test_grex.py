@@ -96,3 +96,51 @@ def test_grex_get_subscribe_topics(grex_device):
         f"{HA_PREFIX}/{HA_SENSOR}/grex_fan_mode/config",
         f"{HA_PREFIX}/{HA_SENSOR}/grex_fan_speed/config",
     ]
+
+
+def test_grex_state_topics_match_discovery(grex_device):
+    """state 발행 토픽이 discovery에 선언된 state_topic과 일치하는지 검증합니다."""
+    assert grex_device.fan_state_topic == f"{HA_PREFIX}/{HA_FAN}/grex/state"
+    assert grex_device.sensor_state_topic == f"{HA_PREFIX}/{HA_SENSOR}/grex_fan/state"
+
+
+# ---------------------------------------------------------------------------
+# build_sensor_payload 매핑 테스트
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("mode", "ha_mode_on", "expected_fan_mode"),
+    [
+        ("auto", False, "자동"),
+        ("manual", False, "수동"),
+        ("sleep", False, "취침"),
+        ("off", True, "HA"),
+        ("off", False, "off"),
+    ],
+)
+def test_build_sensor_payload_fan_mode_mapping(grex_device, mode, ha_mode_on, expected_fan_mode):
+    """mode(+ ha_mode_on 플래그)가 한글 fan_mode로 매핑된다."""
+    payload = grex_device.build_sensor_payload(mode, "off", ha_mode_on=ha_mode_on)
+    assert payload["fan_mode"] == expected_fan_mode
+
+
+@pytest.mark.parametrize(
+    ("speed", "expected_fan_speed"),
+    [
+        ("low", "1단"),
+        ("medium", "2단"),
+        ("high", "3단"),
+        ("off", "대기"),
+    ],
+)
+def test_build_sensor_payload_fan_speed_mapping(grex_device, speed, expected_fan_speed):
+    """speed가 한글 fan_speed로 매핑된다 (mode는 항상 통과되는 상태로 고정)."""
+    payload = grex_device.build_sensor_payload("manual", speed, ha_mode_on=False)
+    assert payload["fan_speed"] == expected_fan_speed
+
+
+def test_build_sensor_payload_guard_blocks_when_off_and_ha_off(grex_device):
+    """mode가 off이고 ha_mode_on도 False이면 가드에 걸려 off/off 그대로 반환한다."""
+    payload = grex_device.build_sensor_payload("off", "low", ha_mode_on=False)
+    assert payload == {"fan_mode": "off", "fan_speed": "off"}

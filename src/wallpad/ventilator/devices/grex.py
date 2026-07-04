@@ -33,6 +33,16 @@ class GrexVentilator(BaseDevice):
             "sw_version": self.sw_version,
         }
 
+    @property
+    def fan_state_topic(self) -> str:
+        """HA fan 엔티티의 상태 토픽입니다."""
+        return f"{HA_PREFIX}/{HA_FAN}/{self.room}/state"
+
+    @property
+    def sensor_state_topic(self) -> str:
+        """HA sensor(모드/속도 표시) 엔티티의 상태 토픽입니다."""
+        return f"{HA_PREFIX}/{HA_SENSOR}/{self.room}_{self.sub_device}/state"
+
     def get_discovery_payloads(self, remove: bool = False) -> list[tuple[str, str]]:
         fan_topic = f"{HA_PREFIX}/{HA_FAN}/{self.room}_{self.sub_device}/config"
         mode_topic = f"{HA_PREFIX}/{HA_SENSOR}/{self.room}_{self.sub_device}_mode/config"
@@ -44,9 +54,9 @@ class GrexVentilator(BaseDevice):
         fan_payload = {
             "name": f"{self.name_prefix}_{self.sub_device}",
             "command_topic": f"{HA_PREFIX}/{HA_FAN}/{self.room}/mode",
-            "state_topic": f"{HA_PREFIX}/{HA_FAN}/{self.room}/state",
+            "state_topic": self.fan_state_topic,
             "spd_cmd_t": f"{HA_PREFIX}/{HA_FAN}/{self.room}/speed",
-            "spd_stat_t": f"{HA_PREFIX}/{HA_FAN}/{self.room}/state",
+            "spd_stat_t": self.fan_state_topic,
             "state_value_template": "{{ value_json.mode }}",
             "spd_val_tpl": "{{ value_json.speed }}",
             "payload_on": "on",
@@ -58,7 +68,7 @@ class GrexVentilator(BaseDevice):
 
         mode_payload = {
             "name": f"{self.name_prefix}_{self.sub_device}_mode",
-            "state_topic": f"{HA_PREFIX}/{HA_SENSOR}/{self.room}_{self.sub_device}/state",
+            "state_topic": self.sensor_state_topic,
             "value_template": f"{{{{ value_json.{self.sub_device}_mode }}}}",
             "icon": "mdi:play-circle-outline",
             "unique_id": f"{self.name_prefix}_{self.room}_{self.sub_device}_mode",
@@ -67,7 +77,7 @@ class GrexVentilator(BaseDevice):
 
         speed_payload = {
             "name": f"{self.name_prefix}_{self.sub_device}_speed",
-            "state_topic": f"{HA_PREFIX}/{HA_SENSOR}/{self.room}_{self.sub_device}/state",
+            "state_topic": self.sensor_state_topic,
             "value_template": f"{{{{ value_json.{self.sub_device}_speed }}}}",
             "icon": "mdi:speedometer",
             "unique_id": f"{self.name_prefix}_{self.room}_{self.sub_device}_speed",
@@ -117,3 +127,29 @@ class GrexVentilator(BaseDevice):
         postfix_hex = "0000000100" if speed in ["low", "medium", "high"] else "0000000000"
 
         return self.packet_builder.build_response(speed_hex, postfix_hex)
+
+    def build_sensor_payload(self, mode: str, speed: str, *, ha_mode_on: bool) -> dict:
+        """모드/속도를 HA sensor 표시용 한글 페이로드로 변환합니다.
+
+        ha_mode_on은 mode가 off라도 HA에서 켠 상태(mqtt_cont["mode"] == "on")를
+        표시로 반영하기 위한 플래그입니다.
+        """
+        payload = {"fan_mode": "off", "fan_speed": "off"}
+        if mode != "off" or ha_mode_on:
+            if mode == "auto":
+                payload["fan_mode"] = "자동"
+            elif mode == "manual":
+                payload["fan_mode"] = "수동"
+            elif mode == "sleep":
+                payload["fan_mode"] = "취침"
+            elif mode == "off" and ha_mode_on:
+                payload["fan_mode"] = "HA"
+            if speed == "low":
+                payload["fan_speed"] = "1단"
+            elif speed == "medium":
+                payload["fan_speed"] = "2단"
+            elif speed == "high":
+                payload["fan_speed"] = "3단"
+            elif speed == "off":
+                payload["fan_speed"] = "대기"
+        return payload

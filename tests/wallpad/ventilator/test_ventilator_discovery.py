@@ -3,13 +3,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from wallpad.ventilator.ventilator import (
-    DEVICE_FAN,
-    HA_FAN,
-    HA_PREFIX,
-    HA_SENSOR,
-    Ventilator,
-)
+from wallpad.mqtt import HA_FAN, HA_PREFIX, HA_SENSOR
+from wallpad.protocol.grex.constants import DEVICE_FAN
+from wallpad.ventilator.ventilator import Ventilator
 
 
 @pytest.fixture

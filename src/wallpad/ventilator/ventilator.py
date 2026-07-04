@@ -5,14 +5,12 @@ import logging
 from wallpad.config import AppConfig
 from wallpad.mqtt import (
     HA_FAN,
-    HA_PREFIX,
     HA_SENSOR,
     TOPIC_BRIDGE_REMOVE,
     TOPIC_BRIDGE_RESTART,
     MqttClient,
 )
 from wallpad.protocol.grex.constants import (
-    DEVICE_FAN,
     PREFIX_CONTROLLER_ERROR,
     PREFIX_CONTROLLER_STATUS,
     PREFIX_VENTILATOR_STATUS,
@@ -113,13 +111,13 @@ class Ventilator:
 
     def publish_state_to_ha(self, target, value):
         if target == HA_FAN:
-            topic = f"{HA_PREFIX}/{HA_FAN}/grex/state"
-            self.mqtt_client.publish_json(topic, value)
-            logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
+            topic = self.device.fan_state_topic
         elif target == HA_SENSOR:
-            topic = f"{HA_PREFIX}/{HA_SENSOR}/grex_{DEVICE_FAN}/state"
-            self.mqtt_client.publish_json(topic, value)
-            logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
+            topic = self.device.sensor_state_topic
+        else:
+            return
+        self.mqtt_client.publish_json(topic, value)
+        logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
 
     async def receive_packets(self, transport):
         frame_buf = []
@@ -187,8 +185,10 @@ class Ventilator:
                 send_to_ha_fan["speed"] = self.grex_cont["speed"]
             self.publish_state_to_ha(HA_FAN, send_to_ha_fan)
 
-            send_to_ha_sensor = self._build_ha_sensor_payload(
-                self.grex_cont["mode"], self.grex_cont["speed"]
+            send_to_ha_sensor = self.device.build_sensor_payload(
+                self.grex_cont["mode"],
+                self.grex_cont["speed"],
+                ha_mode_on=self.mqtt_cont["mode"] == "on",
             )
             self.publish_state_to_ha(HA_SENSOR, send_to_ha_sensor)
 
@@ -227,28 +227,9 @@ class Ventilator:
                 send_to_ha_fan["speed"] = self.vent_cont["speed"]
             self.publish_state_to_ha(HA_FAN, send_to_ha_fan)
 
-            send_to_ha_sensor = self._build_ha_sensor_payload(
-                self.grex_cont["mode"], self.vent_cont["speed"]
+            send_to_ha_sensor = self.device.build_sensor_payload(
+                self.grex_cont["mode"],
+                self.vent_cont["speed"],
+                ha_mode_on=self.mqtt_cont["mode"] == "on",
             )
             self.publish_state_to_ha(HA_SENSOR, send_to_ha_sensor)
-
-    def _build_ha_sensor_payload(self, mode: str, speed: str) -> dict:
-        payload = {"fan_mode": "off", "fan_speed": "off"}
-        if mode != "off" or self.mqtt_cont["mode"] == "on":
-            if mode == "auto":
-                payload["fan_mode"] = "자동"
-            elif mode == "manual":
-                payload["fan_mode"] = "수동"
-            elif mode == "sleep":
-                payload["fan_mode"] = "취침"
-            elif mode == "off" and self.mqtt_cont["mode"] == "on":
-                payload["fan_mode"] = "HA"
-            if speed == "low":
-                payload["fan_speed"] = "1단"
-            elif speed == "medium":
-                payload["fan_speed"] = "2단"
-            elif speed == "high":
-                payload["fan_speed"] = "3단"
-            elif speed == "off":
-                payload["fan_speed"] = "대기"
-        return payload
