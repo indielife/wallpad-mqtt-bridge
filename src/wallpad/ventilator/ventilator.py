@@ -18,7 +18,7 @@ from wallpad.protocol.grex.constants import (
 from wallpad.protocol.grex.packet_builder import GrexPacketBuilder
 from wallpad.protocol.grex.parser import GrexPacketParser
 from wallpad.transport import BaseTransport
-from wallpad.ventilator.devices import GrexVentilator
+from wallpad.ventilator.devices import GrexVentilatorController, GrexVentilatorUnit
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +50,16 @@ class Ventilator:
 
         self.packet_builder = GrexPacketBuilder()
         self.parser = GrexPacketParser()
-        self.device = GrexVentilator(
+        self.unit = GrexVentilatorUnit(
             name_prefix=self.name,
             sw_version=self.config.sw_version,
             packet_builder=self.packet_builder,
         )
+        self.controller = GrexVentilatorController(
+            name_prefix=self.name,
+            sw_version=self.config.sw_version,
+        )
+        self.devices = [self.unit, self.controller]
 
         self.mqtt_client.register_connect_callback(self.on_connect)
         self._register_topic_routes()
@@ -70,15 +75,17 @@ class Ventilator:
         self._publish_ha_discovery()
 
     def _register_topic_routes(self) -> None:
-        for topic in self.device.get_subscribe_topics():
-            self.mqtt_client.register_topic_callback(topic, self._handle_fan_command)
+        for device in self.devices:
+            for topic in device.get_subscribe_topics():
+                self.mqtt_client.register_topic_callback(topic, self._handle_fan_command)
 
         self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_RESTART, self._handle_restart)
         self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_REMOVE, self._handle_remove)
 
     def _publish_ha_discovery(self, remove=False):
-        for topic, payload in self.device.get_discovery_payloads(remove=remove):
-            self.mqtt_client.publish(topic, payload, retain=True)
+        for device in self.devices:
+            for topic, payload in device.get_discovery_payloads(remove=remove):
+                self.mqtt_client.publish(topic, payload, retain=True)
 
     def _handle_fan_command(self, topic: str, payload: str) -> None:
         if topic.endswith("/config"):
@@ -111,9 +118,9 @@ class Ventilator:
 
     def publish_state_to_ha(self, target, value):
         if target == HA_FAN:
-            topic = self.device.fan_state_topic
+            topic = self.unit.state_topic
         elif target == HA_SENSOR:
-            topic = self.device.sensor_state_topic
+            topic = self.controller.state_topic
         else:
             return
         self.mqtt_client.publish_json(topic, value)
@@ -157,7 +164,7 @@ class Ventilator:
             self.handle_ventilator_status(parsed)
 
     async def handle_controller_error(self):
-        m_packet = self.device.build_response_packet("off", "off")
+        m_packet = self.unit.build_response_packet("off", "off")
         m_chksum = self.parser.validate_checksum(m_packet)
         if m_chksum[0]:
             await self.controller_transport.write(bytearray.fromhex(m_packet))
@@ -185,7 +192,7 @@ class Ventilator:
                 send_to_ha_fan["speed"] = self.grex_cont["speed"]
             self.publish_state_to_ha(HA_FAN, send_to_ha_fan)
 
-            send_to_ha_sensor = self.device.build_sensor_payload(
+            send_to_ha_sensor = self.controller.build_sensor_payload(
                 self.grex_cont["mode"],
                 self.grex_cont["speed"],
                 ha_mode_on=self.mqtt_cont["mode"] == "on",
@@ -193,18 +200,18 @@ class Ventilator:
             self.publish_state_to_ha(HA_SENSOR, send_to_ha_sensor)
 
         if self.grex_cont["mode"] == "off":
-            response_packet = self.device.build_response_packet("off", "off")
+            response_packet = self.unit.build_response_packet("off", "off")
             if self.mqtt_cont["mode"] == "off" or (
                 self.mqtt_cont["mode"] == "on" and self.mqtt_cont["speed"] == "off"
             ):
-                control_packet = self.device.build_control_packet("off", "off")
+                control_packet = self.unit.build_control_packet("off", "off")
             elif self.mqtt_cont["mode"] == "on" and self.mqtt_cont["speed"] != "off":
-                control_packet = self.device.build_control_packet("manual", self.mqtt_cont["speed"])
+                control_packet = self.unit.build_control_packet("manual", self.mqtt_cont["speed"])
         else:
-            control_packet = self.device.build_control_packet(
+            control_packet = self.unit.build_control_packet(
                 self.grex_cont["mode"], self.grex_cont["speed"]
             )
-            response_packet = self.device.build_response_packet(
+            response_packet = self.unit.build_response_packet(
                 self.grex_cont["mode"], self.grex_cont["speed"]
             )
 
@@ -227,7 +234,7 @@ class Ventilator:
                 send_to_ha_fan["speed"] = self.vent_cont["speed"]
             self.publish_state_to_ha(HA_FAN, send_to_ha_fan)
 
-            send_to_ha_sensor = self.device.build_sensor_payload(
+            send_to_ha_sensor = self.controller.build_sensor_payload(
                 self.grex_cont["mode"],
                 self.vent_cont["speed"],
                 ha_mode_on=self.mqtt_cont["mode"] == "on",

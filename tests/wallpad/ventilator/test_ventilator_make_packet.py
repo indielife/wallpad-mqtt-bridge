@@ -12,7 +12,7 @@ import pytest
 )
 def test_ventilator_make_control_packet(ventilator_instance, mode, speed, expected_prefix):
     """Grex의 컨트롤 패킷이 올바르게 조립되는지 검증합니다."""
-    packet = ventilator_instance.device.build_control_packet(mode, speed)
+    packet = ventilator_instance.unit.build_control_packet(mode, speed)
 
     assert packet.startswith(expected_prefix)
     assert len(packet) == 22  # 10 bytes * 2 + checksum(2)
@@ -29,7 +29,7 @@ def test_ventilator_make_control_packet(ventilator_instance, mode, speed, expect
 )
 def test_ventilator_make_response_packet(ventilator_instance, mode, speed, expected_prefix):
     """Grex의 응답 패킷이 올바르게 조립되는지 검증합니다."""
-    packet = ventilator_instance.device.build_response_packet(mode, speed)
+    packet = ventilator_instance.unit.build_response_packet(mode, speed)
 
     assert packet.startswith(expected_prefix)
     assert len(packet) == 24  # 11 bytes * 2 + checksum(2)

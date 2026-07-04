@@ -2,43 +2,65 @@ import json
 
 import pytest
 
-from wallpad.ventilator.devices.grex import HA_FAN, HA_PREFIX, HA_SENSOR, GrexVentilator
+from wallpad.ventilator.devices.grex import (
+    HA_FAN,
+    HA_PREFIX,
+    HA_SENSOR,
+    GrexVentilatorController,
+    GrexVentilatorUnit,
+)
+
+EXPECTED_DEVICE_INFO = {
+    "name": "Grex Ventilator",
+    "identifiers": "grex_ventilator",
+    "manufacturer": "Grex",
+    "model": "Ventilator",
+    "sw_version": "1.0.0",
+}
 
 
 @pytest.fixture
-def grex_device():
-    """테스트에 사용할 GrexVentilator 인스턴스를 제공하는 픽스처입니다."""
-    return GrexVentilator(name_prefix="test_grex", sw_version="1.0.0")
+def unit():
+    """HA fan 도메인을 담당하는 환기장치 본체 픽스처입니다."""
+    return GrexVentilatorUnit(name_prefix="test_grex", sw_version="1.0.0")
 
 
-def test_grex_init(grex_device):
-    """GrexVentilator 인스턴스 초기화 시 방 이름과 sub_device가 올바르게 설정되는지 검증합니다."""
-    assert grex_device.name_prefix == "test_grex"
-    assert grex_device.sw_version == "1.0.0"
-    assert grex_device.room == "grex"
-    assert grex_device.sub_device == "fan"
+@pytest.fixture
+def controller():
+    """HA sensor 도메인(모드/속도 표시)을 담당하는 조작기 픽스처입니다."""
+    return GrexVentilatorController(name_prefix="test_grex", sw_version="1.0.0")
 
 
-def test_grex_get_discovery_payloads_add(grex_device):
-    """디스커버리 추가(remove=False) 시 정상적인 토픽과 JSON 페이로드를 반환하는지 검증합니다."""
-    payloads = grex_device.get_discovery_payloads(remove=False)
+# ---------------------------------------------------------------------------
+# 공통 초기화
+# ---------------------------------------------------------------------------
 
-    assert len(payloads) == 3
+
+def test_grex_devices_share_identity(unit, controller):
+    """Unit/Controller가 동일한 room·sub_device·device_info를 공유하는지 검증합니다."""
+    for device in (unit, controller):
+        assert device.name_prefix == "test_grex"
+        assert device.room == "grex"
+        assert device.sub_device == "fan"
+        assert device.device_info == EXPECTED_DEVICE_INFO
+
+
+# ---------------------------------------------------------------------------
+# Unit (HA fan)
+# ---------------------------------------------------------------------------
+
+
+def test_unit_state_topic(unit):
+    assert unit.state_topic == f"{HA_PREFIX}/{HA_FAN}/grex/state"
+
+
+def test_unit_discovery_payloads_add(unit):
+    """본체 discovery가 fan config 1건과 state_topic 일치를 반환하는지 검증합니다."""
+    payloads = unit.get_discovery_payloads(remove=False)
+
+    assert len(payloads) == 1
     fan_topic, fan_payload_str = payloads[0]
-    mode_topic, mode_payload_str = payloads[1]
-    speed_topic, speed_payload_str = payloads[2]
-
     assert fan_topic == f"{HA_PREFIX}/{HA_FAN}/grex_fan/config"
-    assert mode_topic == f"{HA_PREFIX}/{HA_SENSOR}/grex_fan_mode/config"
-    assert speed_topic == f"{HA_PREFIX}/{HA_SENSOR}/grex_fan_speed/config"
-
-    expected_device_info = {
-        "name": "Grex Ventilator",
-        "identifiers": "grex_ventilator",
-        "manufacturer": "Grex",
-        "model": "Ventilator",
-        "sw_version": "1.0.0",
-    }
 
     expected_fan_payload = {
         "name": "test_grex_fan",
@@ -52,8 +74,43 @@ def test_grex_get_discovery_payloads_add(grex_device):
         "payload_off": "off",
         "spds": ["low", "medium", "high", "off"],
         "unique_id": "test_grex_grex_fan",
-        "device": expected_device_info,
+        "device": EXPECTED_DEVICE_INFO,
     }
+    assert json.loads(fan_payload_str) == expected_fan_payload
+
+
+def test_unit_discovery_payloads_remove(unit):
+    payloads = unit.get_discovery_payloads(remove=True)
+    assert payloads == [(f"{HA_PREFIX}/{HA_FAN}/grex_fan/config", "")]
+
+
+def test_unit_get_subscribe_topics(unit):
+    assert unit.get_subscribe_topics() == [
+        f"{HA_PREFIX}/{HA_FAN}/grex_fan/config",
+        f"{HA_PREFIX}/{HA_FAN}/grex/mode",
+        f"{HA_PREFIX}/{HA_FAN}/grex/speed",
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Controller (HA sensor)
+# ---------------------------------------------------------------------------
+
+
+def test_controller_state_topic(controller):
+    assert controller.state_topic == f"{HA_PREFIX}/{HA_SENSOR}/grex_fan/state"
+
+
+def test_controller_discovery_payloads_add(controller):
+    """조작기 discovery가 mode/speed sensor config 2건을 반환하는지 검증합니다."""
+    payloads = controller.get_discovery_payloads(remove=False)
+
+    assert len(payloads) == 2
+    mode_topic, mode_payload_str = payloads[0]
+    speed_topic, speed_payload_str = payloads[1]
+
+    assert mode_topic == f"{HA_PREFIX}/{HA_SENSOR}/grex_fan_mode/config"
+    assert speed_topic == f"{HA_PREFIX}/{HA_SENSOR}/grex_fan_speed/config"
 
     expected_mode_payload = {
         "name": "test_grex_fan_mode",
@@ -61,51 +118,37 @@ def test_grex_get_discovery_payloads_add(grex_device):
         "value_template": "{{ value_json.fan_mode }}",
         "icon": "mdi:play-circle-outline",
         "unique_id": "test_grex_grex_fan_mode",
-        "device": expected_device_info,
+        "device": EXPECTED_DEVICE_INFO,
     }
-
     expected_speed_payload = {
         "name": "test_grex_fan_speed",
         "state_topic": f"{HA_PREFIX}/{HA_SENSOR}/grex_fan/state",
         "value_template": "{{ value_json.fan_speed }}",
         "icon": "mdi:speedometer",
         "unique_id": "test_grex_grex_fan_speed",
-        "device": expected_device_info,
+        "device": EXPECTED_DEVICE_INFO,
     }
-
-    assert json.loads(fan_payload_str) == expected_fan_payload
     assert json.loads(mode_payload_str) == expected_mode_payload
     assert json.loads(speed_payload_str) == expected_speed_payload
 
 
-def test_grex_get_discovery_payloads_remove(grex_device):
-    """디스커버리 삭제(remove=True) 시 빈 문자열 페이로드를 반환하는지 검증합니다."""
-    payloads = grex_device.get_discovery_payloads(remove=True)
-    assert payloads[0] == (f"{HA_PREFIX}/{HA_FAN}/grex_fan/config", "")
-    assert payloads[1] == (f"{HA_PREFIX}/{HA_SENSOR}/grex_fan_mode/config", "")
-    assert payloads[2] == (f"{HA_PREFIX}/{HA_SENSOR}/grex_fan_speed/config", "")
+def test_controller_discovery_payloads_remove(controller):
+    payloads = controller.get_discovery_payloads(remove=True)
+    assert payloads == [
+        (f"{HA_PREFIX}/{HA_SENSOR}/grex_fan_mode/config", ""),
+        (f"{HA_PREFIX}/{HA_SENSOR}/grex_fan_speed/config", ""),
+    ]
 
 
-def test_grex_get_subscribe_topics(grex_device):
-    """구독해야 할 토픽 리스트가 정상적으로 반환되는지 검증합니다."""
-    topics = grex_device.get_subscribe_topics()
-    assert topics == [
-        f"{HA_PREFIX}/{HA_FAN}/grex_fan/config",
-        f"{HA_PREFIX}/{HA_FAN}/grex/mode",
-        f"{HA_PREFIX}/{HA_FAN}/grex/speed",
+def test_controller_get_subscribe_topics(controller):
+    assert controller.get_subscribe_topics() == [
         f"{HA_PREFIX}/{HA_SENSOR}/grex_fan_mode/config",
         f"{HA_PREFIX}/{HA_SENSOR}/grex_fan_speed/config",
     ]
 
 
-def test_grex_state_topics_match_discovery(grex_device):
-    """state 발행 토픽이 discovery에 선언된 state_topic과 일치하는지 검증합니다."""
-    assert grex_device.fan_state_topic == f"{HA_PREFIX}/{HA_FAN}/grex/state"
-    assert grex_device.sensor_state_topic == f"{HA_PREFIX}/{HA_SENSOR}/grex_fan/state"
-
-
 # ---------------------------------------------------------------------------
-# build_sensor_payload 매핑 테스트
+# Controller.build_sensor_payload 매핑
 # ---------------------------------------------------------------------------
 
 
@@ -119,9 +162,9 @@ def test_grex_state_topics_match_discovery(grex_device):
         ("off", False, "off"),
     ],
 )
-def test_build_sensor_payload_fan_mode_mapping(grex_device, mode, ha_mode_on, expected_fan_mode):
+def test_build_sensor_payload_fan_mode_mapping(controller, mode, ha_mode_on, expected_fan_mode):
     """mode(+ ha_mode_on 플래그)가 한글 fan_mode로 매핑된다."""
-    payload = grex_device.build_sensor_payload(mode, "off", ha_mode_on=ha_mode_on)
+    payload = controller.build_sensor_payload(mode, "off", ha_mode_on=ha_mode_on)
     assert payload["fan_mode"] == expected_fan_mode
 
 
@@ -134,13 +177,13 @@ def test_build_sensor_payload_fan_mode_mapping(grex_device, mode, ha_mode_on, ex
         ("off", "대기"),
     ],
 )
-def test_build_sensor_payload_fan_speed_mapping(grex_device, speed, expected_fan_speed):
+def test_build_sensor_payload_fan_speed_mapping(controller, speed, expected_fan_speed):
     """speed가 한글 fan_speed로 매핑된다 (mode는 항상 통과되는 상태로 고정)."""
-    payload = grex_device.build_sensor_payload("manual", speed, ha_mode_on=False)
+    payload = controller.build_sensor_payload("manual", speed, ha_mode_on=False)
     assert payload["fan_speed"] == expected_fan_speed
 
 
-def test_build_sensor_payload_guard_blocks_when_off_and_ha_off(grex_device):
+def test_build_sensor_payload_guard_blocks_when_off_and_ha_off(controller):
     """mode가 off이고 ha_mode_on도 False이면 가드에 걸려 off/off 그대로 반환한다."""
-    payload = grex_device.build_sensor_payload("off", "low", ha_mode_on=False)
+    payload = controller.build_sensor_payload("off", "low", ha_mode_on=False)
     assert payload == {"fan_mode": "off", "fan_speed": "off"}

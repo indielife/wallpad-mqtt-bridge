@@ -1,5 +1,7 @@
-from .grex import GrexVentilator
+from .grex import GrexDevice, GrexVentilatorController, GrexVentilatorUnit
 
 __all__ = [
-    "GrexVentilator",
+    "GrexDevice",
+    "GrexVentilatorController",
+    "GrexVentilatorUnit",
 ]

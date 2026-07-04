@@ -32,8 +32,8 @@ def test_ventilator_initial_state(
     assert ventilator.grex_cont == {"mode": "off", "speed": "off"}
     assert ventilator.vent_cont == {"mode": "off", "speed": "off"}
     assert ventilator.mqtt_cont == {"mode": "off", "speed": "off"}
-    assert ventilator.device is not None
-    assert ventilator.device.name_prefix == "grex"
+    assert ventilator.unit is not None
+    assert ventilator.unit.name_prefix == "grex"
 
 
 def test_ventilator_default_speed_fallback(
