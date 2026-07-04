@@ -14,7 +14,7 @@ from wallpad.mqtt import (
     MqttClient,
 )
 from wallpad.panel.factory import DeviceFactory
-from wallpad.panel.state import RoomState, ScanState, SubDeviceState
+from wallpad.panel.synchronizer import StateSynchronizer
 from wallpad.protocol.kocom.constants import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
@@ -78,6 +78,7 @@ class Panel:
         self.scan_packet_buf = []
 
         self.tick = time.time()
+        self._bus_lock = asyncio.Lock()
         self.packet_builder = KocomPacketBuilder(
             room_rev=config.kocom_room_rev, room_thermostat_rev=config.kocom_room_thermostat_rev
         )
@@ -97,12 +98,20 @@ class Panel:
         self.mqtt_client.register_connect_callback(self.on_connect)
         self._register_topic_routes()
 
+        self.synchronizer = StateSynchronizer(
+            device_states=self.device_states,
+            send_packet=self.send_packet,
+            config=config,
+            is_bus_idle=self._is_bus_idle,
+            ha_ready=self.ha_ready,
+        )
+
     async def start(self) -> list[asyncio.Task]:
         await self.transport.connect()
         self._task_read = asyncio.create_task(self.receive_packets())
-        self._task_scan = asyncio.create_task(self.scan_list())
+        self._task_sync = asyncio.create_task(self.synchronizer.run())
         self._loop = asyncio.get_running_loop()
-        return [self._task_read, self._task_scan]
+        return [self._task_read, self._task_sync]
 
     def on_connect(self, *_):
         self._publish_ha_discovery()
@@ -269,10 +278,7 @@ class Panel:
 
     def _schedule_write(self, data: str) -> None:
         if data and self._loop:
-            asyncio.run_coroutine_threadsafe(
-                self.transport.write(bytearray.fromhex(data)), self._loop
-            )
-            self.tick = time.time()
+            asyncio.run_coroutine_threadsafe(self.write_to_bus(data), self._loop)
 
     def set_list(self, device, room, value, name="kocom"):
         try:
@@ -288,75 +294,13 @@ class Panel:
                 e,
             )
 
-    async def _periodic_scan_room(
-        self, device: str, room: str, scan: ScanState, now: float
-    ) -> None:
-        if now - scan.last > 2:
-            scan.count += 1
-            scan.last = now
-            await self.send_packet(device, room, "", "", cmd="조회")
-            await asyncio.sleep(self.config.packey_delay)
-        if scan.count > 4:
-            scan.tick = now
-            scan.count = 0
-            scan.last = 0
-
-    async def _scan_sub_device(
-        self, device: str, room: str, sub_d: str, sub_v: SubDeviceState, now: float
-    ) -> None:
-        if sub_v.count > 4:
-            sub_v.count = 0
-            sub_v.last = "state"
-        elif sub_v.last == "set":
-            sub_v.last = now
-            if device == DEVICE_GAS:
-                sub_v.last += 5
-            elif device == DEVICE_ELEVATOR:
-                sub_v.last = "state"
-            await self.send_packet(device, room, sub_d, sub_v.set)
-        elif isinstance(sub_v.last, float) and now - sub_v.last > 1:
-            sub_v.last = "set"
-            sub_v.count += 1
-
-    async def _scan_room(self, device: str, room: str, r_state: RoomState, now: float) -> None:
-        if device == DEVICE_ELEVATOR:
-            for sub_d, sub_v in r_state.sub_devices.items():
-                await self._scan_sub_device(device, room, sub_d, sub_v, now)
-            return
-
-        scan = r_state.scan
-        # 엘리베이터가 아닌 기기들의 주기적 스캔/조회 처리
-        if now - scan.tick > self.config.scan_interval:
-            await self._periodic_scan_room(device, room, scan, now)
-        else:
-            for sub_d, sub_v in r_state.sub_devices.items():
-                await self._scan_sub_device(device, room, sub_d, sub_v, now)
-
-    async def _perform_scan(self, now: float) -> None:
-        for device, d_state in self.device_states.items():
-            for room, r_state in d_state.items():
-                await self._scan_room(device, room, r_state, now)
-
-    async def scan_list(self):
-        await self.ha_ready.wait()
-        while True:
-            now = time.time()
-            if now - self.tick > KOCOM_INTERVAL / 1000:
-                try:
-                    await self._perform_scan(now)
-                except Exception as e:
-                    logger.debug("Scan failed: %r", e)
-            await asyncio.sleep(0.2)
+    def _is_bus_idle(self, now: float) -> bool:
+        return now - self.tick > KOCOM_INTERVAL / 1000
 
     async def send_packet(self, device, room, target, value, cmd="상태"):
-        if (time.time() - self.tick) < KOCOM_INTERVAL / 1000:
-            return
-
         if cmd == "상태":
-            logger.info("[To %s] %s/%s/%s -> %s", self.name, device, room, target, value)
             packet = self.make_packet(device, room, "상태", target, value)
         elif cmd == "조회":
-            logger.info("[To %s] %s/%s -> 조회", self.name, device, room)
             packet = self.make_packet(device, room, "조회", "", "")
         else:
             return
@@ -366,14 +310,31 @@ class Panel:
 
         v = self.parser.parse_frame(packet, self.device_states)
 
+        if not await self.write_to_bus(packet):
+            return
+
+        if cmd == "상태":
+            logger.info("[To %s] %s/%s/%s -> %s", self.name, device, room, target, value)
+        else:
+            logger.info("[To %s] %s/%s -> 조회", self.name, device, room)
         logger.debug("[To RS485] %s", packet)
         log_frame("To", self.name, v)
 
         if device == DEVICE_ELEVATOR:
             self.publish_state_to_ha(DEVICE_ELEVATOR, DEVICE_WALLPAD, "on")
 
-        await self.transport.write(bytearray.fromhex(packet))
-        self.tick = time.time()
+    async def write_to_bus(self, packet: str) -> bool:
+        """RS485 버스에 패킷을 씀.
+
+        버스 정숙 판정(tick 가드)부터 실제 전송, tick 갱신까지를 락으로 원자화해 서로 다른
+        코루틴(스캔 루프, MQTT 스레드에서 온 디버그 에코)이 겹쳐 쓰는 것을 막는다.
+        """
+        async with self._bus_lock:
+            if (time.time() - self.tick) < KOCOM_INTERVAL / 1000:
+                return False
+            await self.transport.write(bytearray.fromhex(packet))
+            self.tick = time.time()
+            return True
 
     def make_packet(self, device, room, cmd, target, value):
         # 1. 타겟 기기 객체 찾기
