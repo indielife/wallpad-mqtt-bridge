@@ -1,5 +1,5 @@
 from .base import BaseTransport
-from .factory import create_ventilator_transports, create_wallpad_transport
+from .factory import create_panel_transport, create_ventilator_transports
 from .reconnect import ReconnectingTransport
 from .serial import SerialTransport
 from .socket import SocketTransport
@@ -20,6 +20,6 @@ __all__ = [
     "SerialTransport",
     "SocketTransport",
     "create",
+    "create_panel_transport",
     "create_ventilator_transports",
-    "create_wallpad_transport",
 ]

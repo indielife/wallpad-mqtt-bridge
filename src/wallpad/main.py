@@ -9,8 +9,8 @@ from wallpad.config import AppConfig
 from wallpad.mqtt import MqttClient
 from wallpad.panel import Panel
 from wallpad.transport import (
+    create_panel_transport,
     create_ventilator_transports,
-    create_wallpad_transport,
 )
 from wallpad.ventilator import Ventilator
 from wallpad.version import SW_VERSION
@@ -46,14 +46,14 @@ def setup_logging(path: str, level: str = "info"):
     )
 
 
-async def run_wallpad(config: AppConfig, mqtt_client: MqttClient) -> list[asyncio.Task]:
-    """Wallpad 연결 및 Kocom 초기화를 수행합니다. 실패 시 빈 리스트를 반환합니다."""
+async def run_panel(config: AppConfig, mqtt_client: MqttClient) -> list[asyncio.Task]:
+    """Panel 연결 및 초기화를 수행합니다. 실패 시 빈 리스트를 반환합니다."""
     if not config.wallpad_enabled:
         return []
 
     try:
         logger.info("Initializing Wallpad %s", config.wallpad_manufacturer)
-        transport = create_wallpad_transport(config)
+        transport = create_panel_transport(config)
         panel = Panel(config, mqtt_client, transport)
         return await panel.start()
     except Exception as e:
@@ -62,7 +62,7 @@ async def run_wallpad(config: AppConfig, mqtt_client: MqttClient) -> list[asynci
 
 
 async def run_ventilator(config: AppConfig, mqtt_client: MqttClient) -> list[asyncio.Task]:
-    """Ventilator 연결 및 Grex 초기화를 수행합니다. 실패 시 빈 리스트를 반환합니다."""
+    """Ventilator 연결 및 초기화를 수행합니다. 실패 시 빈 리스트를 반환합니다."""
     if not config.ventilator_enabled:
         return []
 
@@ -74,12 +74,12 @@ async def run_ventilator(config: AppConfig, mqtt_client: MqttClient) -> list[asy
         return []
 
     try:
-        logger.info("Initializing Grex (Serial)")
+        logger.info("Initializing Ventilator %s", config.ventilator_manufacturer)
         ctrl_transport, unit_transport = create_ventilator_transports(config)
         ventilator = Ventilator(config, mqtt_client, ctrl_transport, unit_transport)
         return await ventilator.start()
     except Exception as e:
-        logger.error("Failed to initialize Grex: %r", e)
+        logger.error("Failed to initialize Ventilator %s: %r", config.ventilator_manufacturer, e)
         return []
 
 
@@ -93,13 +93,13 @@ async def main():
     setup_logging(log_path, config.log_level)
 
     logger.info("========================================================")
-    logger.info("    KOCOM Wallpad RS485 Controller Add-on  %s", SW_VERSION)
+    logger.info("    Wallpad MQTT Bridge Add-on  %s", SW_VERSION)
     logger.info("========================================================")
 
     mqtt_client = MqttClient(config.mqtt_config)
     Bridge(mqtt_client)
 
-    tasks = await run_wallpad(config, mqtt_client)
+    tasks = await run_panel(config, mqtt_client)
     tasks += await run_ventilator(config, mqtt_client)
 
     mqtt_client.connect()

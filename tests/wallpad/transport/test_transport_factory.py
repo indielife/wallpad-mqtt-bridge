@@ -2,8 +2,8 @@ import json
 
 from wallpad.config import AppConfig
 from wallpad.transport import (
+    create_panel_transport,
     create_ventilator_transports,
-    create_wallpad_transport,
 )
 from wallpad.transport.reconnect import ReconnectingTransport
 from wallpad.transport.serial import SerialTransport
@@ -56,21 +56,21 @@ SOCKET_OPTIONS_JSON = {
 }
 
 
-def test_create_wallpad_transport_serial(tmp_path):
+def test_create_panel_transport_serial(tmp_path):
     """Serial 설정 시 ReconnectingTransport(SerialTransport)를 반환하는지 검증합니다."""
     options_file = tmp_path / "options.json"
     options_file.write_text(json.dumps(SERIAL_OPTIONS_JSON))
     config = AppConfig(options_path=str(options_file))
     config.load()
 
-    transport = create_wallpad_transport(config)
+    transport = create_panel_transport(config)
 
     assert isinstance(transport, ReconnectingTransport)
     assert isinstance(transport._transport, SerialTransport)
     assert transport._transport.port == "/dev/ttyUSB0"
 
 
-def test_create_wallpad_transport_socket(tmp_path, monkeypatch):
+def test_create_panel_transport_socket(tmp_path, monkeypatch):
     """Socket 설정 시 ReconnectingTransport(SocketTransport)를 반환하는지 검증합니다."""
     monkeypatch.delenv("WALLPAD_HOST", raising=False)
     options_file = tmp_path / "options.json"
@@ -78,7 +78,7 @@ def test_create_wallpad_transport_socket(tmp_path, monkeypatch):
     config = AppConfig(options_path=str(options_file))
     config.load()
 
-    transport = create_wallpad_transport(config)
+    transport = create_panel_transport(config)
 
     assert isinstance(transport, ReconnectingTransport)
     assert isinstance(transport._transport, SocketTransport)
