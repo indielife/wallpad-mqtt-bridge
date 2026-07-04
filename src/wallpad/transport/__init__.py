@@ -1,4 +1,5 @@
 from .base import BaseTransport
+from .bus_arbitration import BusArbitrationTransport
 from .factory import create_panel_transport, create_ventilator_transports
 from .reconnect import ReconnectingTransport
 from .serial import SerialTransport
@@ -16,6 +17,7 @@ def create(device_cfg: dict) -> BaseTransport:
 
 __all__ = [
     "BaseTransport",
+    "BusArbitrationTransport",
     "ReconnectingTransport",
     "SerialTransport",
     "SocketTransport",
