@@ -7,7 +7,7 @@ def test_handle_fan_command_ignores_discovery_config_echo(ventilator_instance):
 
     ventilator_instance._handle_fan_command("homeassistant/fan/grex_fan/config", "{}")
 
-    assert ventilator_instance.mqtt_cont == {"mode": "off", "speed": "off"}
+    assert ventilator_instance.state.desired == {"mode": "off", "speed": "off"}
     ventilator_instance.publish_state_to_ha.assert_not_called()
 
 
@@ -15,14 +15,14 @@ def test_handle_fan_command_mode_on_uses_default_speed(ventilator_instance):
     """모드 on 명령 수신 시 speed가 off였다면 default_speed로 채워진다."""
     ventilator_instance._handle_fan_command("homeassistant/fan/grex/mode", "on")
 
-    assert ventilator_instance.mqtt_cont["mode"] == "on"
-    assert ventilator_instance.mqtt_cont["speed"] == ventilator_instance.default_speed
+    assert ventilator_instance.state.desired["mode"] == "on"
+    assert ventilator_instance.state.desired["speed"] == ventilator_instance.default_speed
 
 
 def test_handle_fan_command_speed_updates_state(ventilator_instance):
     ventilator_instance._handle_fan_command("homeassistant/fan/grex/speed", "high")
 
-    assert ventilator_instance.mqtt_cont["speed"] == "high"
+    assert ventilator_instance.state.desired["speed"] == "high"
 
 
 def test_handle_fan_command_publishes_when_mode_and_speed_off(ventilator_instance):

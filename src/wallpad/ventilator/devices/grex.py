@@ -11,7 +11,10 @@ class GrexDevice(BaseDevice):
     """Grex 환기장치 기기들이 공유하는 식별자·메타데이터 기반 클래스입니다."""
 
     def __init__(
-        self, name_prefix: str, sw_version: str, packet_builder: GrexPacketBuilder | None = None
+        self,
+        sw_version: str,
+        name_prefix: str = "grex",
+        packet_builder: GrexPacketBuilder | None = None,
     ):
         super().__init__(
             name_prefix=name_prefix,
@@ -148,7 +151,7 @@ class GrexVentilatorController(GrexDevice):
     def build_sensor_payload(self, mode: str, speed: str, *, ha_mode_on: bool) -> dict:
         """모드/속도를 HA sensor 표시용 한글 페이로드로 변환합니다.
 
-        ha_mode_on은 mode가 off라도 HA에서 켠 상태(mqtt_cont["mode"] == "on")를
+        ha_mode_on은 mode가 off라도 HA에서 켠 상태(desired mode == "on")를
         표시로 반영하기 위한 플래그입니다.
         """
         payload = {"fan_mode": "off", "fan_speed": "off"}

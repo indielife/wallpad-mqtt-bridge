@@ -87,13 +87,13 @@ def ventilator_with_mock_publish(ventilator_instance):
 async def test_handle_controller_status_state_change_updates_cont(
     ventilator_with_mock_publish,
 ):
-    """상태 변경 시 grex_cont가 갱신되고 HA에 publish된다."""
+    """상태 변경 시 controller_status가 갱신되고 HA에 publish된다."""
     v = ventilator_with_mock_publish
     parsed = {"type": PREFIX_CONTROLLER_STATUS, "mode": "auto", "speed": "low"}
 
     await v.handle_controller_status(parsed)
 
-    assert v.grex_cont == {"mode": "auto", "speed": "low"}
+    assert v.state.controller_status == {"mode": "auto", "speed": "low"}
     assert v.publish_state_to_ha.call_count == 2
     calls = {c.args[0] for c in v.publish_state_to_ha.call_args_list}
     assert HA_FAN in calls
@@ -105,7 +105,7 @@ async def test_handle_controller_status_no_change_skips_publish(
 ):
     """이전 상태와 동일하면 publish가 발생하지 않는다."""
     v = ventilator_with_mock_publish
-    v.grex_cont = {"mode": "auto", "speed": "low"}
+    v.state.controller_status = {"mode": "auto", "speed": "low"}
     parsed = {"type": PREFIX_CONTROLLER_STATUS, "mode": "auto", "speed": "low"}
 
     await v.handle_controller_status(parsed)
@@ -121,13 +121,13 @@ async def test_handle_controller_status_no_change_skips_publish(
 def test_handle_ventilator_status_speed_change_updates_cont(
     ventilator_with_mock_publish,
 ):
-    """속도 변경 시 vent_cont가 갱신되고 HA에 publish된다."""
+    """속도 변경 시 ventilator_status가 갱신되고 HA에 publish된다."""
     v = ventilator_with_mock_publish
     parsed = {"type": PREFIX_VENTILATOR_STATUS, "speed": "medium"}
 
     v.handle_ventilator_status(parsed)
 
-    assert v.vent_cont["speed"] == "medium"
+    assert v.state.ventilator_status["speed"] == "medium"
     assert v.publish_state_to_ha.call_count == 2
 
 
@@ -136,7 +136,7 @@ def test_handle_ventilator_status_no_change_skips_publish(
 ):
     """이전 속도와 동일하면 publish가 발생하지 않는다."""
     v = ventilator_with_mock_publish
-    v.vent_cont = {"speed": "medium"}
+    v.state.ventilator_status = {"speed": "medium"}
     parsed = {"type": PREFIX_VENTILATOR_STATUS, "speed": "medium"}
 
     v.handle_ventilator_status(parsed)
