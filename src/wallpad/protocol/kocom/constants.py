@@ -4,8 +4,6 @@ from wallpad.protocol.base import HardwareInfo
 HARDWARE = HardwareInfo(
     manufacturer="KOCOM",
     model="Wallpad",
-    identifier_prefix="kocom",
-    name_prefix="Kocom",
 )
 
 # DEVICE 명명

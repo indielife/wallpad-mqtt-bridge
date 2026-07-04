@@ -7,8 +7,11 @@ from typing import ClassVar
 class HardwareInfo:
     manufacturer: str
     model: str
-    identifier_prefix: str
-    name_prefix: str
+
+    @property
+    def slug(self) -> str:
+        """식별자·표시 이름에 공통으로 쓰이는 제조사 소문자 슬러그입니다."""
+        return self.manufacturer.lower()
 
 
 class PacketParser(ABC):

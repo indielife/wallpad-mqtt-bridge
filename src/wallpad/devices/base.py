@@ -31,8 +31,8 @@ class BaseDevice:
         """HA Discovery에 등록될 물리적 기기(Device)의 공통 메타데이터입니다."""
         hw = self.hw_info
         return {
-            "name": f"{hw.name_prefix} {self.room}",
-            "identifiers": f"{hw.identifier_prefix}_{self.room}",
+            "name": f"{hw.slug} {self.room}",
+            "identifiers": f"{hw.slug}_{self.room}",
             "manufacturer": hw.manufacturer,
             "model": hw.model,
             "sw_version": self.sw_version,

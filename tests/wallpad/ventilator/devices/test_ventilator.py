@@ -10,9 +10,9 @@ from wallpad.ventilator.devices import (
 )
 
 EXPECTED_DEVICE_INFO = {
-    "name": "Grex Ventilator",
+    "name": "grex Ventilator",
     "identifiers": "grex_ventilator",
-    "manufacturer": "Grex",
+    "manufacturer": "GREX",
     "model": "Ventilator",
     "sw_version": "1.0.0",
 }

@@ -4,9 +4,9 @@
     'command_topic': 'homeassistant/fan/grex/mode',
     'device': dict({
       'identifiers': 'grex_ventilator',
-      'manufacturer': 'Grex',
+      'manufacturer': 'GREX',
       'model': 'Ventilator',
-      'name': 'Grex Ventilator',
+      'name': 'grex Ventilator',
       'sw_version': 'RS485 Compilation 0.1.0',
     }),
     'name': 'grex_fan',
@@ -30,9 +30,9 @@
   dict({
     'device': dict({
       'identifiers': 'grex_ventilator',
-      'manufacturer': 'Grex',
+      'manufacturer': 'GREX',
       'model': 'Ventilator',
-      'name': 'Grex Ventilator',
+      'name': 'grex Ventilator',
       'sw_version': 'RS485 Compilation 0.1.0',
     }),
     'icon': 'mdi:play-circle-outline',
@@ -46,9 +46,9 @@
   dict({
     'device': dict({
       'identifiers': 'grex_ventilator',
-      'manufacturer': 'Grex',
+      'manufacturer': 'GREX',
       'model': 'Ventilator',
-      'name': 'Grex Ventilator',
+      'name': 'grex Ventilator',
       'sw_version': 'RS485 Compilation 0.1.0',
     }),
     'icon': 'mdi:speedometer',

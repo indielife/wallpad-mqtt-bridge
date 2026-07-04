@@ -2,10 +2,8 @@ from wallpad.protocol.base import HardwareInfo
 
 # 제조사 메타데이터
 HARDWARE = HardwareInfo(
-    manufacturer="Grex",
+    manufacturer="GREX",
     model="Ventilator",
-    identifier_prefix="grex",
-    name_prefix="Grex",
 )
 
 # DEVICE 명명
