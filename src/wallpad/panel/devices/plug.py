@@ -1,12 +1,12 @@
 import json
 
-from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.devices.topic import TopicContext
+from wallpad.panel.devices.base import PanelDevice
 from wallpad.protocol.kocom.constants import DEVICE_PLUG
 
 
-class Plug(BaseDevice):
+class Plug(PanelDevice):
     def __init__(
         self,
         name_prefix: str,

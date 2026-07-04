@@ -18,7 +18,7 @@ from wallpad.protocol.grex.constants import (
 from wallpad.protocol.grex.packet_builder import GrexPacketBuilder
 from wallpad.protocol.grex.parser import GrexPacketParser
 from wallpad.transport import BaseTransport
-from wallpad.ventilator.devices import GrexVentilatorController, GrexVentilatorUnit
+from wallpad.ventilator.devices import VentilatorController, VentilatorUnit
 from wallpad.ventilator.state import VentilatorState
 
 logger = logging.getLogger(__name__)
@@ -48,11 +48,11 @@ class Ventilator:
 
         self.packet_builder = GrexPacketBuilder()
         self.parser = GrexPacketParser()
-        self.unit = GrexVentilatorUnit(
+        self.unit = VentilatorUnit(
             sw_version=self.config.sw_version,
             packet_builder=self.packet_builder,
         )
-        self.controller = GrexVentilatorController(
+        self.controller = VentilatorController(
             sw_version=self.config.sw_version,
         )
         self.devices = [self.unit, self.controller]

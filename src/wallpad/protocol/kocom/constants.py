@@ -1,3 +1,9 @@
+# 제조사 메타데이터
+MANUFACTURER = "KOCOM"
+MODEL = "Wallpad"
+IDENTIFIER_PREFIX = "kocom"
+NAME_PREFIX = "Kocom"
+
 # DEVICE 명명
 DEVICE_WALLPAD = "wallpad"
 DEVICE_LIGHT = "light"

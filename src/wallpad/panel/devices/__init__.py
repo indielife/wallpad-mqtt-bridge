@@ -1,3 +1,4 @@
+from .base import PanelDevice
 from .elevator import Elevator
 from .fan import Fan
 from .gas import Gas
@@ -10,6 +11,7 @@ __all__ = [
     "Fan",
     "Gas",
     "Light",
+    "PanelDevice",
     "Plug",
     "Thermostat",
 ]

@@ -26,14 +26,11 @@ class BaseDevice:
 
     @property
     def device_info(self) -> dict:
-        """HA Discovery에 등록될 물리적 기기(Device)의 공통 메타데이터입니다."""
-        return {
-            "name": f"Kocom {self.room}",
-            "identifiers": f"kocom_{self.room}",
-            "manufacturer": "KOCOM",
-            "model": "Wallpad",
-            "sw_version": self.sw_version,
-        }
+        """HA Discovery에 등록될 물리적 기기(Device)의 공통 메타데이터입니다.
+
+        하위 클래스에서 각 기기 제조사/프로토콜에 맞추어 오버라이딩해야 합니다.
+        """
+        raise NotImplementedError
 
     def get_discovery_payloads(self, remove: bool = False) -> list[tuple[str, str]]:
         """

@@ -1,7 +1,9 @@
-from .grex import GrexDevice, GrexVentilatorController, GrexVentilatorUnit
+from .base import VentilatorDevice
+from .controller import VentilatorController
+from .unit import VentilatorUnit
 
 __all__ = [
-    "GrexDevice",
-    "GrexVentilatorController",
-    "GrexVentilatorUnit",
+    "VentilatorController",
+    "VentilatorDevice",
+    "VentilatorUnit",
 ]
