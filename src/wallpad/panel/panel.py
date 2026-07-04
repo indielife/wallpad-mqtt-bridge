@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import time
 
 from wallpad.config import AppConfig
 from wallpad.devices.base import BaseDevice
@@ -23,7 +22,6 @@ from wallpad.protocol.kocom.constants import (
     DEVICE_PLUG,
     DEVICE_THERMOSTAT,
     DEVICE_WALLPAD,
-    KOCOM_INTERVAL,
 )
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 from wallpad.protocol.kocom.parser import KocomPacketParser
@@ -77,8 +75,6 @@ class Panel:
         self.ha_ready = asyncio.Event()
         self.scan_packet_buf = []
 
-        self.tick = time.time()
-        self._bus_lock = asyncio.Lock()
         self.packet_builder = KocomPacketBuilder(
             room_rev=config.kocom_room_rev, room_thermostat_rev=config.kocom_room_thermostat_rev
         )
@@ -102,7 +98,7 @@ class Panel:
             device_states=self.device_states,
             send_packet=self.send_packet,
             config=config,
-            is_bus_idle=self._is_bus_idle,
+            is_bus_idle=self.transport.is_idle,
             ha_ready=self.ha_ready,
         )
 
@@ -233,7 +229,6 @@ class Panel:
 
             packet = "".join(frame_buf)
             if self.parser.validate_checksum(packet)[0]:
-                self.tick = time.time()
                 self.packet_parsing(packet)
 
             frame_buf = []
@@ -278,7 +273,9 @@ class Panel:
 
     def _schedule_write(self, data: str) -> None:
         if data and self._loop:
-            asyncio.run_coroutine_threadsafe(self.write_to_bus(data), self._loop)
+            asyncio.run_coroutine_threadsafe(
+                self.transport.write_if_idle(bytearray.fromhex(data)), self._loop
+            )
 
     def set_list(self, device, room, value, name="kocom"):
         try:
@@ -294,9 +291,6 @@ class Panel:
                 e,
             )
 
-    def _is_bus_idle(self, now: float) -> bool:
-        return now - self.tick > KOCOM_INTERVAL / 1000
-
     async def send_packet(self, device, room, target, value, cmd="상태"):
         if cmd == "상태":
             packet = self.make_packet(device, room, "상태", target, value)
@@ -310,7 +304,7 @@ class Panel:
 
         v = self.parser.parse_frame(packet, self.device_states)
 
-        if not await self.write_to_bus(packet):
+        if not await self.transport.write_if_idle(bytearray.fromhex(packet)):
             return
 
         if cmd == "상태":
@@ -322,19 +316,6 @@ class Panel:
 
         if device == DEVICE_ELEVATOR:
             self.publish_state_to_ha(DEVICE_ELEVATOR, DEVICE_WALLPAD, "on")
-
-    async def write_to_bus(self, packet: str) -> bool:
-        """RS485 버스에 패킷을 씀.
-
-        버스 정숙 판정(tick 가드)부터 실제 전송, tick 갱신까지를 락으로 원자화해 서로 다른
-        코루틴(스캔 루프, MQTT 스레드에서 온 디버그 에코)이 겹쳐 쓰는 것을 막는다.
-        """
-        async with self._bus_lock:
-            if (time.time() - self.tick) < KOCOM_INTERVAL / 1000:
-                return False
-            await self.transport.write(bytearray.fromhex(packet))
-            self.tick = time.time()
-            return True
 
     def make_packet(self, device, room, cmd, target, value):
         # 1. 타겟 기기 객체 찾기

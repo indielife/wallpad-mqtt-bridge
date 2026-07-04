@@ -1,11 +1,9 @@
 """Panel이 StateSynchronizer를 올바르게 소유·기동하는지 검증합니다."""
 
 import asyncio
-import time
 from unittest.mock import AsyncMock
 
 from wallpad.panel.synchronizer import StateSynchronizer
-from wallpad.protocol.kocom.constants import KOCOM_INTERVAL
 
 
 def test_panel_owns_a_state_synchronizer(panel_instance):
@@ -15,13 +13,11 @@ def test_panel_owns_a_state_synchronizer(panel_instance):
     assert panel_instance.synchronizer.ha_ready is panel_instance.ha_ready
 
 
-def test_is_bus_idle_reflects_tick_guard(panel_instance):
-    now = time.time()
-    panel_instance.tick = now
-    assert panel_instance.synchronizer.is_bus_idle(now) is False
-
-    panel_instance.tick = now - (KOCOM_INTERVAL / 1000) - 1
-    assert panel_instance.synchronizer.is_bus_idle(now) is True
+def test_synchronizer_is_bus_idle_wired_to_transport(panel_instance):
+    """버스 정숙 판정은 이제 transport(BusArbitrationTransport)가 소유하므로,
+    synchronizer에는 그 is_idle을 그대로 주입했는지만 검증한다. 실제 정숙 판정
+    로직은 tests/wallpad/transport/test_bus_arbitration.py가 검증한다."""
+    assert panel_instance.synchronizer.is_bus_idle is panel_instance.transport.is_idle
 
 
 async def test_start_schedules_synchronizer_run(panel_instance):

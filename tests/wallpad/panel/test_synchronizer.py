@@ -23,7 +23,7 @@ def synchronizer(mock_config):
         device_states=KocomStateManager(),
         send_packet=AsyncMock(),
         config=mock_config,
-        is_bus_idle=lambda now: True,
+        is_bus_idle=lambda: True,
         ha_ready=asyncio.Event(),
     )
     sync.ha_ready.set()
@@ -36,7 +36,7 @@ async def test_run_blocks_until_ha_ready(mock_config):
         device_states=KocomStateManager(),
         send_packet=AsyncMock(),
         config=mock_config,
-        is_bus_idle=lambda now: True,
+        is_bus_idle=lambda: True,
         ha_ready=asyncio.Event(),
     )
 
@@ -52,7 +52,7 @@ async def test_run_skips_sync_while_bus_busy(mock_config):
         device_states=KocomStateManager(),
         send_packet=AsyncMock(),
         config=mock_config,
-        is_bus_idle=lambda now: False,
+        is_bus_idle=lambda: False,
         ha_ready=asyncio.Event(),
     )
     sync.ha_ready.set()
