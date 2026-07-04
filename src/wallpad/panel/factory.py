@@ -50,7 +50,7 @@ class DeviceFactory:
             Elevator(
                 name_prefix=name_prefix,
                 sw_version=config.sw_version,
-                hardware_info=kocom_const.HARDWARE,
+                hw_info=kocom_const.HARDWARE,
                 packet_builder=packet_builder,
                 topics=topics,
             )
@@ -74,7 +74,7 @@ class DeviceFactory:
             Gas(
                 name_prefix=name_prefix,
                 sw_version=config.sw_version,
-                hardware_info=kocom_const.HARDWARE,
+                hw_info=kocom_const.HARDWARE,
                 packet_builder=packet_builder,
                 topics=topics,
             )
@@ -98,7 +98,7 @@ class DeviceFactory:
             Fan(
                 name_prefix=name_prefix,
                 sw_version=config.sw_version,
-                hardware_info=kocom_const.HARDWARE,
+                hw_info=kocom_const.HARDWARE,
                 packet_builder=packet_builder,
                 topics=topics,
             )
@@ -152,7 +152,7 @@ class DeviceFactory:
                         room=room.name,
                         sub_device=sub_device_name,
                         sw_version=config.sw_version,
-                        hardware_info=kocom_const.HARDWARE,
+                        hw_info=kocom_const.HARDWARE,
                         packet_builder=packet_builder,
                         topics=topics,
                     )
@@ -182,7 +182,7 @@ class DeviceFactory:
                         room=room.name,
                         sub_device=sub_device_name,
                         sw_version=config.sw_version,
-                        hardware_info=kocom_const.HARDWARE,
+                        hw_info=kocom_const.HARDWARE,
                         packet_builder=packet_builder,
                         topics=topics,
                     )
@@ -214,7 +214,7 @@ class DeviceFactory:
                     name_prefix=name_prefix,
                     room=room.name,
                     sw_version=config.sw_version,
-                    hardware_info=kocom_const.HARDWARE,
+                    hw_info=kocom_const.HARDWARE,
                     packet_builder=packet_builder,
                     topics=topics,
                 )

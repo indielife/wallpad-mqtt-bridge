@@ -13,7 +13,7 @@ class PanelDevice(BaseDevice):
         room: str,
         sub_device: str,
         sw_version: str,
-        hardware_info: HardwareInfo,
+        hw_info: HardwareInfo,
         packet_builder: PacketBuilder | None = None,
         topics: TopicContext | None = None,
     ):
@@ -22,7 +22,7 @@ class PanelDevice(BaseDevice):
             room=room,
             sub_device=sub_device,
             sw_version=sw_version,
-            hardware_info=hardware_info,
+            hw_info=hw_info,
             packet_builder=packet_builder,
             topics=topics,
         )

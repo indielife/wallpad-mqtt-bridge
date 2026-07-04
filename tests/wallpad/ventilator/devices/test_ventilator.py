@@ -24,7 +24,7 @@ def unit():
     return VentilatorUnit(
         name_prefix="test_grex",
         sw_version="1.0.0",
-        hardware_info=grex_const.HARDWARE,
+        hw_info=grex_const.HARDWARE,
     )
 
 
@@ -34,7 +34,7 @@ def controller():
     return VentilatorController(
         name_prefix="test_grex",
         sw_version="1.0.0",
-        hardware_info=grex_const.HARDWARE,
+        hw_info=grex_const.HARDWARE,
     )
 
 

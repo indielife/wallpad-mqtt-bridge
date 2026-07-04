@@ -17,7 +17,7 @@ def plug_device():
         room="room1",
         sub_device="plug1",
         sw_version="1.0.0",
-        hardware_info=kocom_const.HARDWARE,
+        hw_info=kocom_const.HARDWARE,
         topics=topics,
     )
 

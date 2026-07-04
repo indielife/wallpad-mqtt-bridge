@@ -34,9 +34,10 @@ class Ventilator:
         ventilator_transport: BaseTransport,
     ):
         self.config = config
+        self.mqtt_client = mqtt_client
         self.controller_transport = controller_transport
         self.ventilator_transport = ventilator_transport
-        self.mqtt_client = mqtt_client
+
         self.state = VentilatorState()
 
         self.default_speed = config.ventilator_default_speed
@@ -49,14 +50,15 @@ class Ventilator:
 
         self.packet_builder = GrexPacketBuilder()
         self.parser = GrexPacketParser()
+
         self.unit = VentilatorUnit(
             sw_version=self.config.sw_version,
-            hardware_info=grex_const.HARDWARE,
+            hw_info=grex_const.HARDWARE,
             packet_builder=self.packet_builder,
         )
         self.controller = VentilatorController(
             sw_version=self.config.sw_version,
-            hardware_info=grex_const.HARDWARE,
+            hw_info=grex_const.HARDWARE,
         )
         self.devices = [self.unit, self.controller]
 

@@ -12,7 +12,7 @@ class Elevator(PanelDevice):
         self,
         name_prefix: str,
         sw_version: str,
-        hardware_info: HardwareInfo,
+        hw_info: HardwareInfo,
         packet_builder: PacketBuilder | None = None,
         topics: TopicContext | None = None,
     ):
@@ -22,7 +22,7 @@ class Elevator(PanelDevice):
             room="wallpad",
             sub_device="elevator",
             sw_version=sw_version,
-            hardware_info=hardware_info,
+            hw_info=hw_info,
             packet_builder=packet_builder,
             topics=topics,
         )

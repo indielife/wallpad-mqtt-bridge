@@ -14,7 +14,7 @@ class BaseDevice:
         room: str,
         sub_device: str,
         sw_version: str,
-        hardware_info: HardwareInfo,
+        hw_info: HardwareInfo,
         packet_builder: PacketBuilder | None = None,
         topics: TopicContext | None = None,
     ):
@@ -22,14 +22,14 @@ class BaseDevice:
         self.room = room
         self.sub_device = sub_device
         self.sw_version = sw_version
-        self.hardware_info = hardware_info
+        self.hw_info = hw_info
         self.packet_builder = packet_builder
         self.topics = topics
 
     @property
     def device_info(self) -> dict:
         """HA Discovery에 등록될 물리적 기기(Device)의 공통 메타데이터입니다."""
-        hw = self.hardware_info
+        hw = self.hw_info
         return {
             "name": f"{hw.name_prefix} {self.room}",
             "identifiers": f"{hw.identifier_prefix}_{self.room}",

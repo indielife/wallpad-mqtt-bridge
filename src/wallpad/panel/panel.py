@@ -61,10 +61,10 @@ class Panel:
         transport: BaseTransport,
     ):
         self.config = config
-        self.transport = transport
-        self.name = config.wallpad_manufacturer
         self.mqtt_client = mqtt_client
+        self.transport = transport
 
+        self.name = config.wallpad_manufacturer
         self.default_speed = config.kocom_default_speed
         if self.default_speed not in ["low", "medium", "high"]:
             logger.info(

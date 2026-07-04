@@ -9,7 +9,7 @@ class VentilatorDevice(BaseDevice):
     def __init__(
         self,
         sw_version: str,
-        hardware_info: HardwareInfo,
+        hw_info: HardwareInfo,
         name_prefix: str = "grex",
         packet_builder: GrexPacketBuilder | None = None,
     ):
@@ -18,14 +18,14 @@ class VentilatorDevice(BaseDevice):
             room="grex",
             sub_device="fan",
             sw_version=sw_version,
-            hardware_info=hardware_info,
+            hw_info=hw_info,
             packet_builder=packet_builder,
         )
 
     @property
     def device_info(self) -> dict:
         """환기장치 기기 고유의 메타데이터를 반환합니다."""
-        hw = self.hardware_info
+        hw = self.hw_info
         return {
             "name": f"{hw.name_prefix} {hw.model}",
             "identifiers": f"{hw.identifier_prefix}_{hw.model.lower()}",

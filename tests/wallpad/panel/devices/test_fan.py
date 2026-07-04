@@ -15,7 +15,7 @@ def fan_device():
     return Fan(
         name_prefix="test_kocom",
         sw_version="1.0.0",
-        hardware_info=kocom_const.HARDWARE,
+        hw_info=kocom_const.HARDWARE,
         topics=topics,
     )
 
