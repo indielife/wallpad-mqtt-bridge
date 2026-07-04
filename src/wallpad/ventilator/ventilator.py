@@ -84,13 +84,11 @@ class Ventilator:
                 self.mqtt_client.publish(topic, payload, retain=True)
 
     def _handle_fan_command(self, topic: str, payload: str) -> None:
-        if topic.endswith("/config"):
-            return  # discovery config 토픽 echo는 HA 명령이 아니므로 무시
+        key = self.unit.resolve_command_key(topic)
+        if key is None:
+            return
 
         logger.info("Message Fan: %s = %s", topic, payload)
-        key = topic.rsplit("/", 1)[-1]
-        if key not in ("speed", "mode"):
-            return
 
         if (
             key == "mode"

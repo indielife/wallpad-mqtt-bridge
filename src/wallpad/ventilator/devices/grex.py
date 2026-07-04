@@ -74,6 +74,16 @@ class GrexVentilatorUnit(GrexDevice):
         spd_cmd_t = f"{HA_PREFIX}/{HA_FAN}/{self.room}/speed"
         return [config_topic, command_topic, spd_cmd_t]
 
+    def resolve_command_key(self, topic: str) -> str | None:
+        """구독 토픽을 fan 명령 키(mode/speed)로 변환합니다.
+
+        discovery config 토픽 echo나 명령이 아닌 토픽은 None을 반환합니다.
+        """
+        if topic.endswith("/config"):
+            return None
+        key = topic.rsplit("/", 1)[-1]
+        return key if key in ("mode", "speed") else None
+
     def build_control_packet(self, mode: str, speed: str) -> str:
         """환기장치 본체를 제어하기 위한 패킷을 생성합니다."""
         if not self.packet_builder:

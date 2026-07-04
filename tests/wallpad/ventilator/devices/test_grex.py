@@ -92,6 +92,20 @@ def test_unit_get_subscribe_topics(unit):
     ]
 
 
+@pytest.mark.parametrize(
+    ("topic", "expected"),
+    [
+        (f"{HA_PREFIX}/{HA_FAN}/grex/mode", "mode"),
+        (f"{HA_PREFIX}/{HA_FAN}/grex/speed", "speed"),
+        (f"{HA_PREFIX}/{HA_FAN}/grex_fan/config", None),
+        (f"{HA_PREFIX}/{HA_FAN}/grex/state", None),
+    ],
+)
+def test_unit_resolve_command_key(unit, topic, expected):
+    """구독 토픽이 fan 명령 키로 변환되고, config echo 등은 None이 된다."""
+    assert unit.resolve_command_key(topic) == expected
+
+
 # ---------------------------------------------------------------------------
 # Controller (HA sensor)
 # ---------------------------------------------------------------------------
