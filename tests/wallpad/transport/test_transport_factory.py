@@ -5,7 +5,10 @@ from wallpad.transport import (
     create_panel_transport,
     create_ventilator_transports,
 )
-from wallpad.transport.bus_arbitration import BusArbitrationTransport
+from wallpad.transport.bus_arbitration import (
+    DEFAULT_IDLE_INTERVAL_SECONDS,
+    BusArbitrationTransport,
+)
 from wallpad.transport.reconnect import ReconnectingTransport
 from wallpad.transport.serial import SerialTransport
 from wallpad.transport.socket import SocketTransport
@@ -68,7 +71,7 @@ def test_create_panel_transport_serial(tmp_path):
     transport = create_panel_transport(config)
 
     assert isinstance(transport, BusArbitrationTransport)
-    assert transport._idle_interval == config.bus_idle_ms / 1000
+    assert transport._idle_interval == DEFAULT_IDLE_INTERVAL_SECONDS
     assert isinstance(transport._transport, ReconnectingTransport)
     assert isinstance(transport._transport._transport, SerialTransport)
     assert transport._transport._transport.port == "/dev/ttyUSB0"
@@ -86,7 +89,7 @@ def test_create_panel_transport_socket(tmp_path, monkeypatch):
     transport = create_panel_transport(config)
 
     assert isinstance(transport, BusArbitrationTransport)
-    assert transport._idle_interval == config.bus_idle_ms / 1000
+    assert transport._idle_interval == DEFAULT_IDLE_INTERVAL_SECONDS
     assert isinstance(transport._transport, ReconnectingTransport)
     assert isinstance(transport._transport._transport, SocketTransport)
     assert transport._transport._transport.host == "192.168.1.200"

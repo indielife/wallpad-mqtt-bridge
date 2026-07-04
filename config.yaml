@@ -85,7 +85,6 @@ options:
     init_temp: 22
     scan_interval: 300
     packet_delay: 0.8
-    bus_idle_ms: 100
     default_speed: low
     loglevel: info
 
@@ -137,7 +136,6 @@ schema:
     init_temp: "int(10,30)"
     scan_interval: "int(100,1000)"
     packet_delay: float
-    bus_idle_ms: "int(10,1000)"
     default_speed: str
     loglevel: str
 

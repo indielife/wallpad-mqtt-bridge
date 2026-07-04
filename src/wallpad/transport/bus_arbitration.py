@@ -3,6 +3,8 @@ import time
 
 from .base import BaseTransport
 
+DEFAULT_IDLE_INTERVAL_SECONDS = 0.1
+
 
 class BusArbitrationTransport(BaseTransport):
     """RS485 반이중 버스에서 충돌을 피하기 위해 마지막 버스 활동 시각을 추적하는
@@ -19,7 +21,9 @@ class BusArbitrationTransport(BaseTransport):
     메커니즘만 책임진다.
     """
 
-    def __init__(self, transport: BaseTransport, idle_interval: float):
+    def __init__(
+        self, transport: BaseTransport, idle_interval: float = DEFAULT_IDLE_INTERVAL_SECONDS
+    ):
         self._transport = transport
         self._idle_interval = idle_interval
         self._last_activity = time.monotonic()

@@ -17,7 +17,7 @@ def create_panel_transport(config: AppConfig) -> BaseTransport:
         inner = ReconnectingTransport(SerialTransport(config.serial_port, 9600))
     else:
         inner = ReconnectingTransport(SocketTransport(config.socket_host, config.socket_port))
-    return BusArbitrationTransport(inner, idle_interval=config.bus_idle_ms / 1000)
+    return BusArbitrationTransport(inner)
 
 
 def create_ventilator_transports(config: AppConfig) -> tuple[BaseTransport, BaseTransport]:
