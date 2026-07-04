@@ -10,6 +10,7 @@ from wallpad.mqtt import (
     TOPIC_BRIDGE_RESTART,
     MqttClient,
 )
+from wallpad.protocol.grex import constants as grex_const
 from wallpad.protocol.grex.constants import (
     PREFIX_CONTROLLER_ERROR,
     PREFIX_CONTROLLER_STATUS,
@@ -18,7 +19,7 @@ from wallpad.protocol.grex.constants import (
 from wallpad.protocol.grex.packet_builder import GrexPacketBuilder
 from wallpad.protocol.grex.parser import GrexPacketParser
 from wallpad.transport import BaseTransport
-from wallpad.ventilator.devices import GrexVentilatorController, GrexVentilatorUnit
+from wallpad.ventilator.devices import VentilatorController, VentilatorUnit
 from wallpad.ventilator.state import VentilatorState
 
 logger = logging.getLogger(__name__)
@@ -33,9 +34,10 @@ class Ventilator:
         ventilator_transport: BaseTransport,
     ):
         self.config = config
+        self.mqtt_client = mqtt_client
         self.controller_transport = controller_transport
         self.ventilator_transport = ventilator_transport
-        self.mqtt_client = mqtt_client
+
         self.state = VentilatorState()
 
         self.default_speed = config.ventilator_default_speed
@@ -48,12 +50,15 @@ class Ventilator:
 
         self.packet_builder = GrexPacketBuilder()
         self.parser = GrexPacketParser()
-        self.unit = GrexVentilatorUnit(
+
+        self.unit = VentilatorUnit(
             sw_version=self.config.sw_version,
+            hw_info=grex_const.HARDWARE,
             packet_builder=self.packet_builder,
         )
-        self.controller = GrexVentilatorController(
+        self.controller = VentilatorController(
             sw_version=self.config.sw_version,
+            hw_info=grex_const.HARDWARE,
         )
         self.devices = [self.unit, self.controller]
 

@@ -1,16 +1,18 @@
 import json
 
-from wallpad.devices.base import BaseDevice
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.devices.topic import TopicContext
+from wallpad.panel.devices.base import PanelDevice
+from wallpad.protocol.base import HardwareInfo
 from wallpad.protocol.kocom.constants import DEVICE_FAN, KOCOM_HEX_BY_FAN_SPEED
 
 
-class Fan(BaseDevice):
+class Fan(PanelDevice):
     def __init__(
         self,
         name_prefix: str,
         sw_version: str,
+        hw_info: HardwareInfo,
         packet_builder: PacketBuilder | None = None,
         topics: TopicContext | None = None,
     ):
@@ -19,6 +21,7 @@ class Fan(BaseDevice):
             room="wallpad",
             sub_device="fan",
             sw_version=sw_version,
+            hw_info=hw_info,
             packet_builder=packet_builder,
             topics=topics,
         )

@@ -11,6 +11,7 @@ from wallpad.panel.panel import (
     DEVICE_THERMOSTAT,
     Panel,
 )
+from wallpad.protocol.kocom import constants as kocom_const
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 
 
@@ -78,6 +79,7 @@ def panel_instance():
             room="livingroom",
             sub_device="light1",
             sw_version="1.0",
+            hw_info=kocom_const.HARDWARE,
             packet_builder=panel.packet_builder,
         ),
         Light(
@@ -85,6 +87,7 @@ def panel_instance():
             room="livingroom",
             sub_device="light2",
             sw_version="1.0",
+            hw_info=kocom_const.HARDWARE,
             packet_builder=panel.packet_builder,
         ),
         Light(
@@ -92,14 +95,34 @@ def panel_instance():
             room="livingroom",
             sub_device="light3",
             sw_version="1.0",
+            hw_info=kocom_const.HARDWARE,
             packet_builder=panel.packet_builder,
         ),
         Thermostat(
-            name_prefix="test", room="room1", sw_version="1.0", packet_builder=panel.packet_builder
+            name_prefix="test",
+            room="room1",
+            sw_version="1.0",
+            hw_info=kocom_const.HARDWARE,
+            packet_builder=panel.packet_builder,
         ),
-        Fan(name_prefix="test", sw_version="1.0", packet_builder=panel.packet_builder),
-        Elevator(name_prefix="test", sw_version="1.0", packet_builder=panel.packet_builder),
-        Gas(name_prefix="test", sw_version="1.0", packet_builder=panel.packet_builder),
+        Fan(
+            name_prefix="test",
+            sw_version="1.0",
+            hw_info=kocom_const.HARDWARE,
+            packet_builder=panel.packet_builder,
+        ),
+        Elevator(
+            name_prefix="test",
+            sw_version="1.0",
+            hw_info=kocom_const.HARDWARE,
+            packet_builder=panel.packet_builder,
+        ),
+        Gas(
+            name_prefix="test",
+            sw_version="1.0",
+            hw_info=kocom_const.HARDWARE,
+            packet_builder=panel.packet_builder,
+        ),
     ]
     return panel
 

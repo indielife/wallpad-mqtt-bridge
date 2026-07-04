@@ -1,3 +1,11 @@
+from wallpad.protocol.base import HardwareInfo
+
+# 제조사 메타데이터
+HARDWARE = HardwareInfo(
+    manufacturer="KOCOM",
+    model="Wallpad",
+)
+
 # DEVICE 명명
 DEVICE_WALLPAD = "wallpad"
 DEVICE_LIGHT = "light"

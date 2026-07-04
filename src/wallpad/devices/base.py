@@ -1,11 +1,11 @@
+from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.devices.topic import TopicContext
-
-from .packet_builder import PacketBuilder
+from wallpad.protocol.base import HardwareInfo
 
 
 class BaseDevice:
     """
-    모든 Kocom/Grex 디바이스의 기본이 되는 추상화 클래스입니다.
+    모든 월패드/환기장치 디바이스의 기본이 되는 추상화 클래스입니다.
     """
 
     def __init__(
@@ -14,6 +14,7 @@ class BaseDevice:
         room: str,
         sub_device: str,
         sw_version: str,
+        hw_info: HardwareInfo,
         packet_builder: PacketBuilder | None = None,
         topics: TopicContext | None = None,
     ):
@@ -21,17 +22,19 @@ class BaseDevice:
         self.room = room
         self.sub_device = sub_device
         self.sw_version = sw_version
+        self.hw_info = hw_info
         self.packet_builder = packet_builder
         self.topics = topics
 
     @property
     def device_info(self) -> dict:
         """HA Discovery에 등록될 물리적 기기(Device)의 공통 메타데이터입니다."""
+        hw = self.hw_info
         return {
-            "name": f"Kocom {self.room}",
-            "identifiers": f"kocom_{self.room}",
-            "manufacturer": "KOCOM",
-            "model": "Wallpad",
+            "identifiers": f"{hw.slug}_{self.room}",
+            "name": f"{hw.slug} {self.room}",
+            "manufacturer": hw.manufacturer,
+            "model": hw.model,
             "sw_version": self.sw_version,
         }
 

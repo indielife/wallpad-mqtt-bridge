@@ -1,3 +1,12 @@
+from wallpad.protocol.base import HardwareInfo
+
+# 제조사 메타데이터
+HARDWARE = HardwareInfo(
+    manufacturer="GREX",
+    model="Ventilator",
+)
+
+# DEVICE 명명
 DEVICE_FAN = "fan"
 
 # 수신 패킷 프리픽스 (앞 2바이트)

@@ -5,13 +5,19 @@ import pytest
 from wallpad.mqtt import HA_PREFIX, HA_SENSOR, HA_SWITCH
 from wallpad.panel.devices.gas import Gas
 from wallpad.panel.topic import TopicBuilder
+from wallpad.protocol.kocom import constants as kocom_const
 
 
 @pytest.fixture
 def gas_device():
     """테스트에 사용할 Gas 인스턴스를 제공하는 픽스처입니다."""
     topics = TopicBuilder.for_gas(room="wallpad", sub_device="gas")
-    return Gas(name_prefix="test_kocom", sw_version="1.0.0", topics=topics)
+    return Gas(
+        name_prefix="test_kocom",
+        sw_version="1.0.0",
+        hw_info=kocom_const.HARDWARE,
+        topics=topics,
+    )
 
 
 def test_gas_init(gas_device):
@@ -43,8 +49,8 @@ def test_gas_get_discovery_payloads_add(gas_device):
         "payload_off": "off",
         "unique_id": "test_kocom_wallpad_gas",
         "device": {
-            "name": "Kocom wallpad",
             "identifiers": "kocom_wallpad",
+            "name": "kocom wallpad",
             "manufacturer": "KOCOM",
             "model": "Wallpad",
             "sw_version": "1.0.0",
@@ -58,8 +64,8 @@ def test_gas_get_discovery_payloads_add(gas_device):
         "icon": "mdi:gas-cylinder",
         "unique_id": "test_kocom_wallpad_gas",
         "device": {
-            "name": "Kocom wallpad",
             "identifiers": "kocom_wallpad",
+            "name": "kocom wallpad",
             "manufacturer": "KOCOM",
             "model": "Wallpad",
             "sw_version": "1.0.0",

@@ -3,6 +3,7 @@ from wallpad.devices.base import BaseDevice
 from wallpad.panel.devices import Elevator, Fan, Gas, Light, Plug, Thermostat
 from wallpad.panel.state import DeviceState, KocomStateManager, RoomState, SubDeviceState
 from wallpad.panel.topic import TopicBuilder
+from wallpad.protocol.kocom import constants as kocom_const
 from wallpad.protocol.kocom.constants import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
@@ -49,6 +50,7 @@ class DeviceFactory:
             Elevator(
                 name_prefix=name_prefix,
                 sw_version=config.sw_version,
+                hw_info=kocom_const.HARDWARE,
                 packet_builder=packet_builder,
                 topics=topics,
             )
@@ -72,6 +74,7 @@ class DeviceFactory:
             Gas(
                 name_prefix=name_prefix,
                 sw_version=config.sw_version,
+                hw_info=kocom_const.HARDWARE,
                 packet_builder=packet_builder,
                 topics=topics,
             )
@@ -95,6 +98,7 @@ class DeviceFactory:
             Fan(
                 name_prefix=name_prefix,
                 sw_version=config.sw_version,
+                hw_info=kocom_const.HARDWARE,
                 packet_builder=packet_builder,
                 topics=topics,
             )
@@ -148,6 +152,7 @@ class DeviceFactory:
                         room=room.name,
                         sub_device=sub_device_name,
                         sw_version=config.sw_version,
+                        hw_info=kocom_const.HARDWARE,
                         packet_builder=packet_builder,
                         topics=topics,
                     )
@@ -177,6 +182,7 @@ class DeviceFactory:
                         room=room.name,
                         sub_device=sub_device_name,
                         sw_version=config.sw_version,
+                        hw_info=kocom_const.HARDWARE,
                         packet_builder=packet_builder,
                         topics=topics,
                     )
@@ -208,6 +214,7 @@ class DeviceFactory:
                     name_prefix=name_prefix,
                     room=room.name,
                     sw_version=config.sw_version,
+                    hw_info=kocom_const.HARDWARE,
                     packet_builder=packet_builder,
                     topics=topics,
                 )

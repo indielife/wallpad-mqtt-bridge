@@ -5,6 +5,7 @@ import pytest
 from wallpad.mqtt import HA_LIGHT, HA_PREFIX
 from wallpad.panel.devices.light import Light
 from wallpad.panel.topic import TopicBuilder
+from wallpad.protocol.kocom import constants as kocom_const
 
 
 @pytest.fixture
@@ -16,6 +17,7 @@ def light_device():
         room="room1",
         sub_device="light1",
         sw_version="1.0.0",
+        hw_info=kocom_const.HARDWARE,
         topics=topics,
     )
 
