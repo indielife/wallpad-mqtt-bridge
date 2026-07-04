@@ -71,6 +71,7 @@ class AppConfig:
         self.init_temp = 22
         self.scan_interval = 300
         self.packet_delay = 0.8
+        self.bus_idle_ms = 100
         self.kocom_default_speed = "low"
         self.log_level = "info"
 
@@ -133,6 +134,7 @@ class AppConfig:
         self.init_temp = adv.get("init_temp", self.init_temp)
         self.scan_interval = adv.get("scan_interval", self.scan_interval)
         self.packet_delay = adv.get("packet_delay", self.packet_delay)
+        self.bus_idle_ms = adv.get("bus_idle_ms", self.bus_idle_ms)
         self.kocom_default_speed = adv.get("default_speed", self.kocom_default_speed)
         self.log_level = adv.get("loglevel", self.log_level).lower()
 
