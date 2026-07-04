@@ -27,8 +27,8 @@ class VentilatorDevice(BaseDevice):
         """환기장치 기기 고유의 메타데이터를 반환합니다."""
         hw = self.hw_info
         return {
-            "name": f"{hw.slug} {hw.model}",
             "identifiers": f"{hw.slug}_{hw.model.lower()}",
+            "name": f"{hw.slug} {hw.model}",
             "manufacturer": hw.manufacturer,
             "model": hw.model,
             "sw_version": self.sw_version,

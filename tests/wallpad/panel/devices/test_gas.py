@@ -49,8 +49,8 @@ def test_gas_get_discovery_payloads_add(gas_device):
         "payload_off": "off",
         "unique_id": "test_kocom_wallpad_gas",
         "device": {
-            "name": "kocom wallpad",
             "identifiers": "kocom_wallpad",
+            "name": "kocom wallpad",
             "manufacturer": "KOCOM",
             "model": "Wallpad",
             "sw_version": "1.0.0",
@@ -64,8 +64,8 @@ def test_gas_get_discovery_payloads_add(gas_device):
         "icon": "mdi:gas-cylinder",
         "unique_id": "test_kocom_wallpad_gas",
         "device": {
-            "name": "kocom wallpad",
             "identifiers": "kocom_wallpad",
+            "name": "kocom wallpad",
             "manufacturer": "KOCOM",
             "model": "Wallpad",
             "sw_version": "1.0.0",

@@ -47,8 +47,8 @@ def test_elevator_get_discovery_payloads_add(elevator_device):
         "payload_off": "off",
         "unique_id": "test_kocom_wallpad_elevator",
         "device": {
-            "name": "kocom wallpad",
             "identifiers": "kocom_wallpad",
+            "name": "kocom wallpad",
             "manufacturer": "KOCOM",
             "model": "Wallpad",
             "sw_version": "1.0.0",
