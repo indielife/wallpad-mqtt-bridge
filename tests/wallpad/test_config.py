@@ -79,7 +79,7 @@ def test_app_config_load(mock_isfile):
         # 5. Advanced 설정 검증
         assert config.init_temp == 24
         assert config.scan_interval == 500
-        assert config.packey_delay == 1.5
+        assert config.packet_delay == 1.5
         assert config.kocom_default_speed == "high"
         assert config.log_level == "debug"
 

@@ -70,7 +70,7 @@ class AppConfig:
         # 5. Advanced 세부 제어 설정
         self.init_temp = 22
         self.scan_interval = 300
-        self.packey_delay = 0.8
+        self.packet_delay = 0.8
         self.kocom_default_speed = "low"
         self.log_level = "info"
 
@@ -132,7 +132,7 @@ class AppConfig:
         adv = json_data.get("advanced", {})
         self.init_temp = adv.get("init_temp", self.init_temp)
         self.scan_interval = adv.get("scan_interval", self.scan_interval)
-        self.packey_delay = adv.get("packet_delay", self.packey_delay)
+        self.packet_delay = adv.get("packet_delay", self.packet_delay)
         self.kocom_default_speed = adv.get("default_speed", self.kocom_default_speed)
         self.log_level = adv.get("loglevel", self.log_level).lower()
 

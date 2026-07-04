@@ -79,7 +79,7 @@ class StateSynchronizer:
             scan_state.count += 1
             scan_state.last = now
             await self.send_packet(device, room, "", "", cmd="조회")
-            await asyncio.sleep(self.config.packey_delay)
+            await asyncio.sleep(self.config.packet_delay)
         if scan_state.count > POLL_BURST_LIMIT:
             scan_state.tick = now
             scan_state.count = 0
