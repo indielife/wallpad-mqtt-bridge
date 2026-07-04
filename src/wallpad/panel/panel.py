@@ -78,6 +78,7 @@ class Panel:
         self.scan_packet_buf = []
 
         self.tick = time.time()
+        self._bus_lock = asyncio.Lock()
         self.packet_builder = KocomPacketBuilder(
             room_rev=config.kocom_room_rev, room_thermostat_rev=config.kocom_room_thermostat_rev
         )
@@ -269,10 +270,7 @@ class Panel:
 
     def _schedule_write(self, data: str) -> None:
         if data and self._loop:
-            asyncio.run_coroutine_threadsafe(
-                self.transport.write(bytearray.fromhex(data)), self._loop
-            )
-            self.tick = time.time()
+            asyncio.run_coroutine_threadsafe(self.write_to_bus(data), self._loop)
 
     def set_list(self, device, room, value, name="kocom"):
         try:
@@ -349,14 +347,9 @@ class Panel:
             await asyncio.sleep(0.2)
 
     async def send_packet(self, device, room, target, value, cmd="상태"):
-        if (time.time() - self.tick) < KOCOM_INTERVAL / 1000:
-            return
-
         if cmd == "상태":
-            logger.info("[To %s] %s/%s/%s -> %s", self.name, device, room, target, value)
             packet = self.make_packet(device, room, "상태", target, value)
         elif cmd == "조회":
-            logger.info("[To %s] %s/%s -> 조회", self.name, device, room)
             packet = self.make_packet(device, room, "조회", "", "")
         else:
             return
@@ -366,14 +359,31 @@ class Panel:
 
         v = self.parser.parse_frame(packet, self.device_states)
 
+        if not await self.write_to_bus(packet):
+            return
+
+        if cmd == "상태":
+            logger.info("[To %s] %s/%s/%s -> %s", self.name, device, room, target, value)
+        else:
+            logger.info("[To %s] %s/%s -> 조회", self.name, device, room)
         logger.debug("[To RS485] %s", packet)
         log_frame("To", self.name, v)
 
         if device == DEVICE_ELEVATOR:
             self.publish_state_to_ha(DEVICE_ELEVATOR, DEVICE_WALLPAD, "on")
 
-        await self.transport.write(bytearray.fromhex(packet))
-        self.tick = time.time()
+    async def write_to_bus(self, packet: str) -> bool:
+        """RS485 버스에 패킷을 씀.
+
+        버스 정숙 판정(tick 가드)부터 실제 전송, tick 갱신까지를 락으로 원자화해 서로 다른
+        코루틴(스캔 루프, MQTT 스레드에서 온 디버그 에코)이 겹쳐 쓰는 것을 막는다.
+        """
+        async with self._bus_lock:
+            if (time.time() - self.tick) < KOCOM_INTERVAL / 1000:
+                return False
+            await self.transport.write(bytearray.fromhex(packet))
+            self.tick = time.time()
+            return True
 
     def make_packet(self, device, room, cmd, target, value):
         # 1. 타겟 기기 객체 찾기
