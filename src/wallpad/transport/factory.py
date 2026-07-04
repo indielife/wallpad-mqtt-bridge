@@ -9,10 +9,10 @@ from wallpad.transport.socket import SocketTransport
 logger = logging.getLogger(__name__)
 
 
-def create_wallpad_transport(config: AppConfig) -> BaseTransport:
-    """Wallpad 연결 타입에 맞는 transport를 생성하여 반환합니다."""
+def create_panel_transport(config: AppConfig) -> BaseTransport:
+    """Panel 연결 타입에 맞는 transport를 생성하여 반환합니다."""
     if config.comm_type == "serial":
-        logger.info("Wallpad Serial Port: %s", config.serial_port)
+        logger.info("Panel Serial Port: %s", config.serial_port)
         return ReconnectingTransport(SerialTransport(config.serial_port, 9600))
     return ReconnectingTransport(SocketTransport(config.socket_host, config.socket_port))
 
