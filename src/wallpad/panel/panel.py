@@ -32,6 +32,27 @@ from wallpad.transport import BaseTransport
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
 
 
+def log_frame(direction: str, name: str, parsed_frame: dict) -> None:
+    fmt = "[%s %s] %s(%s) %s(%s) -> %s(%s)"
+    args = [
+        direction,
+        name,
+        parsed_frame["type"],
+        parsed_frame["command"],
+        parsed_frame["src_device"],
+        parsed_frame["src_room"],
+        parsed_frame["dst_device"],
+        parsed_frame["dst_room"],
+    ]
+
+    is_query = parsed_frame["command"] == "조회" and parsed_frame["src_device"] == DEVICE_WALLPAD
+    if not is_query:
+        fmt += " = %s"
+        args.append(parsed_frame["value"])
+
+    logger.debug(fmt, *args)
+
+
 class Panel:
     def __init__(
         self,
@@ -146,7 +167,7 @@ class Panel:
 
     def _handle_checksum_debug(self, topic: str, payload: str) -> None:
         chksum = self.parser.validate_checksum(payload.lower())
-        logger.info("[From HA]%s = %s(%s)", payload, chksum[0], chksum[1])
+        logger.info("[From HA] %s = %s(%s)", payload, chksum[0], chksum[1])
 
     def parse_message(self, topic_parts: list[str], payload: str) -> None:
         topic_str = "/".join(topic_parts)
@@ -163,7 +184,7 @@ class Panel:
                 device_type, room, sub_device, command, processed_payload, self.default_speed
             )
             logger.info(
-                "[From HA]%s/%s/%s/%s = %s",
+                "[From HA] %s/%s/%s/%s = %s",
                 device_type,
                 room,
                 sub_device,
@@ -217,32 +238,10 @@ class Panel:
             return
 
         try:
-            if v["command"] == "조회" and v["src_device"] == DEVICE_WALLPAD:
-                if source == "HA":
-                    packet = self.make_packet(v["dst_device"], v["dst_room"], "조회", "", "")
-                    self._schedule_write(packet)
-                logger.debug(
-                    "[From %s]%s(%s) %s(%s) -> %s(%s)",
-                    source,
-                    v["type"],
-                    v["command"],
-                    v["src_device"],
-                    v["src_room"],
-                    v["dst_device"],
-                    v["dst_room"],
-                )
-            else:
-                logger.debug(
-                    "[From %s]%s(%s) %s(%s) -> %s(%s) = %s",
-                    source,
-                    v["type"],
-                    v["command"],
-                    v["src_device"],
-                    v["src_room"],
-                    v["dst_device"],
-                    v["dst_room"],
-                    v["value"],
-                )
+            if v["command"] == "조회" and v["src_device"] == DEVICE_WALLPAD and source == "HA":
+                packet = self.make_packet(v["dst_device"], v["dst_room"], "조회", "", "")
+                self._schedule_write(packet)
+            log_frame("From", source, v)
 
             if (v["type"] == "ack" and v["dst_device"] == DEVICE_WALLPAD) or (
                 v["type"] == "send" and v["dst_device"] == DEVICE_ELEVATOR
@@ -277,7 +276,7 @@ class Panel:
 
     def set_list(self, device, room, value, name="kocom"):
         try:
-            logger.info("[From %s]%s/%s/state = %s", name, device, room, value)
+            logger.info("[From %s] %s/%s/state = %s", name, device, room, value)
             self.device_states.update_from_rs485(device, room, value, self.default_speed)
         except Exception as e:
             logger.error(
@@ -354,10 +353,10 @@ class Panel:
             return
 
         if cmd == "상태":
-            logger.info("[To %s]%s/%s/%s -> %s", self.name, device, room, target, value)
+            logger.info("[To %s] %s/%s/%s -> %s", self.name, device, room, target, value)
             packet = self.make_packet(device, room, "상태", target, value)
         elif cmd == "조회":
-            logger.info("[To %s]%s/%s -> 조회", self.name, device, room)
+            logger.info("[To %s] %s/%s -> 조회", self.name, device, room)
             packet = self.make_packet(device, room, "조회", "", "")
         else:
             return
@@ -368,29 +367,7 @@ class Panel:
         v = self.parser.parse_frame(packet, self.device_states)
 
         logger.debug("[To RS485] %s", packet)
-        if v["command"] == "조회" and v["src_device"] == DEVICE_WALLPAD:
-            logger.debug(
-                "[To %s]%s(%s) %s(%s) -> %s(%s)",
-                self.name,
-                v["type"],
-                v["command"],
-                v["src_device"],
-                v["src_room"],
-                v["dst_device"],
-                v["dst_room"],
-            )
-        else:
-            logger.debug(
-                "[To %s]%s(%s) %s(%s) -> %s(%s) = %s",
-                self.name,
-                v["type"],
-                v["command"],
-                v["src_device"],
-                v["src_room"],
-                v["dst_device"],
-                v["dst_room"],
-                v["value"],
-            )
+        log_frame("To", self.name, v)
 
         if device == DEVICE_ELEVATOR:
             self.publish_state_to_ha(DEVICE_ELEVATOR, DEVICE_WALLPAD, "on")
