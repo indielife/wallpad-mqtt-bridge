@@ -277,14 +277,13 @@ class Panel:
                 self.transport.write_if_idle(bytearray.fromhex(data)), self._loop
             )
 
-    def set_list(self, device, room, value, name="kocom"):
+    def set_list(self, device, room, value):
         try:
-            logger.info("[From %s] %s/%s/state = %s", name, device, room, value)
             self.device_states.update_from_rs485(device, room, value, self.default_speed)
+            logger.info("[From rs485] %s/%s/state = %s", device, room, value)
         except Exception as e:
             logger.error(
-                "Failed to update state from %s: %s/%s = %s (error: %r)",
-                name,
+                "Failed to update state from rs485: %s/%s = %s (error: %r)",
                 device,
                 room,
                 value,
