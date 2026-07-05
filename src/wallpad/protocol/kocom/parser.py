@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class KocomPacketParser(PacketParser):
-    PACKET_FRAMES: ClassVar[dict[str, int]] = {"aa": 21}
+    SOF_LENGTH_MAP: ClassVar[dict[str, int]] = {"aa55": 21}
     PACKET_LENGTH = 42
 
     def __init__(self, config) -> None:

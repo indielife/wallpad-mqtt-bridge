@@ -82,3 +82,16 @@ async def test_mixed_d0_d1_packets_on_single_transport(ventilator):
     assert ventilator.dispatch_packet.call_count == 2
     ventilator.dispatch_packet.assert_any_call(VALID_D08A)
     ventilator.dispatch_packet.assert_any_call(VALID_D18B)
+
+
+async def test_sof_byte_in_payload_does_not_break_frame(ventilator):
+    """패킷 페이로드 내부에 SOF의 일부가 나타나도 프레임이 깨지지 않는다."""
+    # d0 8a 00 00 d0 00 01 01 00 00 5c -> sum(bytes[1..9])=92=0x5c
+    valid_d08a_with_d0 = "d08a0000d000010100005c"
+    transport = AsyncMock()
+    transport.read.side_effect = _byte_seq(valid_d08a_with_d0, asyncio.CancelledError())
+
+    with pytest.raises(asyncio.CancelledError):
+        await ventilator.receive_packets(transport)
+
+    ventilator.dispatch_packet.assert_called_once_with(valid_d08a_with_d0)
