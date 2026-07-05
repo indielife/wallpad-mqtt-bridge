@@ -71,3 +71,14 @@ async def test_two_valid_packets_dispatched(panel):
         await panel.receive_packets()
 
     assert panel.process_packet.call_count == 2
+
+
+async def test_sof_byte_in_payload_does_not_break_frame(panel):
+    """패킷 페이로드 내부에 SOF의 첫 바이트가 나타나도 프레임이 깨지지 않는다."""
+    valid_packet_with_aa = "aa5530bc000e00010000aa00000000000000a50d0d"
+    panel.transport.read.side_effect = _byte_seq(valid_packet_with_aa, asyncio.CancelledError())
+
+    with pytest.raises(asyncio.CancelledError):
+        await panel.receive_packets()
+
+    panel.process_packet.assert_called_once_with(valid_packet_with_aa)

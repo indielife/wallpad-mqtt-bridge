@@ -212,28 +212,26 @@ class Panel:
 
     async def receive_packets(self):
         buf = []
-        expected_len = 0
-        is_reading = False
         while True:
             hex_byte = (await self.transport.read(1)).hex()
+            buf.append(hex_byte)
 
-            if hex_byte in self.parser.PACKET_FRAMES:
-                buf = [hex_byte]
-                expected_len = self.parser.PACKET_FRAMES[hex_byte]
-                is_reading = True
-            elif is_reading:
-                buf.append(hex_byte)
+            while len(buf) >= 2:
+                sof = buf[0] + buf[1]
+                if sof not in self.parser.SOF_LENGTH_MAP:
+                    buf.pop(0)
+                    continue
 
-            if not is_reading or len(buf) < expected_len:
-                continue
+                expected_len = self.parser.SOF_LENGTH_MAP[sof]
+                if len(buf) < expected_len:
+                    break
 
-            packet = "".join(buf)
-            if self.parser.validate_checksum(packet)[0]:
-                self.process_packet(packet)
-
-            buf = []
-            expected_len = 0
-            is_reading = False
+                packet = "".join(buf[:expected_len])
+                if self.parser.validate_checksum(packet)[0]:
+                    self.process_packet(packet)
+                    buf = buf[expected_len:]
+                else:
+                    buf.pop(0)
 
     def process_packet(self, packet, source="kocom"):
         parsed_frame = self.parser.parse_frame(packet, self.device_states)

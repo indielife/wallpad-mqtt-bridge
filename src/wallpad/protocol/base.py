@@ -15,7 +15,7 @@ class HardwareInfo:
 
 
 class PacketParser(ABC):
-    PACKET_FRAMES: ClassVar[dict[str, int]]
+    SOF_LENGTH_MAP: ClassVar[dict[str, int]]  # Start of Frame, Length of Frame
 
     @abstractmethod
     def validate_checksum(self, packet: str) -> tuple[bool, str]: ...

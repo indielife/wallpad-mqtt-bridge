@@ -11,7 +11,7 @@ from wallpad.protocol.grex.constants import (
 
 
 class GrexPacketParser(PacketParser):
-    PACKET_FRAMES: ClassVar[dict[str, int]] = {"d0": 11, "d1": 12}
+    SOF_LENGTH_MAP: ClassVar[dict[str, int]] = {"d00a": 11, "d08a": 11, "d18b": 12}
 
     def validate_checksum(self, packet: str) -> tuple[bool, str]:
         n = len(packet) // 2
