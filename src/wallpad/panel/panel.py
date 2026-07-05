@@ -168,7 +168,7 @@ class Panel:
         logger.info("[From HA]HomeAssistant Scan")
 
     def _handle_packet_debug(self, topic: str, payload: str) -> None:
-        self.packet_parsing(payload.lower(), source="HA")
+        self.process_packet(payload.lower(), source="HA")
 
     def _handle_checksum_debug(self, topic: str, payload: str) -> None:
         chksum = self.parser.validate_checksum(payload.lower())
@@ -211,58 +211,53 @@ class Panel:
             logger.info("[To HA] %s = %s", topic, json.dumps(payload, ensure_ascii=False))
 
     async def receive_packets(self):
-        frame_buf = []
-        frame_len = 0
-        in_frame = False
+        buf = []
+        expected_len = 0
+        is_reading = False
         while True:
-            byte_hex = (await self.transport.read(1)).hex()
+            hex_byte = (await self.transport.read(1)).hex()
 
-            if byte_hex in self.parser.PACKET_FRAMES:
-                frame_buf = [byte_hex]
-                frame_len = self.parser.PACKET_FRAMES[byte_hex]
-                in_frame = True
-            elif in_frame:
-                frame_buf.append(byte_hex)
+            if hex_byte in self.parser.PACKET_FRAMES:
+                buf = [hex_byte]
+                expected_len = self.parser.PACKET_FRAMES[hex_byte]
+                is_reading = True
+            elif is_reading:
+                buf.append(hex_byte)
 
-            if not in_frame or len(frame_buf) < frame_len:
+            if not is_reading or len(buf) < expected_len:
                 continue
 
-            packet = "".join(frame_buf)
+            packet = "".join(buf)
             if self.parser.validate_checksum(packet)[0]:
-                self.packet_parsing(packet)
+                self.process_packet(packet)
 
-            frame_buf = []
-            frame_len = 0
-            in_frame = False
+            buf = []
+            expected_len = 0
+            is_reading = False
 
-    def packet_parsing(self, packet, source="kocom"):
-        v = self.parser.parse_frame(packet, self.device_states)
-
-        if v is None:
+    def process_packet(self, packet, source="kocom"):
+        parsed_frame = self.parser.parse_frame(packet, self.device_states)
+        if parsed_frame is None:
             return
 
         try:
-            if v["command"] == "조회" and v["src_device"] == DEVICE_WALLPAD and source == "HA":
-                packet = self.make_packet(v["dst_device"], v["dst_room"], "조회", "", "")
-                self._schedule_write(packet)
-            log_frame("From", source, v)
-
-            if (v["type"] == "ack" and v["dst_device"] == DEVICE_WALLPAD) or (
-                v["type"] == "send" and v["dst_device"] == DEVICE_ELEVATOR
+            if (
+                parsed_frame["command"] == "조회"
+                and parsed_frame["src_device"] == DEVICE_WALLPAD
+                and source == "HA"
             ):
-                if v["type"] == "send" and v["dst_device"] == DEVICE_ELEVATOR:
-                    self.set_list(v["dst_device"], DEVICE_WALLPAD, v["value"])
-                    self.publish_state_to_ha(v["dst_device"], DEVICE_WALLPAD, v["value"])
-                elif v["src_device"] == DEVICE_FAN or v["src_device"] == DEVICE_GAS:
-                    self.set_list(v["src_device"], DEVICE_WALLPAD, v["value"])
-                    self.publish_state_to_ha(v["src_device"], DEVICE_WALLPAD, v["value"])
-                elif (
-                    v["src_device"] == DEVICE_THERMOSTAT
-                    or v["src_device"] == DEVICE_LIGHT
-                    or v["src_device"] == DEVICE_PLUG
-                ):
-                    self.set_list(v["src_device"], v["src_room"], v["value"])
-                    self.publish_state_to_ha(v["src_device"], v["src_room"], v["value"])
+                packet = self.make_packet(
+                    parsed_frame["dst_device"], parsed_frame["dst_room"], "조회", "", ""
+                )
+                self._schedule_write(packet)
+            log_frame("From", source, parsed_frame)
+
+            update_target = parsed_frame.get("update_target")
+            if update_target:
+                self.set_list(update_target["device"], update_target["room"], parsed_frame["value"])
+                self.publish_state_to_ha(
+                    update_target["device"], update_target["room"], parsed_frame["value"]
+                )
         except Exception as e:
             logger.error(
                 "Error parsing packet %s (From %s): %r",
@@ -277,14 +272,13 @@ class Panel:
                 self.transport.write_if_idle(bytearray.fromhex(data)), self._loop
             )
 
-    def set_list(self, device, room, value, name="kocom"):
+    def set_list(self, device, room, value):
         try:
-            logger.info("[From %s] %s/%s/state = %s", name, device, room, value)
             self.device_states.update_from_rs485(device, room, value, self.default_speed)
+            logger.info("[From rs485] %s/%s/state = %s", device, room, value)
         except Exception as e:
             logger.error(
-                "Failed to update state from %s: %s/%s = %s (error: %r)",
-                name,
+                "Failed to update state from rs485: %s/%s = %s (error: %r)",
                 device,
                 room,
                 value,
@@ -302,7 +296,7 @@ class Panel:
         if not packet:
             return
 
-        v = self.parser.parse_frame(packet, self.device_states)
+        parsed_frame = self.parser.parse_frame(packet, self.device_states)
 
         if not await self.transport.write_if_idle(bytearray.fromhex(packet)):
             return
@@ -312,7 +306,7 @@ class Panel:
         else:
             logger.info("[To %s] %s/%s -> 조회", self.name, device, room)
         logger.debug("[To RS485] %s", packet)
-        log_frame("To", self.name, v)
+        log_frame("To", self.name, parsed_frame)
 
         if device == DEVICE_ELEVATOR:
             self.publish_state_to_ha(DEVICE_ELEVATOR, DEVICE_WALLPAD, "on")

@@ -104,6 +104,23 @@ class KocomPacketParser(PacketParser):
                 v["value"] = "off"
             elif v["src_device"] == DEVICE_GAS:
                 v["value"] = v["command"]
+
+            if (v["type"] == "ack" and v["dst_device"] == DEVICE_WALLPAD) or (
+                v["type"] == "send" and v["dst_device"] == DEVICE_ELEVATOR
+            ):
+                if v["type"] == "send" and v["dst_device"] == DEVICE_ELEVATOR:
+                    v["update_target"] = {
+                        "device": v["dst_device"],
+                        "room": DEVICE_WALLPAD,
+                    }
+                else:
+                    v["update_target"] = {
+                        "device": v["src_device"],
+                        "room": DEVICE_WALLPAD
+                        if v["src_device"] in (DEVICE_FAN, DEVICE_GAS)
+                        else v["src_room"],
+                    }
+
             return v
         except Exception as e:
             logger.error("Failed to interpret packet %r: %r", p, e)

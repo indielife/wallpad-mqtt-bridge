@@ -81,12 +81,12 @@ def test_parse_message_fan(panel_instance):
     assert panel_instance.device_states[DEVICE_FAN]["wallpad"]["mode"]["set"] == "on"
 
 
-def test_packet_parsing_light_status(panel_instance):
+def test_process_packet_light_status(panel_instance):
     """RS485 조명 상태 수신 패킷 파싱 시 device_states 상태 업데이트를 검증합니다."""
     # 거실(livingroom) 조명 상태 수신 ACK 패킷 (light1 켜짐, light2 & light3 꺼짐)
     # aa55(header) 30d(type:ack) 0(order) 00(pad) 0e(light) 00(livingroom) 0100(dst:wallpad) 00(상태) ff00000000000000(value) 00(checksum) 0d0d(tail)
     packet = "aa5530d0000e00010000ff00000000000000000d0d"
-    panel_instance.packet_parsing(packet)
+    panel_instance.process_packet(packet)
 
     assert panel_instance.device_states[DEVICE_LIGHT]["livingroom"]["light1"]["state"] == "on"
     assert panel_instance.device_states[DEVICE_LIGHT]["livingroom"]["light2"]["state"] == "off"
@@ -94,12 +94,12 @@ def test_packet_parsing_light_status(panel_instance):
     assert panel_instance.device_states[DEVICE_LIGHT]["livingroom"]["scan"]["tick"] > 0.0
 
 
-def test_packet_parsing_thermostat_status(panel_instance):
+def test_process_packet_thermostat_status(panel_instance):
     """RS485 보일러 상태 수신 패킷 파싱 시 device_states 상태 업데이트를 검증합니다."""
     # 거실(livingroom) 보일러 상태 수신 ACK 패킷 (heat모드, 목표 22도, 현재 20도)
     # aa55 30d 0 00 36(thermo) 00(livingroom) 0100(dst:wallpad) 00(상태) 1100160014000000(value) 00 0d0d
     packet = "aa5530d00036000100001100160014000000000d0d"
-    panel_instance.packet_parsing(packet)
+    panel_instance.process_packet(packet)
 
     assert panel_instance.device_states[DEVICE_THERMOSTAT]["livingroom"]["mode"]["state"] == "heat"
     assert (

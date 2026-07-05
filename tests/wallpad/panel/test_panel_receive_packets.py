@@ -26,20 +26,20 @@ def panel():
     p.tick = 0.0
     p.name = "kocom"
     p.transport = AsyncMock()
-    p.packet_parsing = MagicMock()
+    p.process_packet = MagicMock()
     cfg = MagicMock()
     p.parser = KocomPacketParser(cfg)
     return p
 
 
 async def test_valid_packet_dispatched(panel):
-    """유효 패킷 수신 시 packet_parsing이 정확히 한 번 호출된다."""
+    """유효 패킷 수신 시 process_packet이 정확히 한 번 호출된다."""
     panel.transport.read.side_effect = _byte_seq(VALID_PACKET, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
         await panel.receive_packets()
 
-    panel.packet_parsing.assert_called_once_with(VALID_PACKET)
+    panel.process_packet.assert_called_once_with(VALID_PACKET)
 
 
 async def test_garbage_before_start_byte_ignored(panel):
@@ -50,17 +50,17 @@ async def test_garbage_before_start_byte_ignored(panel):
     with pytest.raises(asyncio.CancelledError):
         await panel.receive_packets()
 
-    panel.packet_parsing.assert_called_once_with(VALID_PACKET)
+    panel.process_packet.assert_called_once_with(VALID_PACKET)
 
 
 async def test_invalid_checksum_not_dispatched(panel):
-    """체크섬이 불일치하는 패킷은 packet_parsing이 호출되지 않는다."""
+    """체크섬이 불일치하는 패킷은 process_packet이 호출되지 않는다."""
     panel.transport.read.side_effect = _byte_seq(INVALID_CHECKSUM, asyncio.CancelledError())
 
     with pytest.raises(asyncio.CancelledError):
         await panel.receive_packets()
 
-    panel.packet_parsing.assert_not_called()
+    panel.process_packet.assert_not_called()
 
 
 async def test_two_valid_packets_dispatched(panel):
@@ -70,4 +70,4 @@ async def test_two_valid_packets_dispatched(panel):
     with pytest.raises(asyncio.CancelledError):
         await panel.receive_packets()
 
-    assert panel.packet_parsing.call_count == 2
+    assert panel.process_packet.call_count == 2
