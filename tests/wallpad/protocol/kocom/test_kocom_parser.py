@@ -112,3 +112,33 @@ def test_parse_frame_invalid_packet_returns_none(parser):
     """파싱 불가능한 패킷에 대해 None을 반환한다."""
     v = parser.parse_frame("deadbeef")
     assert v is None
+
+
+# ── parse_frame: 라우팅 타겟 판정 ───────────────────────────────────────────────
+
+
+def test_parse_frame_target_routing_light(parser):
+    """ACK 조명 패킷의 타겟은 src_device와 src_room으로 설정된다."""
+    v = parser.parse_frame(ACK_LIGHT)
+    assert v is not None
+    assert v["update_target"]["device"] == "light"
+    assert v["update_target"]["room"] == "livingroom"
+
+
+def test_parse_frame_target_routing_fan(parser):
+    """ACK 팬 패킷의 타겟 룸은 항상 wallpad로 설정된다."""
+    v = parser.parse_frame(ACK_FAN)
+    assert v is not None
+    assert v["update_target"]["device"] == "fan"
+    assert v["update_target"]["room"] == "wallpad"
+
+
+def test_parse_frame_target_routing_elevator(parser):
+    """SEND 엘리베이터 패킷의 타겟은 dst_device와 wallpad로 설정된다."""
+    # 엘리베이터 SEND 패킷: type=bc(send), dst=44(elevator)
+    packet = "aa5530bc0044000100000000000000000000020d0d"
+    p = parser._parse_packet(packet)
+    v = parser._value_packet(p)
+    assert v is not None
+    assert v["update_target"]["device"] == "elevator"
+    assert v["update_target"]["room"] == "wallpad"

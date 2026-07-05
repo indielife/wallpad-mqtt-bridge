@@ -126,29 +126,29 @@ class Ventilator:
         logger.info("[To HA] %s = %s", topic, json.dumps(value, ensure_ascii=False))
 
     async def receive_packets(self, transport):
-        frame_buf = []
-        frame_len = 0
-        in_frame = False
+        buf = []
+        expected_len = 0
+        is_reading = False
         while True:
-            byte_hex = (await transport.read(1)).hex()
+            hex_byte = (await transport.read(1)).hex()
 
-            if byte_hex in self.parser.PACKET_FRAMES:
-                frame_buf = [byte_hex]
-                frame_len = self.parser.PACKET_FRAMES[byte_hex]
-                in_frame = True
-            elif in_frame:
-                frame_buf.append(byte_hex)
+            if hex_byte in self.parser.PACKET_FRAMES:
+                buf = [hex_byte]
+                expected_len = self.parser.PACKET_FRAMES[hex_byte]
+                is_reading = True
+            elif is_reading:
+                buf.append(hex_byte)
 
-            if not in_frame or len(frame_buf) < frame_len:
+            if not is_reading or len(buf) < expected_len:
                 continue
 
-            packet = "".join(frame_buf)
+            packet = "".join(buf)
             if self.parser.validate_checksum(packet)[0]:
                 await self.dispatch_packet(packet)
 
-            frame_buf = []
-            frame_len = 0
-            in_frame = False
+            buf = []
+            expected_len = 0
+            is_reading = False
 
     async def dispatch_packet(self, packet):
         parsed = self.parser.parse_frame(packet)
