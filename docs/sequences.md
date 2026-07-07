@@ -2,7 +2,7 @@
 
 > **스레드 구분**
 > - **paho thread**: MQTT 콜백(`on_connect`, `on_message`)이 실행되는 paho 내부 스레드
-> - **asyncio loop**: `scan_list()`, `receive_packets()` 태스크가 실행되는 이벤트 루프 스레드
+> - **asyncio loop**: `receive_packets()`, `StateSynchronizer.run()` 태스크가 실행되는 이벤트 루프 스레드
 
 ---
 
@@ -21,16 +21,16 @@ sequenceDiagram
     participant HA as Home Assistant
 
     main->>Panel: __init__()
-    Note over Panel: ha_ready 미설정, _loop None
+    Note over Panel: _register_topic_routes(), ha_ready 미설정, _loop None
     main->>paho: mqtt.connect()
     main->>aloop: await panel.start()
     aloop->>aloop: await transport.connect()
-    aloop->>aloop: create_task(scan_list())
+    aloop->>aloop: create_task(receive_packets())
+    aloop->>aloop: create_task(synchronizer.run())
     aloop->>aloop: _loop 할당
-    Note over aloop: scan_list() 대기 - await ha_ready.wait()
+    Note over aloop: synchronizer.run() 대기 - await ha_ready.wait()
 
     paho-->>Panel: on_connect()
-    Panel->>Panel: _subscribe_ha_topics()
     Panel->>Panel: _publish_ha_discovery()
     Note over Panel: ha_ready.clear(), ha_registry 설정
     Panel->>Broker: discovery 토픽 발행 (retain)
@@ -42,7 +42,7 @@ sequenceDiagram
 
     paho->>aloop: call_soon_threadsafe(ha_ready.set)
     aloop->>aloop: ha_ready.set()
-    Note over aloop: scan_list() 재개 - RS485 폴링 시작
+    Note over aloop: synchronizer.run() 재개 - RS485 폴링 시작
 ```
 
 ---
@@ -50,7 +50,7 @@ sequenceDiagram
 ## 2. HA to Panel (제어 명령)
 
 HA 제어 명령이 내려오면 `device_states`에 목표 상태를 기록하고,
-`scan_list()` 다음 순회 시 RS485 패킷을 전송한다.
+`StateSynchronizer` 다음 순회 시 RS485 패킷을 전송한다.
 
 ```mermaid
 sequenceDiagram
@@ -74,10 +74,10 @@ sequenceDiagram
     Panel->>Broker: publish_state_to_ha() optimistic
     Broker->>HA: 즉시 상태 반영
 
-    aloop->>aloop: scan_list() 다음 순회
-    Note over aloop: _scan_sub_device() - set != state 감지
-    aloop->>aloop: set_serial() - make_packet()
-    aloop->>RS485: transport.write()
+    aloop->>aloop: synchronizer.sync_once() 다음 순회
+    Note over aloop: reconcile_device() - set != state 감지
+    aloop->>aloop: send_packet() - make_packet()
+    aloop->>RS485: transport.write_if_idle()
 ```
 
 ---
@@ -95,8 +95,8 @@ sequenceDiagram
     participant HA as Home Assistant
 
     RS485->>aloop: 상태 패킷 송신
-    Note over aloop: receive_packets() - start byte 감지, 버퍼 누적, 체크섬 검증
-    aloop->>Panel: packet_parsing()
+    Note over aloop: receive_packets() - SOF 감지, 버퍼 누적, 체크섬 검증
+    aloop->>Panel: process_packet()
     Panel->>Panel: parser.parse_frame()
     Note over Panel: device, room, value 추출
     Panel->>Panel: set_list()
