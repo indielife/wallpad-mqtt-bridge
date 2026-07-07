@@ -4,11 +4,11 @@
 
 ---
 
-## 1. RS485 통신 연결 방식 비교 (Socket vs Serial)
+## RS485 통신 연결 방식 비교 (Socket vs Serial)
 
 이 프로젝트는 Home Assistant(HA)가 구동되는 호스트 기기(라즈베리 파이, 미니 PC 등)와 RS485 버스 간의 통신 방식을 두 가지로 지원합니다.
 
-### 1.1. 소켓 방식 (Socket Mode - EW11 등 사용)
+### 소켓 방식 (Socket Mode - EW11 등 사용)
 Wi-Fi to RS485 게이트웨이(예: Elfin-EW11)를 하드웨어 단에 설치하여 무선으로 데이터를 릴레이하는 방식입니다.
 
 * **물리 결선**: 월패드 통신선 ➡️ EW11 (RS485 단자)
@@ -28,7 +28,7 @@ graph TD
     end
 ```
 
-### 1.2. 시리얼 방식 (Serial Mode - USB to RS485 사용)
+### 시리얼 방식 (Serial Mode - USB to RS485 사용)
 USB to RS485 변환 동글을 Home Assistant 호스트 기기에 직접 꽂아 유선으로 연결하는 방식입니다.
 
 * **물리 결선**: 기기 통신선 ➡️ USB to RS485 동글 ➡️ HA 호스트 기기 USB 포트
@@ -47,11 +47,11 @@ graph LR
 
 ---
 
-## 2. 기기별 하드웨어 결선 아키텍처 (Kocom vs Grex)
+## 기기별 하드웨어 결선 아키텍처 (Kocom vs Grex)
 
 Kocom과 Grex는 통신 선로를 구성하는 방식이 완전히 다릅니다.
 
-### 2.1. Kocom: 버스(Bus) 토폴로지
+### Kocom: 버스(Bus) 토폴로지
 코콤 홈네트워크는 모든 기기(조명, 난방, 가스, 엘리베이터 등)가 하나의 RS485 통신선(Bus)을 공유하는 형태입니다.
 
 * **동작 방식**:
@@ -69,7 +69,7 @@ graph LR
     Thermostat["난방 조절기"] <--> Bus
 ```
 
-### 2.2. Grex: 프록시 / 중간자(MITM) 토폴로지
+### Grex: 프록시 / 중간자(MITM) 토폴로지
 그렉스 환기시스템은 **벽 조절기(Controller)**와 **천장 환기장치 본체(Ventilator)**가 1:1로만 직접 통신하는 구조입니다.
 
 * **동작 방식**:

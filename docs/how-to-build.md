@@ -6,13 +6,13 @@
 - 월패드가 EW11 등 시리얼-네트워크 변환기를 통해 네트워크에 연결되어 있을 것 (Socket 모드)
 - MQTT 브로커 접근 가능 (HA VM 내의 Mosquitto를 그대로 사용 가능)
 
-## 1. 이미지 빌드
+## 이미지 빌드
 
 ```bash
 docker build -t wallpad-mqtt-bridge .
 ```
 
-## 2. 설정 파일 준비
+## 설정 파일 준비
 
 `scripts/options.example.json`을 복사해 실제 환경에 맞게 수정합니다.
 
@@ -32,7 +32,7 @@ cp scripts/options.example.json scripts/options.json
 
 > `scripts/options.json`은 `.gitignore`에 추가해 실제 IP/비밀번호가 커밋되지 않도록 합니다.
 
-## 3. 컨테이너 실행 (Socket 모드)
+## 컨테이너 실행 (Socket 모드)
 
 ```bash
 docker run --rm -it \
@@ -42,7 +42,7 @@ docker run --rm -it \
 
 로그 레벨을 `debug`로 설정하면 RS485 패킷 수신 내용을 실시간으로 확인할 수 있습니다.
 
-## 4. 셸로 진입해서 확인
+## 셸로 진입해서 확인
 
 ```bash
 docker run --rm -it \

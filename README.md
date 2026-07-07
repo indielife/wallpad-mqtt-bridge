@@ -9,13 +9,13 @@
 
 애드온 설정 탭에서 다음과 같이 기본 설정 항목을 입력합니다.
 
-### 1. MQTT Broker
+### MQTT Broker
 홈어시스턴트에서 사용하는 MQTT 브로커(예: Mosquitto Broker 애드온)와의 연결 정보입니다.
 - **Host**: MQTT 브로커 호스트. HA 내부 Mosquitto 브로커 애드온을 사용하는 경우 `core-mosquitto`를 입력합니다. 외부 브로커는 IP 주소로 입력합니다. (기본값: `core-mosquitto`)
 - **Username**: MQTT 사용자 계정 ID
 - **Password**: MQTT 사용자 계정 비밀번호
 
-### 2. Wallpad
+### Wallpad
 월패드 제조사 및 연결 정보 설정입니다.
 - **Manufacturer**: 월패드 제조사 명칭. 현재는 `kocom`만 지원됩니다. (기본값: `kocom`)
 - **Connection Type**: 월패드와 통신하는 물리적인 연결 방식 선택 (`Serial` 또는 `Socket`)
@@ -27,7 +27,7 @@
 - **Serial**: `Connection Type`을 `Serial`로 설정한 경우 활성화되는 시리얼 포트 설정입니다.
   - **Port**: 홈어시스턴트 서버에 연결된 USB 시리얼 디바이스 경로를 입력합니다. (예: `/dev/ttyUSB0`)
 
-### 3. Enabled Devices
+### Enabled Devices
 방 개념이 없는 집 전체 단위 기기를 활성화하는 설정입니다. (활성화할 기기는 `true`로 설정)
 - **fan**: 환기팬
 - **gas**: 가스 밸브
@@ -35,7 +35,7 @@
 
 > **조명 · 플러그 · 난방**은 아래 `Rooms` 설정에서 방별로 구성합니다.
 
-### 4. Rooms
+### Rooms
 방마다 설치된 기기 구성을 입력합니다. `wallpad` 섹션 하위에 위치합니다.
 
 각 방은 다음 항목으로 구성됩니다.
@@ -70,7 +70,7 @@ rooms:
     # thermo_no 생략 → 이 방은 난방 없음
 ```
 
-### 5. Ventilator
+### Ventilator
 전열교환기(환기장치) 연동 설정입니다.
 - **Manufacturer**: 전열교환기 제조사 선택 (`None`, `Grex` 중 선택. 기본값: `None`)
 - **Connection Type**: 전열교환기 연결 방식 선택 (`Serial` 또는 `Socket`)
