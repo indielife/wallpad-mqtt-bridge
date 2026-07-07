@@ -4,7 +4,7 @@
 
 ---
 
-## 1. 개요 (Overview)
+## 개요 (Overview)
 
 이 프로젝트는 월패드의 RS485 통신 라인(EW11 등 Wifi to RS485 게이트웨이 경유)을 모니터링하여 가전기기의 상태를 Home Assistant로 전송하고, 반대로 Home Assistant에서 내려오는 제어 명령을 RS485 패킷으로 변환하여 기기들을 제어하는 **MQTT-RS485 브릿지** 역할을 합니다.
 
@@ -22,7 +22,7 @@ graph LR
 
 ---
 
-## 2. 주요 구성 요소 (Key Components)
+## 주요 구성 요소 (Key Components)
 
 ### Transport 계층 (`src/wallpad/transport/`)
 
@@ -61,9 +61,9 @@ graph LR
 
 ---
 
-## 3. 핵심 데이터 흐름 (Data Flow)
+## 핵심 데이터 흐름 (Data Flow)
 
-### 3.1. RS485 ➡️ Home Assistant (상태 모니터링)
+### RS485 ➡️ Home Assistant (상태 모니터링)
 
 1. **패킷 수신 태스크 (`receive_packets()`)**
    - `transport.read(1)`로 시리얼/소켓 연결에서 바이트를 한 개씩 읽어 버퍼에 쌓습니다.
@@ -78,7 +78,7 @@ graph LR
 
 ---
 
-### 3.2. Home Assistant ➡️ RS485 (기기 제어)
+### Home Assistant ➡️ RS485 (기기 제어)
 
 1. **제어 명령 수신 (`on_message` & `parse_message`)**
    - Home Assistant 대시보드나 자동화 규칙에 의해 기기 제어가 트리거되면, HA는 MQTT 제어 토픽으로 메시지를 발행합니다.
@@ -94,7 +94,7 @@ graph LR
 
 ---
 
-## 4. HA MQTT Discovery (자동 기기 등록)
+## HA MQTT Discovery (자동 기기 등록)
 
 브릿지 실행 초기(MQTT `on_connect`) 혹은 HA 재시작 시 `_publish_ha_discovery`를 실행합니다.
 - 활성화된 기기들로부터 디스커버리 정보를 취합하여 `homeassistant/<component>/<device_id>/config` 토픽으로 MQTT 메시지를 발행합니다.
@@ -105,11 +105,11 @@ graph LR
 
 ---
 
-## 5. Panel vs Ventilator 비교 (Panel vs Ventilator Comparison)
+## Panel vs Ventilator 비교 (Panel vs Ventilator Comparison)
 
 이 프로젝트는 월패드 연동을 위한 `Panel` 모듈과 전열교환기 연동을 위한 `Ventilator` 모듈을 모두 포함하고 있으며, 두 모듈은 대상 기기와 통신 방식에서 큰 차이가 있습니다.
 
-### 5.1. 동작 차이 요약
+### 동작 차이 요약
 
 | 구분 | [Panel 클래스](../src/wallpad/panel/panel.py) | [Ventilator 클래스](../src/wallpad/ventilator/ventilator.py) |
 | :--- | :--- | :--- |
@@ -119,7 +119,7 @@ graph LR
 | **버스 중재** | 필요 (`BusArbitrationTransport`로 정숙 시에만 쓰기) | 불필요 (독립된 두 회선을 각각 소유) |
 | **상태 스캔** | 필요 (`StateSynchronizer` 폴링 루프 동작) | 불필요 (양방향 실시간 수집 패킷 이용) |
 
-### 5.2. Ventilator의 프록시(Proxy) 작동 방식
+### Ventilator의 프록시(Proxy) 작동 방식
 
 그렉스 환기 시스템은 **벽 조절기(Controller)**와 **천장 환기 유닛 본체(Ventilator)** 간의 통신 선을 잘라 브릿지의 독립된 두 시리얼 포트에 각각 연결하여 중간자(MITM) 형태로 패킷을 가로채고 전달합니다. 브릿지는 두 회선 각각에 대해 `receive_packets()` 태스크를 띄워 동시에 수신합니다.
 
