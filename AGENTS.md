@@ -10,13 +10,7 @@
 
 ## 브랜치 규칙
 
-명명 규칙은 [CONTRIBUTING.md](CONTRIBUTING.md) 참조. 브랜치 생성 전 반드시 원격 main 동기화:
-
-```bash
-git fetch origin
-git checkout main && git pull origin main
-git checkout -b <branch-name>
-```
+브랜치 생성 전 **반드시 원격 main을 동기화**한 뒤 생성합니다. 명명 규칙과 동기화 명령은 [CONTRIBUTING.md](CONTRIBUTING.md#브랜치-명명-규칙)를 참조합니다.
 
 ## Python 실행 환경
 
