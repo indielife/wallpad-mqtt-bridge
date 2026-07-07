@@ -1,6 +1,6 @@
 # Git 커밋 메시지 규칙 (Gitmoji + Conventional Commits)
 
-## 1. 커밋 메시지 구조
+## 커밋 메시지 구조
 
 ```text
 <emoji> <type>(<scope>): <subject>
@@ -10,7 +10,7 @@
 <footer>
 ```
 
-## 2. 제목(Subject) 규칙
+## 제목(Subject) 규칙
 
 - **형식:** `<emoji> <type>(<scope>): <subject>`
 - **이모지:** 유니코드 직접 사용 — 콜론 코드(`:sparkles:`) 사용 금지
@@ -58,25 +58,25 @@ feat: 로그인 기능 추가
 🔧 config: config.yaml 마이그레이션 (#67)
 ```
 
-## 3. 본문(Body) 규칙
+## 본문(Body) 규칙
 
 - 한 줄 72자 이하
 - `what` / `why` 중심, 구현 방법(`how`)은 지양
 - 글머리 기호(`- `) 사용, 명사형 종결 — 어색할 경우 음슴체(`~함`, `~음`) 허용
 
-## 4. 바닥글(Footer) 규칙
+## 바닥글(Footer) 규칙
 
 - 이슈 종료: `Closes #<번호>` / 이슈 참조: `Ref #<번호>`
 - 동일 이슈에 `Closes`와 `Ref` 중복 금지
 - 여러 이슈: `Closes #17, #18` 또는 별도 라인
 
-## 5. 커밋 전 검사
+## 커밋 전 검사
 
 ```bash
 .venv/bin/pre-commit run --all-files
 ```
 
-## 6. 브랜치 명명 규칙
+## 브랜치 명명 규칙
 
 형식: `<type>/<issue-number>-<description>`
 
@@ -92,17 +92,17 @@ git checkout main && git pull origin main
 git checkout -b <branch-name>
 ```
 
-## 7. Pull Request 작성 규칙
+## Pull Request 작성 규칙
 
 - `.github/PULL_REQUEST_TEMPLATE.md` 양식 준수
 - PR 제목 형식: 커밋 메시지 제목과 동일 (`<emoji> <type>(<scope>): <subject>`)
 - PR 본문 하단에 `Closes #<이슈 번호>` 작성
 
-## 8. 추적 제외 파일 언급 금지
+## 추적 제외 파일 언급 금지
 
 `.gitignore` 대상 파일(`.cursor/`, `.cursorrules/`, `.vscode/`, `.env` 등)은 커밋 메시지·PR 어디에도 언급하지 않습니다.
 
-## 9. 이슈 템플릿 선택 기준
+## 이슈 템플릿 선택 기준
 
 | 템플릿 | 선택 기준 |
 |--------|-----------|
