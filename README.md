@@ -95,5 +95,4 @@ rooms:
 
 ## Credits & Acknowledgements
 
-이 프로젝트는 [Zoolian/zooil]님의 [kocomRS485](https://github.com/zooil/kocomRS485) 프로젝트를 기반으로 새롭게 구성하고 수정한 버전입니다.
-좋은 코드를 공유해 주신 원작자분께 감사드립니다.
+이 프로젝트는 [zooil](https://github.com/zooil)님의 [kocomRS485](https://github.com/zooil/kocomRS485)에서 출발했으며, 그 원본은 랜이님이 만든 코콤 월패드 프로그램입니다. 시작점을 마련해 주신 두 분께 감사드립니다.
