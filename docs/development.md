@@ -7,7 +7,7 @@
 우분투(Linux) 환경에서 아래 명령어를 실행하여 `uv` 독립형 바이너리를 설치합니다.
 
 ```bash
-curl -LsSf [https://astral.sh/uv/install.sh](https://astral.sh/uv/install.sh) | sh
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 설치 후 터미널을 재시작하거나 `source ~/.bashrc` (또는 사용하는 쉘 설정 파일)를 실행하여 환경 변수를 반영합니다.
@@ -53,6 +53,8 @@ uv sync
 ## 코드 포매팅 및 린트 (Ruff)
 
 이 프로젝트는 매우 빠른 파이썬 코드 포매터이자 린터인 ruff를 사용합니다. 코드를 수정한 후 커밋하기 전에 아래 명령어들을 사용하여 코드 스타일을 일관되게 정리할 수 있습니다.
+
+> 아래 명령들은 `.venv`가 활성화된 상태를 전제로 합니다. 시스템 파이썬으로 실행하지 마세요.
 
 ### 코드 포매팅 (코드 자동 정렬)
 ```bash

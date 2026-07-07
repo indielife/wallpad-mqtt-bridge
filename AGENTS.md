@@ -20,11 +20,19 @@ git checkout -b <branch-name>
 
 ## Python 실행 환경
 
-- 패키지 추가: `uv add [package]`
-- 스크립트/도구 실행: **반드시 `.venv/bin/` 바이너리를 직접 호출** (`uv run` 사용 금지)
-  - 예: `.venv/bin/pytest`, `.venv/bin/pre-commit`
-- Python 버전: 3.12 이상
-- 린트/포맷: `.venv/bin/ruff check` 및 `.venv/bin/ruff format` 통과 필수
+- **시스템 파이썬 사용 금지.** 항상 프로젝트 `.venv`를 활성화한 뒤 작업합니다.
+
+  ```bash
+  source .venv/bin/activate
+  ```
+
+- 활성화 후에는 `ruff`, `pytest`, `pre-commit` 등을 접두사 없이 그대로 실행합니다.
+- `uv run` 사용 금지. 패키지 추가는 `uv add [package]`.
+- Python 버전: 3.12 이상.
+- 커밋 전 `ruff check` 및 `ruff format` 통과 필수.
+
+> 에이전트 참고: Bash 도구는 호출마다 새 셸이라 `activate` 상태가 유지되지 않습니다.
+> 한 호출로 끝내려면 `source .venv/bin/activate && pytest`처럼 묶거나 `.venv/bin/pytest`를 직접 호출하세요.
 
 ## Python 코딩 스타일
 
