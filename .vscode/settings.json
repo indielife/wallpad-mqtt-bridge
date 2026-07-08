@@ -1,0 +1,24 @@
+{
+    "[python]": {
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4,
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit"
+        }
+    },
+
+    "python.analysis.extraPaths": [
+        "./src"
+    ],
+    "python.envFile": "${workspaceFolder}/.env",
+
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "remote.autoForwardPorts": false
+}
