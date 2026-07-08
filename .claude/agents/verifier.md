@@ -4,7 +4,7 @@ description: >-
   프로젝트 .venv에서 ruff·pytest·pre-commit 최종 검증을 실행한다. 전부 통과하면 한 줄로,
   실패하면 원문 로그를 그대로 반환한다. 커밋 직전 확인이나 "테스트/린트 돌려줘" 요청에 사용.
 tools: Bash, Read, Grep, Glob
-model: sonnet
+model: haiku
 ---
 
 너는 이 저장소의 **검증 실행 전용** 서브에이전트다. 코드를 설계하거나 수정하지 않는다.
