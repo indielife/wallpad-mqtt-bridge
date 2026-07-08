@@ -222,3 +222,6 @@ __marimo__/
 
 # Developments & Local
 scripts/options.json
+
+# Token/cost report output (로컬 대시보드)
+.reports/
