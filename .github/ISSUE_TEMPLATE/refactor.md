@@ -14,7 +14,7 @@ labels: ["type:refactor"]
 ## Branch Name
 
 <!-- [GUIDELINE] 이슈 카드 생성 시 <issue-number> 플레이스홀더를 수정하지 않고 그대로 본문을 업로드할 것. 생성 이후 번호를 채우기 위해 본문을 재수정(API 재호출)하여 토큰을 낭비하지 말 것. -->
-- `refactor/<issue-number>-<description>` (e.g., `refactor/123-split-transport-layer`)
+- `refactor/<issue-number>-<description>` (e.g., `refactor/123-split-large-module`)
 
 ## Approach
 
