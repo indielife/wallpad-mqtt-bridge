@@ -123,7 +123,8 @@ git checkout -b <branch-name>
 
 ## 추적 제외 파일 언급 금지
 
-`.gitignore` 대상 파일(`.cursor/`, `.cursorrules/`, `.vscode/`, `.env` 등)은 커밋 메시지·PR 어디에도 언급하지 않습니다.
+`.gitignore` 대상 파일(`.cursor/`, `.cursorrules/`, `.vscode/`, `.env` 등)은
+커밋 메시지·PR 어디에도 언급하지 않습니다.
 
 ## 이슈 템플릿 선택 기준
 

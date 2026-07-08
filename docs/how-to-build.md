@@ -12,7 +12,9 @@
 docker build -t wallpad-mqtt-bridge .
 ```
 
-> 이 문서는 **실제 구동**에 초점을 둡니다. 이미지 빌드 후 컨테이너 내부 파일 구조를 검증하는 방법은 [development.md](development.md#도커-빌드-및-내부-구조-검증)를 참조하세요.
+> 이 문서는 **실제 구동**에 초점을 둡니다.
+> 이미지 빌드 후 컨테이너 내부 파일 구조를 검증하는 방법은
+> [development.md](development.md#도커-빌드-및-내부-구조-검증)를 참조하세요.
 
 ## 설정 파일 준비
 
