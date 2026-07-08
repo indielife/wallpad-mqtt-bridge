@@ -17,8 +17,6 @@
 쪼개진다. ``main`` 브랜치 작업은 어느 PR에도 안 붙는 "미분류" 버킷으로 모인다.
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import subprocess
