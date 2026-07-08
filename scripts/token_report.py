@@ -151,6 +151,9 @@ def iter_usage(directory: Path, since: datetime | None):
                     if ts and ts[:10] < since.strftime("%Y-%m-%d"):
                         continue
                 model = message.get("model") or "unknown"
+                # Claude Code 합성 메시지(<synthetic>)는 실제 usage가 없어 제외
+                if model.startswith("<"):
+                    continue
                 branch = obj.get("gitBranch") or "(unknown)"
                 sidechain = bool(obj.get("isSidechain"))
                 yield (
