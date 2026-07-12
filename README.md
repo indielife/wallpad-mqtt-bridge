@@ -1,5 +1,7 @@
 # Wallpad MQTT Bridge — Home Assistant Add-on
 
+[![CI](https://github.com/indielife/wallpad-mqtt-bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/indielife/wallpad-mqtt-bridge/actions/workflows/ci.yml)
+
 ## 지원 제조사 (Supported Manufacturers)
 
 현재 이 애드온이 지원하는 월패드 제조사는 다음과 같습니다.
