@@ -217,8 +217,10 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# AI Tools
-.claude/settings.local.json
+# AI Tools (디렉터리·심링크 모두 제외)
+.claude
+.agents
+.codex
 
 # Developments & Local
 scripts/options.json
