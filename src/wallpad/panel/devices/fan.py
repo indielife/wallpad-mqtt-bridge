@@ -3,8 +3,38 @@ import json
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.devices.topic import TopicContext
 from wallpad.panel.devices.base import PanelDevice
+from wallpad.panel.devices.controller import CategoryController
 from wallpad.protocol.base import HardwareInfo
 from wallpad.protocol.kocom.constants import DEVICE_FAN, KOCOM_HEX_BY_FAN_SPEED
+
+
+class FanController(CategoryController):
+    """환기팬 컨트롤러입니다. mode와 speed가 상호 결합된 상태를 함께 관리합니다."""
+
+    def apply_ha_command(
+        self, sub_device: str, command: str, payload: str, default_speed: str
+    ) -> None:
+        state = self.state
+        if command != "mode":
+            state["speed"].set = payload
+            state["mode"].set = "on"
+        else:
+            state["speed"].set = default_speed if payload == "on" else "off"
+            state["mode"].set = payload
+        state["speed"].last = "set"
+        state["mode"].last = "set"
+
+    def reflect_rs485(self, value, default_speed: str) -> None:
+        state = self.state
+        for sub, v in value.items():
+            sub_state = state[sub]
+            if sub == "mode":
+                sub_state.state = v
+                state["speed"].state = "off" if v == "off" else default_speed
+            else:
+                sub_state.state = v
+                state["mode"].state = "off" if v == "off" else "on"
+            self.recover_if_confirmed(sub_state)
 
 
 class Fan(PanelDevice):

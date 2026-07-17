@@ -1,17 +1,20 @@
+import time
+
 from wallpad.devices.base import BaseDevice
-from wallpad.panel.state import RoomState
+from wallpad.panel.state import RoomState, SubDeviceState
 
 
 class CategoryController:
     """방(Room) 안에서 한 카테고리(조명·콘센트·온도조절기 등)에 속하는 SubDevice들을
-    묶는 구조 컨테이너입니다.
+    묶는 컨트롤러입니다.
 
-    RS485의 최소 통신 단위는 (카테고리 x 방)이므로, 향후 이 물리적 제약과 패킷
-    조립 책임은 leaf(SubDevice)가 아니라 이 컨트롤러에 캡슐화됩니다.
+    RS485의 최소 통신 단위는 (카테고리 x 방)이므로, 이 물리적 제약과 상태 소유는
+    leaf(SubDevice)가 아니라 이 컨트롤러에 캡슐화됩니다. 자식들의 상태(`RoomState`)를
+    소유하며, HA 제어 반영(`apply_ha_command`)과 RS485 수신 반영(`apply_rs485_state`)을
+    자기 책임으로 갖습니다.
 
-    자식 SubDevice들의 상태(`RoomState`)를 소유하는 권위자입니다. 이 `state`는
-    `device_states`(synchronizer가 순회하는 인덱스)와 **동일한 객체**로 연결되어,
-    컨트롤러의 상태 변이가 곧 `device_states`에 반영됩니다.
+    이 `state`는 `device_states`(synchronizer가 순회하는 인덱스)와 **동일한 객체**로
+    연결되어, 컨트롤러의 상태 변이가 곧 `device_states`에 반영됩니다.
     """
 
     def __init__(self, category: str, room: str, state: RoomState | None = None):
@@ -22,3 +25,53 @@ class CategoryController:
 
     def add_sub_device(self, device: BaseDevice) -> None:
         self.sub_devices.append(device)
+
+    # --- 상태 소유권: HA 명령 / RS485 수신 반영 ---
+
+    def apply_ha_command(
+        self, sub_device: str, command: str, payload: str, default_speed: str
+    ) -> None:
+        """Home Assistant 제어 요청을 자기 RoomState에 반영합니다."""
+        raise NotImplementedError
+
+    def apply_rs485_state(self, value, default_speed: str) -> None:
+        """RS485 수신 상태를 반영하고 스캔 타이머를 초기화합니다."""
+        self.reset_scan()
+        self.reflect_rs485(value, default_speed)
+
+    def reflect_rs485(self, value, default_speed: str) -> None:
+        """카테고리별 RS485 상태 반영 규칙. 서브클래스가 구현합니다."""
+        raise NotImplementedError
+
+    def reset_scan(self) -> None:
+        self.state.scan.tick = time.time()
+        self.state.scan.count = 0
+        self.state.scan.last = 0.0
+
+    def recover_if_confirmed(self, sub_state: SubDeviceState) -> None:
+        """제어(set)가 RS485로 확인되면 재전송 대기 상태를 회수합니다."""
+        if (
+            sub_state.last == "set" or isinstance(sub_state.last, float)
+        ) and sub_state.set == sub_state.state:
+            sub_state.last = "state"
+            sub_state.count = 0
+
+
+class SwitchController(CategoryController):
+    """조명·콘센트처럼 방 안의 여러 on/off 스위치를 묶는 컨트롤러입니다.
+
+    두 카테고리는 상태 반영 규칙이 동일하므로 이 공통 베이스를 공유합니다.
+    """
+
+    def apply_ha_command(
+        self, sub_device: str, command: str, payload: str, default_speed: str
+    ) -> None:
+        sub_state = self.state[sub_device]
+        sub_state[command] = payload
+        sub_state.last = command
+
+    def reflect_rs485(self, value, default_speed: str) -> None:
+        for sub, v in value.items():
+            sub_state = self.state[sub]
+            sub_state.state = v
+            self.recover_if_confirmed(sub_state)

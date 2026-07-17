@@ -3,8 +3,37 @@ import json
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.devices.topic import TopicContext
 from wallpad.panel.devices.base import PanelDevice
+from wallpad.panel.devices.controller import CategoryController
 from wallpad.protocol.base import HardwareInfo
 from wallpad.protocol.kocom.constants import DEVICE_THERMOSTAT
+
+
+class ThermostatController(CategoryController):
+    """온도조절기 컨트롤러입니다. 목표온도 설정은 자동으로 heat 모드를 동반합니다."""
+
+    def apply_ha_command(
+        self, sub_device: str, command: str, payload: str, default_speed: str
+    ) -> None:
+        state = self.state
+        if command != "mode":
+            state["target_temp"].set = int(float(payload))
+            state["mode"].set = "heat"
+            state["target_temp"].last = "set"
+            state["mode"].last = "set"
+        else:
+            state["mode"].set = payload
+            state["mode"].last = "set"
+
+    def reflect_rs485(self, value, default_speed: str) -> None:
+        state = self.state
+        for sub, v in value.items():
+            sub_state = state[sub]
+            if sub == "mode":
+                sub_state.state = v
+            else:
+                sub_state.state = int(float(v))
+                state["mode"].state = "heat"
+            self.recover_if_confirmed(sub_state)
 
 
 class Thermostat(PanelDevice):

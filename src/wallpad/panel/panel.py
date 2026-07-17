@@ -12,7 +12,7 @@ from wallpad.mqtt import (
     TOPIC_BRIDGE_SCAN,
     MqttClient,
 )
-from wallpad.panel.devices import Room
+from wallpad.panel.devices import CategoryController, Room
 from wallpad.panel.factory import DeviceFactory
 from wallpad.panel.synchronizer import StateSynchronizer
 from wallpad.protocol.kocom.constants import (
@@ -109,6 +109,11 @@ class Panel:
         self.parser = KocomPacketParser(config)
         self.rooms, self.device_states = DeviceFactory.build(config, self.name, self.packet_builder)
         self.devices = flatten_device_tree(self.rooms)
+        self.controller_map: dict[tuple[str, str], CategoryController] = {
+            (controller.category, controller.room): controller
+            for room in self.rooms
+            for controller in room.controllers
+        }
         self.device_map: dict[tuple[str, str], BaseDevice] = {
             (type(d).__name__.lower(), d.room): d for d in self.devices
         }
@@ -212,8 +217,8 @@ class Panel:
             return
         device_type, room, sub_device, processed_payload = result
         try:
-            self.device_states.update_from_ha(
-                device_type, room, sub_device, command, processed_payload, self.default_speed
+            self.controller_map[(device_type, room)].apply_ha_command(
+                sub_device, command, processed_payload, self.default_speed
             )
             logger.info(
                 "[From HA] %s/%s/%s/%s = %s",
@@ -299,7 +304,7 @@ class Panel:
 
     def set_list(self, device, room, value):
         try:
-            self.device_states.update_from_rs485(device, room, value, self.default_speed)
+            self.controller_map[(device, room)].apply_rs485_state(value, self.default_speed)
             logger.info("[From rs485] %s/%s/state = %s", device, room, value)
         except Exception as e:
             logger.error(
