@@ -113,6 +113,35 @@ class TestTreeStructure:
         assert kitchen.controller(DEVICE_THERMOSTAT) is None
 
 
+class TestStateOwnership:
+    """CategoryController가 device_states와 동일한 RoomState 객체를 소유하는지 검증.
+
+    controller.state와 device_states[category][room]이 같은 객체여야, 컨트롤러의
+    상태 변이가 synchronizer가 순회하는 device_states에 그대로 반영된다.
+    """
+
+    @pytest.fixture
+    def built(self, config):
+        builder = KocomPacketBuilder(
+            room_rev=config.kocom_room_rev, room_thermostat_rev=config.kocom_room_thermostat_rev
+        )
+        return DeviceFactory.build(config, config.wallpad_manufacturer, builder)
+
+    def test_room_device_controller_shares_state_identity(self, built):
+        rooms, states = built
+        livingroom = next(room for room in rooms if room.name == "livingroom")
+        for category in (DEVICE_LIGHT, DEVICE_PLUG, DEVICE_THERMOSTAT):
+            controller = livingroom.controller(category)
+            assert controller.state is states[category]["livingroom"]
+
+    def test_global_controller_shares_state_identity(self, built):
+        rooms, states = built
+        wallpad = rooms[0]
+        for category in (DEVICE_ELEVATOR, DEVICE_GAS, DEVICE_FAN):
+            controller = wallpad.controller(category)
+            assert controller.state is states[category][DEVICE_WALLPAD]
+
+
 class TestFlatten:
     def test_flatten_reproduces_category_major_order(self, tree):
         flat = flatten_device_tree(tree)

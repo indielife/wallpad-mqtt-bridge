@@ -1,4 +1,5 @@
 from wallpad.devices.base import BaseDevice
+from wallpad.panel.state import RoomState
 
 
 class CategoryController:
@@ -6,15 +7,18 @@ class CategoryController:
     묶는 구조 컨테이너입니다.
 
     RS485의 최소 통신 단위는 (카테고리 x 방)이므로, 향후 이 물리적 제약과 패킷
-    조립 책임은 leaf(SubDevice)가 아니라 이 컨트롤러에 캡슐화됩니다. 다만 이번
-    단계(Composite 1/2)에서는 트리 골격만 세우고 라우팅·상태 소유권은 갖지 않습니다.
-    실제 동작 이전은 후속 이슈(#160)에서 다룹니다.
+    조립 책임은 leaf(SubDevice)가 아니라 이 컨트롤러에 캡슐화됩니다.
+
+    자식 SubDevice들의 상태(`RoomState`)를 소유하는 권위자입니다. 이 `state`는
+    `device_states`(synchronizer가 순회하는 인덱스)와 **동일한 객체**로 연결되어,
+    컨트롤러의 상태 변이가 곧 `device_states`에 반영됩니다.
     """
 
-    def __init__(self, category: str, room: str):
+    def __init__(self, category: str, room: str, state: RoomState | None = None):
         self.category = category
         self.room = room
         self.sub_devices: list[BaseDevice] = []
+        self.state = state
 
     def add_sub_device(self, device: BaseDevice) -> None:
         self.sub_devices.append(device)

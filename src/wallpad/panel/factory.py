@@ -56,8 +56,10 @@ class DeviceFactory:
         states: KocomStateManager,
     ) -> None:
         topics = TopicBuilder.for_elevator(room="wallpad", sub_device="elevator")
+        room_state = RoomState()
+        room_state[DEVICE_ELEVATOR] = SubDeviceState(state="off", set_val="off")
         controller = wallpad_room.add_controller(
-            CategoryController(DEVICE_ELEVATOR, wallpad_room.name)
+            CategoryController(DEVICE_ELEVATOR, wallpad_room.name, state=room_state)
         )
         controller.add_sub_device(
             Elevator(
@@ -69,8 +71,6 @@ class DeviceFactory:
             )
         )
         device_state = DeviceState()
-        room_state = RoomState()
-        room_state[DEVICE_ELEVATOR] = SubDeviceState(state="off", set_val="off")
         device_state[DEVICE_WALLPAD] = room_state
         states[DEVICE_ELEVATOR] = device_state
 
@@ -83,7 +83,11 @@ class DeviceFactory:
         states: KocomStateManager,
     ) -> None:
         topics = TopicBuilder.for_gas(room="wallpad", sub_device="gas")
-        controller = wallpad_room.add_controller(CategoryController(DEVICE_GAS, wallpad_room.name))
+        room_state = RoomState()
+        room_state[DEVICE_GAS] = SubDeviceState(state="off", set_val="off")
+        controller = wallpad_room.add_controller(
+            CategoryController(DEVICE_GAS, wallpad_room.name, state=room_state)
+        )
         controller.add_sub_device(
             Gas(
                 name_prefix=name_prefix,
@@ -94,8 +98,6 @@ class DeviceFactory:
             )
         )
         device_state = DeviceState()
-        room_state = RoomState()
-        room_state[DEVICE_GAS] = SubDeviceState(state="off", set_val="off")
         device_state[DEVICE_WALLPAD] = room_state
         states[DEVICE_GAS] = device_state
 
@@ -108,7 +110,12 @@ class DeviceFactory:
         states: KocomStateManager,
     ) -> None:
         topics = TopicBuilder.for_fan(room="wallpad", sub_device="fan")
-        controller = wallpad_room.add_controller(CategoryController(DEVICE_FAN, wallpad_room.name))
+        room_state = RoomState()
+        room_state["mode"] = SubDeviceState(state="off", set_val="off")
+        room_state["speed"] = SubDeviceState(state="off", set_val="off")
+        controller = wallpad_room.add_controller(
+            CategoryController(DEVICE_FAN, wallpad_room.name, state=room_state)
+        )
         controller.add_sub_device(
             Fan(
                 name_prefix=name_prefix,
@@ -119,9 +126,6 @@ class DeviceFactory:
             )
         )
         device_state = DeviceState()
-        room_state = RoomState()
-        room_state["mode"] = SubDeviceState(state="off", set_val="off")
-        room_state["speed"] = SubDeviceState(state="off", set_val="off")
         device_state[DEVICE_WALLPAD] = room_state
         states[DEVICE_FAN] = device_state
 
@@ -158,7 +162,7 @@ class DeviceFactory:
                 continue
             room_state = RoomState()
             controller = room_devices[room.name].add_controller(
-                CategoryController(DEVICE_LIGHT, room.name)
+                CategoryController(DEVICE_LIGHT, room.name, state=room_state)
             )
             for i in range(room.light_count + 1):
                 room_state[DEVICE_LIGHT + str(i)] = SubDeviceState(state="off", set_val="off")
@@ -191,7 +195,7 @@ class DeviceFactory:
                 continue
             room_state = RoomState()
             controller = room_devices[room.name].add_controller(
-                CategoryController(DEVICE_PLUG, room.name)
+                CategoryController(DEVICE_PLUG, room.name, state=room_state)
             )
             for i in range(room.plug_count + 1):
                 room_state[DEVICE_PLUG + str(i)] = SubDeviceState(state="on", set_val="on")
@@ -231,7 +235,7 @@ class DeviceFactory:
             device_state[room.name] = room_state
             topics = TopicBuilder.for_thermostat(room=room.name)
             controller = room_devices[room.name].add_controller(
-                CategoryController(DEVICE_THERMOSTAT, room.name)
+                CategoryController(DEVICE_THERMOSTAT, room.name, state=room_state)
             )
             controller.add_sub_device(
                 Thermostat(
