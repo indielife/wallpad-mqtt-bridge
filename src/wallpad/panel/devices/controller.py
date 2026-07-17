@@ -56,6 +56,27 @@ class CategoryController:
             sub_state.last = "state"
             sub_state.count = 0
 
+    # --- 패킷 조립 위임 (#131) ---
+
+    def make_packet(self, cmd: str, target: str, value: str) -> str | None:
+        """명령 대상 leaf를 찾아 패킷 조립을 위임합니다.
+
+        조립 자체는 아직 leaf(SubDevice)의 build_packet이 수행하며(B 단계),
+        컨트롤러는 소유한 상태(RoomState)를 주입해 위임합니다. 조립 책임의 물리적
+        이전은 후속(#165)에서 다룹니다.
+        """
+        leaf = self.find_leaf(target)
+        if leaf is None:
+            return None
+        return leaf.build_packet(cmd=cmd, target=target, value=value, room_state=self.state)
+
+    def find_leaf(self, target: str) -> BaseDevice | None:
+        """명령 대상 leaf(SubDevice)를 반환합니다. 기본 규칙은 sub_device == 카테고리."""
+        for leaf in self.sub_devices:
+            if leaf.sub_device == self.category:
+                return leaf
+        return None
+
 
 class SwitchController(CategoryController):
     """조명·콘센트처럼 방 안의 여러 on/off 스위치를 묶는 컨트롤러입니다.
@@ -75,3 +96,10 @@ class SwitchController(CategoryController):
             sub_state = self.state[sub]
             sub_state.state = v
             self.recover_if_confirmed(sub_state)
+
+    def find_leaf(self, target: str) -> BaseDevice | None:
+        """조명·콘센트는 방 안 여러 leaf 중 target으로 지목된 것을 반환합니다."""
+        for leaf in self.sub_devices:
+            if leaf.sub_device == target:
+                return leaf
+        return None
