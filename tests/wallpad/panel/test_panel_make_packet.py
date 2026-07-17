@@ -2,7 +2,18 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from wallpad.panel.devices import Elevator, Fan, Gas, Light, Thermostat
+from wallpad.panel.devices import (
+    Elevator,
+    ElevatorController,
+    Fan,
+    FanController,
+    Gas,
+    GasController,
+    Light,
+    LightController,
+    Thermostat,
+    ThermostatController,
+)
 from wallpad.panel.panel import (
     DEVICE_ELEVATOR,
     DEVICE_FAN,
@@ -11,28 +22,20 @@ from wallpad.panel.panel import (
     DEVICE_THERMOSTAT,
     Panel,
 )
+from wallpad.panel.state import RoomState, SubDeviceState
 from wallpad.protocol.kocom import constants as kocom_const
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 
 
 @pytest.fixture
 def panel_instance():
-    """무거운 초기화를 우회하고 패킷 생성에 필요한 최소한의 상태만 구성한 Panel 인스턴스"""
+    """무거운 초기화를 우회하고 make_packet 위임에 필요한 컨트롤러 트리만 구성한 Panel.
+
+    make_packet은 controller_map[(device, room)]로 대상 컨트롤러를 찾아 조립을
+    위임하므로, 각 컨트롤러에 자식 SubDevice와 상태(RoomState)를 연결한다.
+    """
     panel = Panel.__new__(Panel)
     mock_config = MagicMock()
-    mock_config.kocom_room = {
-        "00": "livingroom",
-        "01": "bedroom",
-        "02": "room2",
-        "03": "room1",
-        "04": "kitchen",
-    }
-    mock_config.kocom_room_thermostat = {
-        "00": "livingroom",
-        "01": "bedroom",
-        "02": "room1",
-        "03": "room2",
-    }
     mock_config.kocom_room_rev = {
         "livingroom": "00",
         "bedroom": "01",
@@ -48,82 +51,79 @@ def panel_instance():
         "room2": "03",
     }
     panel.config = mock_config
-    panel.device_states = {
-        DEVICE_LIGHT: {
-            "livingroom": {
-                "light1": {"state": "off"},
-                "light2": {"state": "on"},
-                "light3": {"state": "off"},
-            }
-        },
-        DEVICE_THERMOSTAT: {
-            "room1": {
-                "mode": {"set": "heat"},
-                "target_temp": {"set": 25.0},
-            }
-        },
-        DEVICE_FAN: {
-            "wallpad": {
-                "mode": {"set": "on"},
-                "speed": {"set": "medium"},
-            }
-        },
-    }
     panel.packet_builder = KocomPacketBuilder(
         room_rev=mock_config.kocom_room_rev,
         room_thermostat_rev=mock_config.kocom_room_thermostat_rev,
     )
-    panel.devices = [
-        Light(
-            name_prefix="test",
-            room="livingroom",
-            sub_device="light1",
-            sw_version="1.0",
-            hw_info=kocom_const.HARDWARE,
-            packet_builder=panel.packet_builder,
-        ),
-        Light(
-            name_prefix="test",
-            room="livingroom",
-            sub_device="light2",
-            sw_version="1.0",
-            hw_info=kocom_const.HARDWARE,
-            packet_builder=panel.packet_builder,
-        ),
-        Light(
-            name_prefix="test",
-            room="livingroom",
-            sub_device="light3",
-            sw_version="1.0",
-            hw_info=kocom_const.HARDWARE,
-            packet_builder=panel.packet_builder,
-        ),
+    pb = panel.packet_builder
+
+    # 조명(livingroom): light1 꺼짐, light2 켜짐, light3 꺼짐
+    light_state = RoomState()
+    light_state["light1"] = SubDeviceState(state="off")
+    light_state["light2"] = SubDeviceState(state="on")
+    light_state["light3"] = SubDeviceState(state="off")
+    light_ctrl = LightController(DEVICE_LIGHT, "livingroom", state=light_state)
+    for name in ("light1", "light2", "light3"):
+        light_ctrl.add_sub_device(
+            Light(
+                name_prefix="test",
+                room="livingroom",
+                sub_device=name,
+                sw_version="1.0",
+                hw_info=kocom_const.HARDWARE,
+                packet_builder=pb,
+            )
+        )
+
+    # 온도조절기(room1): heat, 25도
+    thermo_state = RoomState()
+    thermo_state["mode"] = SubDeviceState(state="heat", set_val="heat")
+    thermo_state["target_temp"] = SubDeviceState(state=25.0, set_val=25.0)
+    thermo_ctrl = ThermostatController(DEVICE_THERMOSTAT, "room1", state=thermo_state)
+    thermo_ctrl.add_sub_device(
         Thermostat(
             name_prefix="test",
             room="room1",
             sw_version="1.0",
             hw_info=kocom_const.HARDWARE,
-            packet_builder=panel.packet_builder,
-        ),
-        Fan(
-            name_prefix="test",
-            sw_version="1.0",
-            hw_info=kocom_const.HARDWARE,
-            packet_builder=panel.packet_builder,
-        ),
+            packet_builder=pb,
+        )
+    )
+
+    # 환기팬(wallpad): on, medium
+    fan_state = RoomState()
+    fan_state["mode"] = SubDeviceState(state="on", set_val="on")
+    fan_state["speed"] = SubDeviceState(state="medium", set_val="medium")
+    fan_ctrl = FanController(DEVICE_FAN, "wallpad", state=fan_state)
+    fan_ctrl.add_sub_device(
+        Fan(name_prefix="test", sw_version="1.0", hw_info=kocom_const.HARDWARE, packet_builder=pb)
+    )
+
+    # 엘리베이터(wallpad)
+    elevator_state = RoomState()
+    elevator_state["elevator"] = SubDeviceState(state="off", set_val="off")
+    elevator_ctrl = ElevatorController(DEVICE_ELEVATOR, "wallpad", state=elevator_state)
+    elevator_ctrl.add_sub_device(
         Elevator(
-            name_prefix="test",
-            sw_version="1.0",
-            hw_info=kocom_const.HARDWARE,
-            packet_builder=panel.packet_builder,
-        ),
-        Gas(
-            name_prefix="test",
-            sw_version="1.0",
-            hw_info=kocom_const.HARDWARE,
-            packet_builder=panel.packet_builder,
-        ),
-    ]
+            name_prefix="test", sw_version="1.0", hw_info=kocom_const.HARDWARE, packet_builder=pb
+        )
+    )
+
+    # 가스(wallpad)
+    gas_state = RoomState()
+    gas_state["gas"] = SubDeviceState(state="off", set_val="off")
+    gas_ctrl = GasController(DEVICE_GAS, "wallpad", state=gas_state)
+    gas_ctrl.add_sub_device(
+        Gas(name_prefix="test", sw_version="1.0", hw_info=kocom_const.HARDWARE, packet_builder=pb)
+    )
+
+    panel.controller_map = {
+        (DEVICE_LIGHT, "livingroom"): light_ctrl,
+        (DEVICE_THERMOSTAT, "room1"): thermo_ctrl,
+        (DEVICE_FAN, "wallpad"): fan_ctrl,
+        (DEVICE_ELEVATOR, "wallpad"): elevator_ctrl,
+        (DEVICE_GAS, "wallpad"): gas_ctrl,
+    }
     return panel
 
 

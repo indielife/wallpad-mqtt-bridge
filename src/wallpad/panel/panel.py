@@ -12,7 +12,7 @@ from wallpad.mqtt import (
     TOPIC_BRIDGE_SCAN,
     MqttClient,
 )
-from wallpad.panel.devices import Room
+from wallpad.panel.devices import CategoryController, Room
 from wallpad.panel.factory import DeviceFactory
 from wallpad.panel.synchronizer import StateSynchronizer
 from wallpad.protocol.kocom.constants import (
@@ -109,6 +109,11 @@ class Panel:
         self.parser = KocomPacketParser(config)
         self.rooms, self.device_states = DeviceFactory.build(config, self.name, self.packet_builder)
         self.devices = flatten_device_tree(self.rooms)
+        self.controller_map: dict[tuple[str, str], CategoryController] = {
+            (controller.category, controller.room): controller
+            for room in self.rooms
+            for controller in room.controllers
+        }
         self.device_map: dict[tuple[str, str], BaseDevice] = {
             (type(d).__name__.lower(), d.room): d for d in self.devices
         }
@@ -212,8 +217,8 @@ class Panel:
             return
         device_type, room, sub_device, processed_payload = result
         try:
-            self.device_states.update_from_ha(
-                device_type, room, sub_device, command, processed_payload, self.default_speed
+            self.controller_map[(device_type, room)].apply_ha_command(
+                sub_device, command, processed_payload, self.default_speed
             )
             logger.info(
                 "[From HA] %s/%s/%s/%s = %s",
@@ -299,7 +304,7 @@ class Panel:
 
     def set_list(self, device, room, value):
         try:
-            self.device_states.update_from_rs485(device, room, value, self.default_speed)
+            self.controller_map[(device, room)].apply_rs485_state(value, self.default_speed)
             logger.info("[From rs485] %s/%s/state = %s", device, room, value)
         except Exception as e:
             logger.error(
@@ -337,35 +342,14 @@ class Panel:
             self.publish_state_to_ha(DEVICE_ELEVATOR, DEVICE_WALLPAD, "on")
 
     def make_packet(self, device, room, cmd, target, value):
-        # 1. 타겟 기기 객체 찾기
-        target_obj = None
-        for d in self.devices:
-            if device in [DEVICE_LIGHT, DEVICE_PLUG]:
-                if d.room == room and d.sub_device == target:
-                    target_obj = d
-                    break
-            elif device == DEVICE_THERMOSTAT:
-                if d.room == room and d.sub_device == "thermostat":
-                    target_obj = d
-                    break
-            else:
-                if d.room == room and d.sub_device == device:
-                    target_obj = d
-                    break
-
-        # 2. 객체에게 패킷 생성 위임 (전략 패턴 + 빌더)
-        if target_obj and cmd != "조회":
-            room_state = self.device_states.get(device, {}).get(room, {})
-            built_packet = target_obj.build_packet(
-                cmd=cmd,
-                target=target,
-                value=value,
-                room_state=room_state,
-            )
+        # 1. (device, room) 컨트롤러에 조립 위임 (맵 조회 O(1), 타겟 탐색은 컨트롤러 책임)
+        controller = self.controller_map.get((device, room))
+        if controller is not None and cmd != "조회":
+            built_packet = controller.make_packet(cmd, target, value)
             if built_packet:
                 return built_packet
 
-        # 3. 객체에서 처리되지 않은 공통 명령(예: 방 전체 '조회')은 빌더를 통해 직접 생성
+        # 2. 컨트롤러에서 처리되지 않은 공통 명령(예: 방 전체 '조회')은 빌더로 직접 생성
         if cmd == "조회":
             return self.packet_builder.build_scan_packet(device=device, room=room)
 

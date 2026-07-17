@@ -1,7 +1,8 @@
 from unittest.mock import MagicMock
 
-from wallpad.panel.devices import Thermostat
+from wallpad.panel.devices import Thermostat, ThermostatController
 from wallpad.panel.panel import DEVICE_THERMOSTAT, Panel
+from wallpad.panel.state import RoomState, SubDeviceState
 from wallpad.protocol.kocom import constants as kocom_const
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 from wallpad.protocol.kocom.parser import KocomPacketParser
@@ -52,14 +53,15 @@ def test_panel_make_packet_thermostat_temp_format():
         "room2": "03",
     }
     panel.config = mock_config
-    panel.device_states = {
-        DEVICE_THERMOSTAT: {"room1": {"mode": {"set": "heat"}, "target_temp": {"set": 25.0}}}
-    }
     panel.packet_builder = KocomPacketBuilder(
         room_rev=mock_config.kocom_room_rev,
         room_thermostat_rev=mock_config.kocom_room_thermostat_rev,
     )
-    panel.devices = [
+    thermo_state = RoomState()
+    thermo_state["mode"] = SubDeviceState(state="heat", set_val="heat")
+    thermo_state["target_temp"] = SubDeviceState(state=25.0, set_val=25.0)
+    thermo_ctrl = ThermostatController(DEVICE_THERMOSTAT, "room1", state=thermo_state)
+    thermo_ctrl.add_sub_device(
         Thermostat(
             name_prefix="test",
             room="room1",
@@ -67,13 +69,14 @@ def test_panel_make_packet_thermostat_temp_format():
             hw_info=kocom_const.HARDWARE,
             packet_builder=panel.packet_builder,
         )
-    ]
+    )
+    panel.controller_map = {(DEVICE_THERMOSTAT, "room1"): thermo_ctrl}
 
     packet = panel.make_packet(DEVICE_THERMOSTAT, "room1", "상태", "", "")
     # 25도 -> 16진수 "19". 패킷의 value(20번째 인덱스) 앞 6글자가 "110019"여야 함
     assert packet[20:26] == "110019"
 
     # 9도일 경우 "09"로 패딩되는지 추가 검증
-    panel.device_states[DEVICE_THERMOSTAT]["room1"]["target_temp"]["set"] = 9.0
+    thermo_state["target_temp"].set = 9.0
     packet_single = panel.make_packet(DEVICE_THERMOSTAT, "room1", "상태", "", "")
     assert packet_single[20:26] == "110009"

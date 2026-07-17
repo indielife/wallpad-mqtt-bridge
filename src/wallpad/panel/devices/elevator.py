@@ -3,8 +3,26 @@ import json
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.devices.topic import TopicContext
 from wallpad.panel.devices.base import PanelDevice
+from wallpad.panel.devices.controller import CategoryController
 from wallpad.protocol.base import HardwareInfo
 from wallpad.protocol.kocom.constants import DEVICE_ELEVATOR
+
+
+class ElevatorController(CategoryController):
+    """엘리베이터 호출 컨트롤러입니다. off 명령은 RS485 ack 없이 즉시 확정됩니다."""
+
+    def apply_ha_command(
+        self, sub_device: str, command: str, payload: str, default_speed: str
+    ) -> None:
+        sub_state = self.state[sub_device]
+        sub_state.set = payload
+        sub_state.last = "state" if payload == "off" else command
+
+    def reflect_rs485(self, value, default_speed: str) -> None:
+        sub_state = self.state[self.category]
+        sub_state.state = value
+        sub_state.last = "state"
+        sub_state.count = 0
 
 
 class Elevator(PanelDevice):

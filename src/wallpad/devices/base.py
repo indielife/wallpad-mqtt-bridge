@@ -70,7 +70,7 @@ class BaseDevice:
 
     def get_optimistic_state(self, device_states) -> object | None:
         """
-        update_from_ha 직후 즉시 publish할 HA 상태를 반환합니다.
+        HA 명령 반영(apply_ha_command) 직후 즉시 publish할 HA 상태를 반환합니다.
         None 반환 시 publish 스킵 (RS485 ack 후 publish).
         """
         return None

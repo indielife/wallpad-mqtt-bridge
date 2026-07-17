@@ -4,10 +4,28 @@ import logging
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.devices.topic import TopicContext
 from wallpad.panel.devices.base import PanelDevice
+from wallpad.panel.devices.controller import CategoryController
 from wallpad.protocol.base import HardwareInfo
 from wallpad.protocol.kocom.constants import DEVICE_GAS
 
 logger = logging.getLogger(__name__)
+
+
+class GasController(CategoryController):
+    """가스 밸브 컨트롤러입니다. HA는 잠금(off)만 명령할 수 있습니다."""
+
+    def apply_ha_command(
+        self, sub_device: str, command: str, payload: str, default_speed: str
+    ) -> None:
+        sub_state = self.state[sub_device]
+        sub_state.set = payload
+        sub_state.last = command
+
+    def reflect_rs485(self, value, default_speed: str) -> None:
+        sub_state = self.state[self.category]
+        sub_state.state = value
+        sub_state.last = "state"
+        sub_state.count = 0
 
 
 class Gas(PanelDevice):

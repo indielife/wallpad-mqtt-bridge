@@ -46,7 +46,19 @@ graph LR
 - **[`Panel`](../src/wallpad/panel/panel.py) 클래스**
   - 이 프로젝트의 코어 모듈입니다.
   - 초기화 시 `BaseTransport`를 주입받아, `start()`에서 두 개의 asyncio 태스크 — RS485 수신 루프(`receive_packets()`)와 상태 동기화 워커(`StateSynchronizer.run()`) — 를 생성합니다.
-  - 양방향 메시지 변환 및 상태 관리를 전담합니다.
+  - 양방향 메시지 변환과 라우팅을 담당하며, 상태 소유·갱신 규칙과 패킷 조립은
+    각 `CategoryController`에 위임합니다. `controller_map[(device, room)]`으로
+    대상 컨트롤러를 O(1) 조회해, 기기 종류별 `if/elif` 분기 없이 위임합니다.
+
+- **기기 계층 트리 ([`Room`](../src/wallpad/panel/devices/room.py) → [`CategoryController`](../src/wallpad/panel/devices/controller.py) → SubDevice)**
+  - Panel은 자식 기기를 `Room → CategoryController → SubDevice(leaf)` 트리로 보유합니다.
+    방(`Room`)이 라우팅의 첫 분기점이고, 그 아래 한 카테고리(조명·콘센트·온도조절기 등)를
+    `CategoryController`가 묶습니다. 전역 기기(엘리베이터·가스·팬)는 가상 방 `wallpad`에 속합니다.
+  - RS485의 최소 통신 단위가 `(카테고리 × 방)`이므로, 각 `CategoryController`가 자식들의
+    상태(`RoomState`)를 **소유**하고 HA 명령 반영(`apply_ha_command`)·RS485 수신
+    반영(`apply_rs485_state`)을 자기 책임으로 가집니다.
+  - 이 상태는 `StateSynchronizer`가 순회하는 `device_states` 인덱스와 **동일한 객체**로
+    연결되어(shared identity), 컨트롤러의 상태 변이가 곧 `device_states`에 반영됩니다.
 
 - **[`StateSynchronizer`](../src/wallpad/panel/synchronizer.py) 클래스**
   - HA가 원하는 상태(`set`)와 RS485 실제 상태(`state`)를 맞추는 워커입니다.
@@ -56,8 +68,11 @@ graph LR
   - 전열교환기(환기장치) 연동 모듈입니다.
   - 벽 조절기(ctrl)와 환기 유닛(unit) 두 개의 `BaseTransport`를 주입받아 중간자(MITM) 방식으로 동작합니다.
 
-- **디바이스 모델 및 빌더 ([Light](../src/wallpad/panel/devices/light.py) / [Plug](../src/wallpad/panel/devices/plug.py) / [Thermostat](../src/wallpad/panel/devices/thermostat.py) 등)**
-  - 각 기기별 프로토콜 사양에 맞춰 수신된 Hex 패킷을 의미 있는 상태 값으로 디코딩하거나, HA의 제어 명령을 RS485 Hex 패킷으로 조립(Build)합니다.
+- **디바이스 모델(leaf) 및 빌더 ([Light](../src/wallpad/panel/devices/light.py) / [Plug](../src/wallpad/panel/devices/plug.py) / [Thermostat](../src/wallpad/panel/devices/thermostat.py) 등)**
+  - SubDevice(leaf)는 HA 쪽 표면(Discovery 페이로드·명령 해석 `resolve_command`·상태 발행)과
+    자기 기기의 RS485 Hex 패킷 조립(`build_packet`)을 담당합니다.
+  - 상태 소유와 라우팅은 상위 `CategoryController`가 가지며, leaf는 컨트롤러가 위임한 조립을
+    수행합니다. (조립 책임을 컨트롤러로 물리적으로 끌어올리는 작업은 후속 이슈 #165에서 다룹니다.)
 
 ---
 
@@ -70,7 +85,7 @@ graph LR
    - 버퍼 앞머리의 start-of-frame(SOF) 바이트가 파서의 `SOF_LENGTH_MAP`에 있으면, 해당 프레임 길이만큼 모아 체크섬을 검증합니다. 검증에 실패하면 한 바이트씩 밀며 재동기화합니다.
 2. **패킷 파싱 (`process_packet()` → `parser.parse_frame()`)**
    - 수신 완료된 패킷에서 목적지(Destination), 출발지(Source), 명령(Command), 제어 대상, 상태 값 등을 분석합니다.
-   - 분석 결과에 갱신 대상이 있으면 `set_list()`가 내부 상태 관리자(`self.device_states`)에 `update_from_rs485`로 반영합니다.
+   - 분석 결과에 갱신 대상이 있으면 `set_list()`가 대상 `(device, room)`의 `CategoryController`를 `controller_map`으로 찾아 `apply_rs485_state`로 상태를 반영합니다.
 3. **HA 전송 (`publish_state_to_ha()`)**
    - 기기의 상태 업데이트가 있으면 JSON 형태로 가공하여 미리 정의된 HA 상태 토픽으로 MQTT 메시지를 발행(Publish)합니다.
    * **예시 토픽:** `homeassistant/light/livingroom/state`
@@ -84,12 +99,12 @@ graph LR
    - Home Assistant 대시보드나 자동화 규칙에 의해 기기 제어가 트리거되면, HA는 MQTT 제어 토픽으로 메시지를 발행합니다.
    - 브릿지는 명령 토픽별로 등록해 둔 콜백(`_handle_device_command`)으로 이를 수신하고, `parse_message()`가 `command_registry`에서 대상 디바이스를 찾아 `device.resolve_command()`로 명령을 해석합니다.
 2. **목표 상태 기록**
-   - 해석한 명령을 `self.device_states.update_from_ha`로 반영하여 해당 기기의 목표 제어 값(`set`)을 기록합니다.
+   - 해석한 명령을 대상 `CategoryController`(`controller_map` 조회)의 `apply_ha_command`로 반영하여 해당 기기의 목표 제어 값(`set`)을 기록합니다.
    - 낙관적(optimistic) 반영이 가능한 기기는 즉시 `publish_state_to_ha()`로 HA에 상태를 되돌려 UI 반응성을 확보합니다.
 3. **상태 동기화 워커 (`StateSynchronizer.run()`)**
    - 이벤트 루프에서 주기적으로 도는 워커가 버스가 정숙(`is_idle`)한 순간에만 `sync_once()` → `sync_room()`을 수행하며, HA가 설정한 목표 값(`set`)과 실제 기기 상태(`state`)의 차이를 감시합니다.
    - 차이가 있으면 `reconcile_device()`가 `send_packet()`을 호출합니다.
-   - 각 기기 클래스는 전략 패턴과 빌더 패턴을 사용해 해당 조작 명령에 부합하는 **RS485 Hex 패킷**을 `make_packet()`으로 생성합니다.
+   - 패킷 생성은 `Panel.make_packet()`이 `controller_map`으로 대상 `CategoryController`를 찾아 위임하고, 컨트롤러가 대상 leaf(`find_leaf`)를 골라 그 기기의 `build_packet()`으로 **RS485 Hex 패킷**을 조립하는 흐름으로 이뤄집니다.
    - 최종적으로 `transport.write_if_idle()`를 통해, 버스가 정숙할 때만 EW11(시리얼/소켓)로 데이터를 내보냅니다. 확인 응답이 없으면 워커가 정책에 따라 재전송합니다.
 
 ---

@@ -3,8 +3,13 @@ import json
 from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.devices.topic import TopicContext
 from wallpad.panel.devices.base import PanelDevice
+from wallpad.panel.devices.controller import SwitchController
 from wallpad.protocol.base import HardwareInfo
 from wallpad.protocol.kocom.constants import DEVICE_PLUG
+
+
+class PlugController(SwitchController):
+    """한 방의 콘센트 스위치들을 묶는 컨트롤러입니다."""
 
 
 class Plug(PanelDevice):
