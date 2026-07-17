@@ -76,6 +76,10 @@ feat: 로그인 기능 추가
 .venv/bin/pre-commit run --all-files
 ```
 
+pre-commit 훅은 ruff(check·format)·파일 위생 검사와 함께 `pytest`를 실행합니다.
+커밋이 성립하려면 테스트가 모두 통과해야 하며, 이는 한 PR 안에서 테스트가 깨진 채로
+커밋이 누적되는 것을 로컬에서 미리 차단합니다. (CI는 push된 브랜치 최종 상태를 별도로 검증합니다.)
+
 ## 줄바꿈 정책
 
 작성물의 종류(surface)마다 렌더링·diff 특성이 달라 줄바꿈 기준을 다르게 적용합니다.
