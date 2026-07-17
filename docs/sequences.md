@@ -49,7 +49,7 @@ sequenceDiagram
 
 ## HA to Panel (제어 명령)
 
-HA 제어 명령이 내려오면 `device_states`에 목표 상태를 기록하고,
+HA 제어 명령이 내려오면 대상 `CategoryController`가 목표 상태를 기록하고,
 `StateSynchronizer` 다음 순회 시 RS485 패킷을 전송한다.
 
 ```mermaid
@@ -69,7 +69,7 @@ sequenceDiagram
     paho->>Panel: parse_message()
     Panel->>Panel: command_registry 조회
     Panel->>Panel: device.resolve_command()
-    Panel->>Panel: device_states.update_from_ha()
+    Panel->>Panel: controller_map 조회 - controller.apply_ha_command()
     Note over Panel: sub_device.set 갱신
     Panel->>Broker: publish_state_to_ha() optimistic
     Broker->>HA: 즉시 상태 반영
@@ -100,7 +100,7 @@ sequenceDiagram
     Panel->>Panel: parser.parse_frame()
     Note over Panel: device, room, value 추출
     Panel->>Panel: set_list()
-    Panel->>Panel: device_states.update_from_rs485()
+    Panel->>Panel: controller_map 조회 - controller.apply_rs485_state()
     Panel->>Panel: publish_state_to_ha()
     Panel->>Broker: mqtt_client.publish_json()
     Note over Broker: homeassistant/light/livingroom/state
