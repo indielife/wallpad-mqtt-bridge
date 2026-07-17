@@ -1,6 +1,14 @@
 from wallpad.config import AppConfig
-from wallpad.devices.base import BaseDevice
-from wallpad.panel.devices import Elevator, Fan, Gas, Light, Plug, Thermostat
+from wallpad.panel.devices import (
+    CategoryController,
+    Elevator,
+    Fan,
+    Gas,
+    Light,
+    Plug,
+    Room,
+    Thermostat,
+)
 from wallpad.panel.state import DeviceState, KocomStateManager, RoomState, SubDeviceState
 from wallpad.panel.topic import TopicBuilder
 from wallpad.protocol.kocom import constants as kocom_const
@@ -22,31 +30,36 @@ class DeviceFactory:
         config: AppConfig,
         name_prefix: str,
         packet_builder: KocomPacketBuilder,
-    ) -> tuple[list[BaseDevice], KocomStateManager]:
-        devices: list[BaseDevice] = []
+    ) -> tuple[list[Room], KocomStateManager]:
         states = KocomStateManager()
+        wallpad_room = Room(DEVICE_WALLPAD)
+        room_devices: dict[str, Room] = {room.name: Room(room.name) for room in config.rooms}
 
         if config.elevator_enabled:
-            DeviceFactory._add_elevator(config, name_prefix, packet_builder, devices, states)
+            DeviceFactory._add_elevator(config, name_prefix, packet_builder, wallpad_room, states)
         if config.gas_enabled:
-            DeviceFactory._add_gas(config, name_prefix, packet_builder, devices, states)
+            DeviceFactory._add_gas(config, name_prefix, packet_builder, wallpad_room, states)
         if config.fan_enabled:
-            DeviceFactory._add_fan(config, name_prefix, packet_builder, devices, states)
+            DeviceFactory._add_fan(config, name_prefix, packet_builder, wallpad_room, states)
 
-        DeviceFactory._add_room_devices(config, name_prefix, packet_builder, devices, states)
+        DeviceFactory._add_room_devices(config, name_prefix, packet_builder, room_devices, states)
 
-        return devices, states
+        rooms = [room for room in (wallpad_room, *room_devices.values()) if room.controllers]
+        return rooms, states
 
     @staticmethod
     def _add_elevator(
         config: AppConfig,
         name_prefix: str,
         packet_builder: KocomPacketBuilder,
-        devices: list[BaseDevice],
+        wallpad_room: Room,
         states: KocomStateManager,
     ) -> None:
         topics = TopicBuilder.for_elevator(room="wallpad", sub_device="elevator")
-        devices.append(
+        controller = wallpad_room.add_controller(
+            CategoryController(DEVICE_ELEVATOR, wallpad_room.name)
+        )
+        controller.add_sub_device(
             Elevator(
                 name_prefix=name_prefix,
                 sw_version=config.sw_version,
@@ -66,11 +79,12 @@ class DeviceFactory:
         config: AppConfig,
         name_prefix: str,
         packet_builder: KocomPacketBuilder,
-        devices: list[BaseDevice],
+        wallpad_room: Room,
         states: KocomStateManager,
     ) -> None:
         topics = TopicBuilder.for_gas(room="wallpad", sub_device="gas")
-        devices.append(
+        controller = wallpad_room.add_controller(CategoryController(DEVICE_GAS, wallpad_room.name))
+        controller.add_sub_device(
             Gas(
                 name_prefix=name_prefix,
                 sw_version=config.sw_version,
@@ -90,11 +104,12 @@ class DeviceFactory:
         config: AppConfig,
         name_prefix: str,
         packet_builder: KocomPacketBuilder,
-        devices: list[BaseDevice],
+        wallpad_room: Room,
         states: KocomStateManager,
     ) -> None:
         topics = TopicBuilder.for_fan(room="wallpad", sub_device="fan")
-        devices.append(
+        controller = wallpad_room.add_controller(CategoryController(DEVICE_FAN, wallpad_room.name))
+        controller.add_sub_device(
             Fan(
                 name_prefix=name_prefix,
                 sw_version=config.sw_version,
@@ -115,13 +130,13 @@ class DeviceFactory:
         config: AppConfig,
         name_prefix: str,
         packet_builder: KocomPacketBuilder,
-        devices: list[BaseDevice],
+        room_devices: dict[str, Room],
         states: KocomStateManager,
     ) -> None:
-        light_state = DeviceFactory._build_lights(config, name_prefix, packet_builder, devices)
-        plug_state = DeviceFactory._build_plugs(config, name_prefix, packet_builder, devices)
+        light_state = DeviceFactory._build_lights(config, name_prefix, packet_builder, room_devices)
+        plug_state = DeviceFactory._build_plugs(config, name_prefix, packet_builder, room_devices)
         thermo_state = DeviceFactory._build_thermostats(
-            config, name_prefix, packet_builder, devices
+            config, name_prefix, packet_builder, room_devices
         )
         if light_state:
             states[DEVICE_LIGHT] = light_state
@@ -135,18 +150,21 @@ class DeviceFactory:
         config: AppConfig,
         name_prefix: str,
         packet_builder: KocomPacketBuilder,
-        devices: list[BaseDevice],
+        room_devices: dict[str, Room],
     ) -> DeviceState:
         device_state = DeviceState()
         for room in config.rooms:
             if room.light_addr is None or room.light_count == 0:
                 continue
             room_state = RoomState()
+            controller = room_devices[room.name].add_controller(
+                CategoryController(DEVICE_LIGHT, room.name)
+            )
             for i in range(room.light_count + 1):
                 room_state[DEVICE_LIGHT + str(i)] = SubDeviceState(state="off", set_val="off")
                 sub_device_name = DEVICE_LIGHT + str(i)
                 topics = TopicBuilder.for_light(room=room.name, sub_device=sub_device_name)
-                devices.append(
+                controller.add_sub_device(
                     Light(
                         name_prefix=name_prefix,
                         room=room.name,
@@ -165,18 +183,21 @@ class DeviceFactory:
         config: AppConfig,
         name_prefix: str,
         packet_builder: KocomPacketBuilder,
-        devices: list[BaseDevice],
+        room_devices: dict[str, Room],
     ) -> DeviceState:
         device_state = DeviceState()
         for room in config.rooms:
             if room.light_addr is None or room.plug_count == 0:
                 continue
             room_state = RoomState()
+            controller = room_devices[room.name].add_controller(
+                CategoryController(DEVICE_PLUG, room.name)
+            )
             for i in range(room.plug_count + 1):
                 room_state[DEVICE_PLUG + str(i)] = SubDeviceState(state="on", set_val="on")
                 sub_device_name = DEVICE_PLUG + str(i)
                 topics = TopicBuilder.for_plug(room=room.name, sub_device=sub_device_name)
-                devices.append(
+                controller.add_sub_device(
                     Plug(
                         name_prefix=name_prefix,
                         room=room.name,
@@ -195,7 +216,7 @@ class DeviceFactory:
         config: AppConfig,
         name_prefix: str,
         packet_builder: KocomPacketBuilder,
-        devices: list[BaseDevice],
+        room_devices: dict[str, Room],
     ) -> DeviceState:
         device_state = DeviceState()
         for room in config.rooms:
@@ -209,7 +230,10 @@ class DeviceFactory:
             )
             device_state[room.name] = room_state
             topics = TopicBuilder.for_thermostat(room=room.name)
-            devices.append(
+            controller = room_devices[room.name].add_controller(
+                CategoryController(DEVICE_THERMOSTAT, room.name)
+            )
+            controller.add_sub_device(
                 Thermostat(
                     name_prefix=name_prefix,
                     room=room.name,
