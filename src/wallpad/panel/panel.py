@@ -12,6 +12,7 @@ from wallpad.mqtt import (
     TOPIC_BRIDGE_SCAN,
     MqttClient,
 )
+from wallpad.panel.devices import Room
 from wallpad.panel.factory import DeviceFactory
 from wallpad.panel.synchronizer import StateSynchronizer
 from wallpad.protocol.kocom.constants import (
@@ -28,6 +29,33 @@ from wallpad.protocol.kocom.parser import KocomPacketParser
 from wallpad.transport import BaseTransport
 
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
+
+# 트리(Room→CategoryController→SubDevice)를 레거시 flat 리스트로 평면화할 때의
+# 카테고리 순회 순서. discovery 발행·명령 등록 등 기존 외부 계약이 이 순서에
+# 의존하므로, 카테고리-major(방 기기는 카테고리별로 전체 방을 순회)로 고정한다.
+FLATTEN_CATEGORY_ORDER = (
+    DEVICE_ELEVATOR,
+    DEVICE_GAS,
+    DEVICE_FAN,
+    DEVICE_LIGHT,
+    DEVICE_PLUG,
+    DEVICE_THERMOSTAT,
+)
+
+
+def flatten_device_tree(rooms: list[Room]) -> list[BaseDevice]:
+    """기기 계층 트리를 레거시 flat device 리스트로 파생한다.
+
+    Panel 하위 로직(device_map·command_registry·discovery·make_packet)이 기대하는
+    순서를 그대로 재현하기 위해 카테고리-major로 순회한다.
+    """
+    devices: list[BaseDevice] = []
+    for category in FLATTEN_CATEGORY_ORDER:
+        for room in rooms:
+            controller = room.controller(category)
+            if controller is not None:
+                devices.extend(controller.sub_devices)
+    return devices
 
 
 def log_frame(direction: str, name: str, parsed_frame: dict) -> None:
@@ -79,9 +107,8 @@ class Panel:
             room_rev=config.kocom_room_rev, room_thermostat_rev=config.kocom_room_thermostat_rev
         )
         self.parser = KocomPacketParser(config)
-        self.devices, self.device_states = DeviceFactory.build(
-            config, self.name, self.packet_builder
-        )
+        self.rooms, self.device_states = DeviceFactory.build(config, self.name, self.packet_builder)
+        self.devices = flatten_device_tree(self.rooms)
         self.device_map: dict[tuple[str, str], BaseDevice] = {
             (type(d).__name__.lower(), d.room): d for d in self.devices
         }
