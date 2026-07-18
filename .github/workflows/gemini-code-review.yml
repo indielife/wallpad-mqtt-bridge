@@ -52,6 +52,11 @@ jobs:
               "model": {
                 "maxSessionTurns": 25
               },
+              "telemetry": {
+                "enabled": true,
+                "target": "local",
+                "outfile": ".gemini/telemetry.log"
+              },
               "mcpServers": {
                 "github": {
                   "command": "docker",
