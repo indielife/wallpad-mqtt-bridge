@@ -91,12 +91,6 @@ class Panel:
 
         self.name = config.wallpad_manufacturer
         self.default_speed = config.kocom_default_speed
-        if self.default_speed not in ["low", "medium", "high"]:
-            logger.info(
-                "[Error] Kocom DEFAULT_SPEED 설정오류로 low로 설정. %s -> low",
-                self.default_speed,
-            )
-            self.default_speed = "low"
 
         self.scan_packet_buf = []
         self._loop: asyncio.AbstractEventLoop | None = None

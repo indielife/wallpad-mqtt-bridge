@@ -36,12 +36,6 @@ class Ventilator:
         self.state = VentilatorState()
 
         self.default_speed = config.ventilator_default_speed
-        if self.default_speed not in ["low", "medium", "high"]:
-            logger.info(
-                "[Error] Grex DEFAULT_SPEED 설정오류로 low로 설정. %s -> low",
-                self.default_speed,
-            )
-            self.default_speed = "low"
 
         self.packet_builder = GrexPacketBuilder()
         self.parser = GrexPacketParser()

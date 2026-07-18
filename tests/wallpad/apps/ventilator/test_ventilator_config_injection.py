@@ -34,16 +34,3 @@ def test_ventilator_initial_state(
     assert ventilator.state.desired == {"mode": "off", "speed": "off"}
     assert ventilator.unit is not None
     assert ventilator.unit.name_prefix == "grex"
-
-
-def test_ventilator_default_speed_fallback(
-    mock_config, mock_controller_transport, mock_ventilator_transport
-):
-    """Ventilator 객체 생성 시 잘못된 default_speed가 주어지면 low로 강제 설정되는지 검증합니다."""
-    mock_config.ventilator_default_speed = "invalid_speed"
-
-    ventilator = Ventilator(
-        mock_config, MagicMock(), mock_controller_transport, mock_ventilator_transport
-    )
-
-    assert ventilator.default_speed == "low"
