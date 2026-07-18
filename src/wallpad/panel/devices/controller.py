@@ -1,6 +1,7 @@
 import time
 
 from wallpad.devices.base import BaseDevice
+from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.panel.state import RoomState, SubDeviceState
 
 
@@ -10,23 +11,28 @@ class CategoryController:
 
     RS485의 최소 통신 단위는 (카테고리 x 방)이므로, 이 물리적 제약과 상태 소유는
     leaf(SubDevice)가 아니라 이 컨트롤러에 캡슐화됩니다. 자식들의 상태(`RoomState`)를
-    소유하며, HA 제어 반영(`apply_ha_command`)과 RS485 수신 반영(`apply_rs485_state`)을
-    자기 책임으로 갖습니다.
+    소유하며, HA 제어 반영(`apply_ha_command`)·RS485 수신 반영(`apply_rs485_state`)·
+    명령 패킷 조립(`make_packet`)을 모두 자기 상태를 기반으로 수행합니다.
 
     이 `state`는 `device_states`(synchronizer가 순회하는 인덱스)와 **동일한 객체**로
     연결되어, 컨트롤러의 상태 변이가 곧 `device_states`에 반영됩니다.
     """
 
-    def __init__(self, category: str, room: str, state: RoomState | None = None):
+    def __init__(
+        self,
+        category: str,
+        room: str,
+        state: RoomState | None = None,
+        packet_builder: "PacketBuilder | None" = None,
+    ):
         self.category = category
         self.room = room
         self.sub_devices: list[BaseDevice] = []
         self.state = state
+        self.packet_builder = packet_builder
 
     def add_sub_device(self, device: BaseDevice) -> None:
         self.sub_devices.append(device)
-
-    # --- 상태 소유권: HA 명령 / RS485 수신 반영 ---
 
     def apply_ha_command(
         self, sub_device: str, command: str, payload: str, default_speed: str
@@ -56,26 +62,9 @@ class CategoryController:
             sub_state.last = "state"
             sub_state.count = 0
 
-    # --- 패킷 조립 위임 (#131) ---
-
     def make_packet(self, cmd: str, target: str, value: str) -> str | None:
-        """명령 대상 leaf를 찾아 패킷 조립을 위임합니다.
-
-        조립 자체는 아직 leaf(SubDevice)의 build_packet이 수행하며(B 단계),
-        컨트롤러는 소유한 상태(RoomState)를 주입해 위임합니다. 조립 책임의 물리적
-        이전은 후속(#165)에서 다룹니다.
-        """
-        leaf = self.find_leaf(target)
-        if leaf is None:
-            return None
-        return leaf.build_packet(cmd=cmd, target=target, value=value, room_state=self.state)
-
-    def find_leaf(self, target: str) -> BaseDevice | None:
-        """명령 대상 leaf(SubDevice)를 반환합니다. 기본 규칙은 sub_device == 카테고리."""
-        for leaf in self.sub_devices:
-            if leaf.sub_device == self.category:
-                return leaf
-        return None
+        """카테고리별로 자기 상태를 사용해 패킷을 조립합니다. 서브클래스가 구현합니다."""
+        raise NotImplementedError
 
 
 class SwitchController(CategoryController):
@@ -97,9 +86,33 @@ class SwitchController(CategoryController):
             sub_state.state = v
             self.recover_if_confirmed(sub_state)
 
-    def find_leaf(self, target: str) -> BaseDevice | None:
-        """조명·콘센트는 방 안 여러 leaf 중 target으로 지목된 것을 반환합니다."""
-        for leaf in self.sub_devices:
-            if leaf.sub_device == target:
-                return leaf
+    def make_packet(self, cmd: str, target: str, value: str) -> str | None:
+        if target not in self.state:
+            return None
+
+        device_type = self.category
+
+        value_hex = ""
+        all_device = device_type + "0"
+        for i in range(1, 9):
+            sub_device = device_type + str(i)
+            if target != sub_device:
+                if target == all_device:
+                    value_hex += "ff" if value == "on" and sub_device in self.state else "00"
+                else:
+                    if sub_device in self.state and self.state[sub_device].state == "on":
+                        value_hex += "ff"
+                    else:
+                        value_hex += "00"
+            else:
+                value_hex += "ff" if value == "on" else "00"
+
+        if self.packet_builder:
+            return self.packet_builder.encode(
+                src=device_type,
+                dst="wallpad",
+                room=self.room,
+                cmd=cmd,
+                value_hex=value_hex,
+            )
         return None

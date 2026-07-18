@@ -68,11 +68,11 @@ graph LR
   - 전열교환기(환기장치) 연동 모듈입니다.
   - 벽 조절기(ctrl)와 환기 유닛(unit) 두 개의 `BaseTransport`를 주입받아 중간자(MITM) 방식으로 동작합니다.
 
-- **디바이스 모델(leaf) 및 빌더 ([Light](../src/wallpad/panel/devices/light.py) / [Plug](../src/wallpad/panel/devices/plug.py) / [Thermostat](../src/wallpad/panel/devices/thermostat.py) 등)**
-  - SubDevice(leaf)는 HA 쪽 표면(Discovery 페이로드·명령 해석 `resolve_command`·상태 발행)과
-    자기 기기의 RS485 Hex 패킷 조립(`build_packet`)을 담당합니다.
-  - 상태 소유와 라우팅은 상위 `CategoryController`가 가지며, leaf는 컨트롤러가 위임한 조립을
-    수행합니다. (조립 책임을 컨트롤러로 물리적으로 끌어올리는 작업은 후속 이슈 #165에서 다룹니다.)
+- **디바이스 모델(leaf) ([Light](../src/wallpad/panel/devices/light.py) / [Plug](../src/wallpad/panel/devices/plug.py) / [Thermostat](../src/wallpad/panel/devices/thermostat.py) 등)**
+  - SubDevice(leaf)는 HA 쪽 표면(Discovery 페이로드·명령 해석 `resolve_command`·상태 발행)만
+    담당합니다.
+  - 상태 소유와 RS485 Hex 패킷 조립(`make_packet`)은 모두 상위 `CategoryController`가
+    가지며, leaf는 조립에 관여하지 않습니다.
 
 ---
 
@@ -104,7 +104,7 @@ graph LR
 3. **상태 동기화 워커 (`StateSynchronizer.run()`)**
    - 이벤트 루프에서 주기적으로 도는 워커가 버스가 정숙(`is_idle`)한 순간에만 `sync_once()` → `sync_room()`을 수행하며, HA가 설정한 목표 값(`set`)과 실제 기기 상태(`state`)의 차이를 감시합니다.
    - 차이가 있으면 `reconcile_device()`가 `send_packet()`을 호출합니다.
-   - 패킷 생성은 `Panel.make_packet()`이 `controller_map`으로 대상 `CategoryController`를 찾아 위임하고, 컨트롤러가 대상 leaf(`find_leaf`)를 골라 그 기기의 `build_packet()`으로 **RS485 Hex 패킷**을 조립하는 흐름으로 이뤄집니다.
+   - 패킷 생성은 `Panel.make_packet()`이 `controller_map`으로 대상 `CategoryController`를 찾아 위임하고, 컨트롤러가 자기 상태(`RoomState`)를 사용해 `make_packet()`으로 **RS485 Hex 패킷**을 직접 조립하는 흐름으로 이뤄집니다.
    - 최종적으로 `transport.write_if_idle()`를 통해, 버스가 정숙할 때만 EW11(시리얼/소켓)로 데이터를 내보냅니다. 확인 응답이 없으면 워커가 정책에 따라 재전송합니다.
 
 ---

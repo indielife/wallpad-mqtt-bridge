@@ -81,12 +81,3 @@ class BaseDevice:
         대부분의 기기는 1개, Gas처럼 복수 토픽이 필요한 경우 여러 개를 반환합니다.
         """
         raise NotImplementedError
-
-    def build_packet(
-        self, cmd: str, target: str, value: str, room_state: dict, **kwargs
-    ) -> str | None:
-        """
-        명령 패킷(16진수 문자열) 전체를 생성하여 반환합니다.
-        오버라이딩하지 않은 경우 None을 반환하여 main.py의 레거시 로직을 따릅니다.
-        """
-        return None

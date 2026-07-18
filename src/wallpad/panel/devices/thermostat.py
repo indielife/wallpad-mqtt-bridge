@@ -1,6 +1,5 @@
 import json
 
-from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.devices.topic import TopicContext
 from wallpad.panel.devices.base import PanelDevice
 from wallpad.panel.devices.controller import CategoryController
@@ -35,6 +34,32 @@ class ThermostatController(CategoryController):
                 state["mode"].state = "heat"
             self.recover_if_confirmed(sub_state)
 
+    def make_packet(self, cmd: str, target: str, value: str) -> str | None:
+        value_hex = ""
+        try:
+            mode = self.state.get("mode", {}).get("set", "off")
+            target_temp = self.state.get("target_temp", {}).get("set", 22.0)
+            if mode == "heat":
+                value_hex += "1100"
+            elif mode == "off":
+                value_hex += "0100"
+            else:
+                value_hex += "1101"
+            value_hex += f"{int(float(target_temp)):02x}"
+            value_hex += "0000000000"
+        except Exception:
+            return None
+
+        if self.packet_builder:
+            return self.packet_builder.encode(
+                src=self.category,
+                dst="wallpad",
+                room=self.room,
+                cmd=cmd,
+                value_hex=value_hex,
+            )
+        return None
+
 
 class Thermostat(PanelDevice):
     def __init__(
@@ -43,7 +68,6 @@ class Thermostat(PanelDevice):
         room: str,
         sw_version: str,
         hw_info: HardwareInfo,
-        packet_builder: PacketBuilder | None = None,
         topics: TopicContext | None = None,
     ):
         super().__init__(
@@ -52,7 +76,6 @@ class Thermostat(PanelDevice):
             sub_device="thermostat",
             sw_version=sw_version,
             hw_info=hw_info,
-            packet_builder=packet_builder,
             topics=topics,
         )
 
@@ -93,31 +116,3 @@ class Thermostat(PanelDevice):
             "target_temp": room_state["target_temp"]["set"],
             "current_temp": room_state["current_temp"]["state"],
         }
-
-    def build_packet(
-        self, cmd: str, target: str, value: str, room_state: dict, **kwargs
-    ) -> str | None:
-        value_hex = ""
-        try:
-            mode = room_state.get("mode", {}).get("set", "off")
-            target_temp = room_state.get("target_temp", {}).get("set", 22.0)
-            if mode == "heat":
-                value_hex += "1100"
-            elif mode == "off":
-                value_hex += "0100"
-            else:
-                value_hex += "1101"
-            value_hex += f"{int(float(target_temp)):02x}"
-            value_hex += "0000000000"
-        except Exception:
-            return None
-
-        if self.packet_builder:
-            return self.packet_builder.encode(
-                src=self.sub_device,
-                dst="wallpad",
-                room=self.room,
-                cmd=cmd,
-                value_hex=value_hex,
-            )
-        return None

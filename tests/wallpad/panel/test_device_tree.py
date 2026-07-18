@@ -1,7 +1,7 @@
 """기기 계층 트리(Room→CategoryController→SubDevice)와 flat 뷰 파생 검증.
 
-이 리팩토링(#144)은 외부 동작을 바꾸지 않고 트리 골격만 도입한다. 따라서 여기서는
-(1) DeviceFactory가 트리를 구성하는지, (2) 트리를 평면화한 flat 리스트가 레거시
+(1) DeviceFactory가 config로부터 이 트리를 올바르게 구성하는지, (2) 트리를 평면화한
+flat 리스트가 Panel 하위 로직(device_map·command_registry 등)이 기대하는 레거시
 순서(카테고리-major)를 그대로 재현하는지를 고정한다.
 """
 

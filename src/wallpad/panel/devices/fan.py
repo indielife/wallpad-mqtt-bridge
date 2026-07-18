@@ -1,6 +1,5 @@
 import json
 
-from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.devices.topic import TopicContext
 from wallpad.panel.devices.base import PanelDevice
 from wallpad.panel.devices.controller import CategoryController
@@ -36,6 +35,30 @@ class FanController(CategoryController):
                 state["mode"].state = "off" if v == "off" else "on"
             self.recover_if_confirmed(sub_state)
 
+    def make_packet(self, cmd: str, target: str, value: str) -> str | None:
+        value_hex = ""
+        try:
+            mode = self.state.get("mode", {}).get("set", "off")
+            speed = self.state.get("speed", {}).get("set", "off")
+            if mode == "on":
+                value_hex += "1100"
+            elif mode == "off":
+                value_hex += "0001"
+            value_hex += KOCOM_HEX_BY_FAN_SPEED.get(speed, "0")
+            value_hex += "00000000000"
+        except Exception:
+            return None
+
+        if self.packet_builder:
+            return self.packet_builder.encode(
+                src=self.category,
+                dst="wallpad",
+                room=self.room,
+                cmd=cmd,
+                value_hex=value_hex,
+            )
+        return None
+
 
 class Fan(PanelDevice):
     def __init__(
@@ -43,7 +66,6 @@ class Fan(PanelDevice):
         name_prefix: str,
         sw_version: str,
         hw_info: HardwareInfo,
-        packet_builder: PacketBuilder | None = None,
         topics: TopicContext | None = None,
     ):
         super().__init__(
@@ -52,7 +74,6 @@ class Fan(PanelDevice):
             sub_device="fan",
             sw_version=sw_version,
             hw_info=hw_info,
-            packet_builder=packet_builder,
             topics=topics,
         )
 
@@ -89,29 +110,3 @@ class Fan(PanelDevice):
             "mode": room_state["mode"]["set"],
             "speed": room_state["speed"]["set"],
         }
-
-    def build_packet(
-        self, cmd: str, target: str, value: str, room_state: dict, **kwargs
-    ) -> str | None:
-        value_hex = ""
-        try:
-            mode = room_state.get("mode", {}).get("set", "off")
-            speed = room_state.get("speed", {}).get("set", "off")
-            if mode == "on":
-                value_hex += "1100"
-            elif mode == "off":
-                value_hex += "0001"
-            value_hex += KOCOM_HEX_BY_FAN_SPEED.get(speed, "0")
-            value_hex += "00000000000"
-        except Exception:
-            return None
-
-        if self.packet_builder:
-            return self.packet_builder.encode(
-                src=self.sub_device,
-                dst="wallpad",
-                room=self.room,
-                cmd=cmd,
-                value_hex=value_hex,
-            )
-        return None

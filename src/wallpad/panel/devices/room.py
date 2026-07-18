@@ -7,8 +7,8 @@ class Room:
     수신 프레임(src_room)·HA 명령(room)이 모두 방을 지목하고, 방은 이미
     RoomConfig로 존재하는 의미 있는 집합체이므로 라우팅의 첫 분기점으로 둡니다.
     전역 카테고리(엘리베이터·가스·팬)는 물리적으로 월패드에 속하므로 "wallpad"
-    가상 방이 수용합니다. 이번 단계에서는 CategoryController들을 담는 구조
-    컨테이너일 뿐이며, 라우팅 위임은 후속 이슈(#160)에서 다룹니다.
+    가상 방이 수용합니다. CategoryController들을 카테고리로 조회할 수 있는
+    컨테이너입니다.
     """
 
     def __init__(self, name: str):
