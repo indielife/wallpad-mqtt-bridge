@@ -32,6 +32,7 @@ class ThermostatController(CategoryController):
                 sub_state.state = v
             else:
                 sub_state.state = int(float(v))
+                state["mode"].state = "heat"
             self.recover_if_confirmed(sub_state)
 
     def build_packet(self, cmd: str, target: str, value: str) -> str | None:

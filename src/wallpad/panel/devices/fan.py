@@ -33,6 +33,7 @@ class FanController(CategoryController):
                 state["speed"].state = "off" if v == "off" else default_speed
             else:
                 sub_state.state = v
+                state["mode"].state = "off" if v == "off" else "on"
             self.recover_if_confirmed(sub_state)
 
     def build_packet(self, cmd: str, target: str, value: str) -> str | None:
