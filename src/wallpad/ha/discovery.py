@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 class HaDiscoveryCoordinator:
     """HA MQTT Discovery 발행과 restart/remove 기동 핸들러를 소유하는 공용 컴포넌트.
 
-    Panel과 Ventilator가 각자 복붙해 갖고 있던 on_connect → discovery 발행 →
-    restart/remove 보일러플레이트를 단일 출처로 통합한다. 발행 후 echo 기반
-    준비 핸드셰이크(ha_ready)가 필요한 쪽은 HandshakeHaDiscoveryCoordinator를 쓴다.
+    on_connect → discovery 발행 → restart/remove 흐름을 담당한다. 발행 후
+    echo 기반 준비 핸드셰이크(ha_ready)가 필요한 쪽은
+    HandshakeHaDiscoveryCoordinator를 쓴다.
     """
 
     def __init__(self, mqtt_client: MqttClient, devices: list[BaseDevice]):

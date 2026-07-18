@@ -14,8 +14,7 @@ VALID_SPEEDS = ("low", "medium", "high")
 def _normalize_speed(value: str, label: str) -> str:
     """default_speed 설정값을 검증하고, 유효하지 않으면 low로 강등한다.
 
-    Kocom(Panel)·Grex(Ventilator) 양쪽이 동일한 규칙을 중복 구현하던 것을
-    config 로드 계층으로 모아, 두 기기가 이미 정규화된 값만 읽도록 한다.
+    Kocom(Panel)·Grex(Ventilator) 양쪽이 이 함수로 정규화된 값만 읽는다.
     """
     if value not in VALID_SPEEDS:
         logger.info("[Error] %s DEFAULT_SPEED 설정오류로 low로 설정. %s -> low", label, value)
