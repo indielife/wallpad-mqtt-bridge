@@ -2,7 +2,7 @@
 on_connect 메커니즘 및 race condition regression 테스트.
 
 Panel 생성 시 register_topic_callback으로 토픽이 등록되고, MqttClient의
-연결(on_connect) 시점에 자동 구독 → _publish_ha_discovery → ha_registry 설정 →
+연결(on_connect) 시점에 자동 구독 → ha_coordinator.publish → expected_echo_topic 설정 →
 retained 메시지 수신 → ha_ready.set() 흐름을 검증한다.
 
 실제 MqttClient(paho 클라이언트만 patch)를 사용해 라우팅 매칭 로직을
@@ -47,17 +47,16 @@ def _make_sync_loop():
 # ---------------------------------------------------------------------------
 
 
-def test_on_connect_publishes_discovery_and_sets_ha_registry(mock_config, mqtt_client):
-    """on_connect 호출 후 ha_registry가 마지막 config 토픽으로 설정되는지 검증."""
+def test_on_connect_publishes_discovery_and_sets_expected_echo_topic(mock_config, mqtt_client):
+    """on_connect 호출 후 expected_echo_topic이 마지막 config 토픽으로 설정되는지 검증."""
     panel = Panel(mock_config, mqtt_client, MagicMock())
 
-    assert panel.ha_registry is False
+    assert panel.ha_coordinator.expected_echo_topic is None
 
     _fire_connect(mqtt_client)
 
-    assert panel.ha_registry is not False
-    assert isinstance(panel.ha_registry, str)
-    assert panel.ha_registry.endswith("/config")
+    assert panel.ha_coordinator.expected_echo_topic is not None
+    assert panel.ha_coordinator.expected_echo_topic.endswith("/config")
 
 
 def test_on_connect_subscribes_to_config_and_command_topics(mock_config, mqtt_client):
@@ -83,26 +82,26 @@ def test_ha_ready_set_after_retained_config_message(mock_config, mqtt_client):
 
     _fire_connect(mqtt_client)
     assert not panel.ha_ready.is_set()  # 아직 준비 안 됨
-    assert panel.ha_registry is not False
+    assert panel.ha_coordinator.expected_echo_topic is not None
 
     # broker가 retained 메시지를 돌려주는 상황 시뮬레이션
-    _dispatch(mqtt_client, panel.ha_registry, "{}")
+    _dispatch(mqtt_client, panel.ha_coordinator.expected_echo_topic, "{}")
 
     assert panel.ha_ready.is_set()
 
 
 def test_ha_ready_not_set_if_wrong_topic_arrives(mock_config, mqtt_client):
-    """ha_registry와 다른 토픽이 오면 ha_ready가 설정되지 않아야 한다."""
+    """expected_echo_topic과 다른 토픽이 오면 ha_ready가 설정되지 않아야 한다."""
     panel = Panel(mock_config, mqtt_client, MagicMock())
     panel._loop = _make_sync_loop()
 
     _fire_connect(mqtt_client)
 
-    wrong_topic = "homeassistant/light/livingroom_light0/config"  # ha_registry가 아닌 토픽
+    wrong_topic = "homeassistant/light/livingroom_light0/config"  # expected_echo_topic이 아닌 토픽
     _dispatch(mqtt_client, wrong_topic, "{}")
 
-    # ha_registry(마지막 config 토픽)가 아닌 메시지로는 해제 안 됨
-    if panel.ha_registry != wrong_topic:
+    # expected_echo_topic(마지막 config 토픽)가 아닌 메시지로는 해제 안 됨
+    if panel.ha_coordinator.expected_echo_topic != wrong_topic:
         assert not panel.ha_ready.is_set()
 
 
@@ -118,8 +117,8 @@ def test_connect_before_panel_init_prevents_on_connect(mock_config, mqtt_client)
 
     panel = Panel(mock_config, mqtt_client, MagicMock())
 
-    # on_connect가 발화하지 않았으므로 discovery 미발행 → ha_registry 미설정
-    assert panel.ha_registry is False
+    # on_connect가 발화하지 않았으므로 discovery 미발행 → expected_echo_topic 미설정
+    assert panel.ha_coordinator.expected_echo_topic is None
     # ha_ready 미설정 — HA 명령이 모두 무시됨
     assert not panel.ha_ready.is_set()
 
@@ -131,9 +130,9 @@ def test_connect_after_panel_init_enables_scan(mock_config, mqtt_client):
 
     _fire_connect(mqtt_client)  # 이제 자동 구독 + discovery 발행
 
-    assert panel.ha_registry is not False
+    assert panel.ha_coordinator.expected_echo_topic is not None
 
     # retained 메시지 도착 → ha_ready 설정
-    _dispatch(mqtt_client, panel.ha_registry, "{}")
+    _dispatch(mqtt_client, panel.ha_coordinator.expected_echo_topic, "{}")
 
     assert panel.ha_ready.is_set()
