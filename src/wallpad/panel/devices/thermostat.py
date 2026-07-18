@@ -1,6 +1,5 @@
 import json
 
-from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.devices.topic import TopicContext
 from wallpad.panel.devices.base import PanelDevice
 from wallpad.panel.devices.controller import CategoryController

@@ -1,5 +1,4 @@
 from wallpad.devices.base import BaseDevice
-from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.devices.topic import TopicContext
 from wallpad.protocol.base import HardwareInfo
 
