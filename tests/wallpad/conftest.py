@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from wallpad.panel.panel import Panel
+from wallpad.apps.panel.panel import Panel
 
 
 def _make_room(name, room_no=None, light_count=0, plug_count=0, thermo_no=None):

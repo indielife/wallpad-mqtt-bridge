@@ -34,7 +34,7 @@ def test_bridge_registers_log_level_topic_callback():
 )
 def test_log_level_command_changes_root_logger(_restore_root_log_level, payload, expected_level):
     """log_level 커맨드가 panel/ventilator 모듈 구분 없이 루트 로거에 적용되는지 검증합니다."""
-    other_logger = logging.getLogger("wallpad.ventilator.ventilator")
+    other_logger = logging.getLogger("wallpad.apps.ventilator.ventilator")
 
     bridge = Bridge(MagicMock())
     bridge._handle_log_level(TOPIC_BRIDGE_LOG_LEVEL, payload)
