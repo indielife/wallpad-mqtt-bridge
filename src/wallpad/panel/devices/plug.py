@@ -20,7 +20,6 @@ class Plug(PanelDevice):
         sub_device: str,
         sw_version: str,
         hw_info: HardwareInfo,
-        packet_builder: PacketBuilder | None = None,
         topics: TopicContext | None = None,
     ):
         super().__init__(
@@ -29,7 +28,6 @@ class Plug(PanelDevice):
             sub_device=sub_device,
             sw_version=sw_version,
             hw_info=hw_info,
-            packet_builder=packet_builder,
             topics=topics,
         )
 
@@ -56,33 +54,3 @@ class Plug(PanelDevice):
 
     def resolve_command(self, _command: str, payload: str) -> tuple[str, str, str, str] | None:
         return (DEVICE_PLUG, self.room, self.sub_device, payload)
-
-    def build_packet(
-        self, cmd: str, target: str, value: str, room_state: dict, **kwargs
-    ) -> str | None:
-        device_type = "plug"
-
-        value_hex = ""
-        all_device = device_type + "0"
-        for i in range(1, 9):
-            sub_device = device_type + str(i)
-            if target != sub_device:
-                if target == all_device:
-                    value_hex += "ff" if value == "on" and sub_device in room_state else "00"
-                else:
-                    if sub_device in room_state and room_state[sub_device].get("state") == "on":
-                        value_hex += "ff"
-                    else:
-                        value_hex += "00"
-            else:
-                value_hex += "ff" if value == "on" else "00"
-
-        if self.packet_builder:
-            return self.packet_builder.encode(
-                src=device_type,
-                dst="wallpad",
-                room=self.room,
-                cmd=cmd,
-                value_hex=value_hex,
-            )
-        return None

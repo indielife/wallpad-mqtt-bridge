@@ -14,7 +14,6 @@ class PanelDevice(BaseDevice):
         sub_device: str,
         sw_version: str,
         hw_info: HardwareInfo,
-        packet_builder: PacketBuilder | None = None,
         topics: TopicContext | None = None,
     ):
         super().__init__(
@@ -23,6 +22,5 @@ class PanelDevice(BaseDevice):
             sub_device=sub_device,
             sw_version=sw_version,
             hw_info=hw_info,
-            packet_builder=packet_builder,
             topics=topics,
         )

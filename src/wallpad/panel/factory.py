@@ -73,7 +73,6 @@ class DeviceFactory:
                 name_prefix=name_prefix,
                 sw_version=config.sw_version,
                 hw_info=kocom_const.HARDWARE,
-                packet_builder=packet_builder,
                 topics=topics,
             )
         )
@@ -102,7 +101,6 @@ class DeviceFactory:
                 name_prefix=name_prefix,
                 sw_version=config.sw_version,
                 hw_info=kocom_const.HARDWARE,
-                packet_builder=packet_builder,
                 topics=topics,
             )
         )
@@ -132,7 +130,6 @@ class DeviceFactory:
                 name_prefix=name_prefix,
                 sw_version=config.sw_version,
                 hw_info=kocom_const.HARDWARE,
-                packet_builder=packet_builder,
                 topics=topics,
             )
         )
@@ -188,7 +185,6 @@ class DeviceFactory:
                         sub_device=sub_device_name,
                         sw_version=config.sw_version,
                         hw_info=kocom_const.HARDWARE,
-                        packet_builder=packet_builder,
                         topics=topics,
                     )
                 )
@@ -223,7 +219,6 @@ class DeviceFactory:
                         sub_device=sub_device_name,
                         sw_version=config.sw_version,
                         hw_info=kocom_const.HARDWARE,
-                        packet_builder=packet_builder,
                         topics=topics,
                     )
                 )
@@ -260,7 +255,6 @@ class DeviceFactory:
                     room=room.name,
                     sw_version=config.sw_version,
                     hw_info=kocom_const.HARDWARE,
-                    packet_builder=packet_builder,
                     topics=topics,
                 )
             )

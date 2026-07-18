@@ -69,7 +69,6 @@ def test_panel_make_packet_thermostat_temp_format():
             room="room1",
             sw_version="1.0",
             hw_info=kocom_const.HARDWARE,
-            packet_builder=panel.packet_builder,
         )
     )
     panel.controller_map = {(DEVICE_THERMOSTAT, "room1"): thermo_ctrl}

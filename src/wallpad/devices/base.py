@@ -82,9 +82,7 @@ class BaseDevice:
         """
         raise NotImplementedError
 
-    def build_packet(
-        self, cmd: str, target: str, value: str, room_state: dict, **kwargs
-    ) -> str | None:
+    def build_packet(self, cmd: str, target: str, value: str, **kwargs) -> str | None:
         """
         명령 패킷(16진수 문자열) 전체를 생성하여 반환합니다.
         오버라이딩하지 않은 경우 None을 반환하여 main.py의 레거시 로직을 따릅니다.

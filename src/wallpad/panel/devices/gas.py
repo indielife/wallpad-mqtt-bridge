@@ -47,7 +47,6 @@ class Gas(PanelDevice):
         name_prefix: str,
         sw_version: str,
         hw_info: HardwareInfo,
-        packet_builder: PacketBuilder | None = None,
         topics: TopicContext | None = None,
     ):
         # 가스 밸브도 엘리베이터처럼 'wallpad' 방에 종속된 'gas' 장치입니다.
@@ -57,7 +56,6 @@ class Gas(PanelDevice):
             sub_device="gas",
             sw_version=sw_version,
             hw_info=hw_info,
-            packet_builder=packet_builder,
             topics=topics,
         )
 
@@ -111,18 +109,3 @@ class Gas(PanelDevice):
             logger.warning("Cannot set GAS to ON from HA")
             return None
         return (DEVICE_GAS, self.room, self.sub_device, payload)
-
-    def build_packet(
-        self, cmd: str, target: str, value: str, room_state: dict, **kwargs
-    ) -> str | None:
-        value_hex = "0000000000000000"
-
-        if self.packet_builder:
-            return self.packet_builder.encode(
-                src=self.sub_device,
-                dst="wallpad",
-                room=self.room,
-                cmd="off",
-                value_hex=value_hex,
-            )
-        return None

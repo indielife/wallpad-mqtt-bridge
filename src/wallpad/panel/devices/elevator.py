@@ -44,7 +44,6 @@ class Elevator(PanelDevice):
         name_prefix: str,
         sw_version: str,
         hw_info: HardwareInfo,
-        packet_builder: PacketBuilder | None = None,
         topics: TopicContext | None = None,
     ):
         # 엘리베이터는 기본적으로 'wallpad' 방에 종속된 'elevator' 장치입니다.
@@ -54,7 +53,6 @@ class Elevator(PanelDevice):
             sub_device="elevator",
             sw_version=sw_version,
             hw_info=hw_info,
-            packet_builder=packet_builder,
             topics=topics,
         )
 
@@ -86,18 +84,3 @@ class Elevator(PanelDevice):
         # "off" 명령은 RS485 ack가 없으므로 즉시 publish
         set_val = device_states[DEVICE_ELEVATOR][self.room][self.sub_device]["set"]
         return set_val if set_val == "off" else None
-
-    def build_packet(
-        self, cmd: str, target: str, value: str, room_state: dict, **kwargs
-    ) -> str | None:
-        value_hex = "0000000000000000"
-
-        if self.packet_builder:
-            return self.packet_builder.encode(
-                src="wallpad",
-                dst="elevator",
-                room=self.room,
-                cmd="on",
-                value_hex=value_hex,
-            )
-        return None
