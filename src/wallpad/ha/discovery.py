@@ -29,16 +29,19 @@ class HaDiscoveryCoordinator:
         self.publish()
 
     def publish(self, remove: bool = False) -> None:
-        self._publish_all(remove)
+        self._publish(self._discovery_messages(remove))
 
-    def _publish_all(self, remove: bool) -> str | None:
-        """discovery payload를 순서대로 발행하고, 마지막으로 발행한 토픽을 반환한다."""
-        last_topic: str | None = None
-        for device in self.devices:
-            for topic, payload in device.get_discovery_payloads(remove=remove):
-                self.mqtt_client.publish(topic, payload, retain=True)
-                last_topic = topic
-        return last_topic
+    def _discovery_messages(self, remove: bool) -> list[tuple[str, str]]:
+        """활성 기기들의 (topic, payload) discovery 메시지를 발행 순서대로 모은다."""
+        return [
+            (topic, payload)
+            for device in self.devices
+            for topic, payload in device.get_discovery_payloads(remove=remove)
+        ]
+
+    def _publish(self, messages: list[tuple[str, str]]) -> None:
+        for topic, payload in messages:
+            self.mqtt_client.publish(topic, payload, retain=True)
 
     def _handle_restart(self, topic: str, payload: str) -> None:
         self.publish()
@@ -68,9 +71,12 @@ class HandshakeHaDiscoveryCoordinator(HaDiscoveryCoordinator):
         self.ha_ready = asyncio.Event()
 
     def publish(self, remove: bool = False) -> None:
-        self.expected_echo_topic = None
         self.ha_ready.clear()
-        self.expected_echo_topic = self._publish_all(remove)
+        messages = self._discovery_messages(remove)
+        # 에코백이 발행 도중/직후에 도착해도 매칭을 놓치지 않도록, 실제 발행에
+        # 앞서 기대 토픽(마지막 discovery 토픽)을 먼저 확정한다.
+        self.expected_echo_topic = messages[-1][0] if messages else None
+        self._publish(messages)
 
     def handle_echo(self, topic: str, payload: str) -> None:
         logger.info("Message: %s = %s", topic, payload)

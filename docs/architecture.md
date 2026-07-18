@@ -119,7 +119,7 @@ Panel과 Ventilator는 discovery 발행·`restart`/`remove` 기동 핸들러를 
 - 브릿지 실행 초기(MQTT `on_connect`) 혹은 HA `restart`/`remove` 커맨드 수신 시 코디네이터의 `publish()`가 실행됩니다.
 - 활성화된 기기들로부터 디스커버리 정보를 취합하여 `homeassistant/<component>/<device_id>/config` 토픽으로 MQTT 메시지를 발행합니다.
 - 이 정보를 받은 Home Assistant는 별도의 수동 구성 없이 대시보드 및 기기 목록에 구성 요소를 자동으로 추가합니다.
-- Panel은 발행 직후 `ha_ready`(`asyncio.Event`, 코디네이터가 소유)를 내려, HA가 retained config를 에코백하여 discovery 등록이 확인되기 전까지 제어 명령 처리와 RS485 폴링을 차단합니다. Ventilator는 양방향 실시간 패킷으로 상태를 수집하므로 이 핸드셰이크가 없습니다.
+- Panel은 발행 직전 `ha_ready`(`asyncio.Event`, 코디네이터가 소유)를 클리어하여, HA가 retained config를 에코백해 discovery 등록이 확인되기 전까지 제어 명령 처리와 RS485 폴링을 차단합니다. Ventilator는 양방향 실시간 패킷으로 상태를 수집하므로 이 핸드셰이크가 없습니다.
 
 주요 시나리오별 시퀀스 다이어그램은 [sequences.md](sequences.md)를 참조합니다.
 

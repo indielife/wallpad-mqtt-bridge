@@ -110,6 +110,22 @@ def test_publish_clears_ha_ready_and_expected_echo_topic_before_publishing():
     assert coordinator.expected_echo_topic is None
 
 
+def test_expected_echo_topic_is_set_before_any_publish_call():
+    """에코백이 발행 도중에 도착해도 매칭을 놓치지 않도록, 첫 publish 호출
+    시점에 이미 expected_echo_topic이 최종 토픽으로 확정돼 있어야 한다."""
+    device_a = _make_device([("topic/a/config", "{}")])
+    device_b = _make_device([("topic/b/config", "{}")])
+    coordinator, mqtt_client = _make_handshake_coordinator([device_a, device_b])
+
+    seen: list[str | None] = []
+    mqtt_client.publish.side_effect = lambda *a, **k: seen.append(coordinator.expected_echo_topic)
+
+    coordinator.publish()
+
+    # 모든 발행 시점에 이미 마지막 토픽으로 확정돼 있어야 한다
+    assert seen == ["topic/b/config", "topic/b/config"]
+
+
 def test_handle_echo_sets_ha_ready_when_topic_matches():
     loop = MagicMock()
     loop.call_soon_threadsafe.side_effect = lambda f: f()
