@@ -11,8 +11,8 @@ class CategoryController:
 
     RS485의 최소 통신 단위는 (카테고리 x 방)이므로, 이 물리적 제약과 상태 소유는
     leaf(SubDevice)가 아니라 이 컨트롤러에 캡슐화됩니다. 자식들의 상태(`RoomState`)를
-    소유하며, HA 제어 반영(`apply_ha_command`)과 RS485 수신 반영(`apply_rs485_state`)을
-    자기 책임으로 갖습니다.
+    소유하며, HA 제어 반영(`apply_ha_command`)·RS485 수신 반영(`apply_rs485_state`)·
+    명령 패킷 조립(`make_packet`)을 모두 자기 상태를 기반으로 수행합니다.
 
     이 `state`는 `device_states`(synchronizer가 순회하는 인덱스)와 **동일한 객체**로
     연결되어, 컨트롤러의 상태 변이가 곧 `device_states`에 반영됩니다.
@@ -33,8 +33,6 @@ class CategoryController:
 
     def add_sub_device(self, device: BaseDevice) -> None:
         self.sub_devices.append(device)
-
-    # --- 상태 소유권: HA 명령 / RS485 수신 반영 ---
 
     def apply_ha_command(
         self, sub_device: str, command: str, payload: str, default_speed: str
@@ -63,8 +61,6 @@ class CategoryController:
         ) and sub_state.set == sub_state.state:
             sub_state.last = "state"
             sub_state.count = 0
-
-    # --- 패킷 조립 위임 (#131, #165) ---
 
     def make_packet(self, cmd: str, target: str, value: str) -> str | None:
         """카테고리별로 자기 상태를 사용해 패킷을 조립합니다. 서브클래스가 구현합니다."""
