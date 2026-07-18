@@ -1,5 +1,16 @@
 from unittest.mock import MagicMock
 
+from wallpad.mqtt import TOPIC_BRIDGE_REMOVE, TOPIC_BRIDGE_RESTART
+
+
+def _find_handler(mock_register_topic_callback, topic):
+    """등록된 콜백 중 topic에 매핑된 핸들러를 찾는다. 어떤 객체가 소유하는지에
+    의존하지 않고 실제 라우팅 결과를 검증하기 위함이다."""
+    for call in mock_register_topic_callback.call_args_list:
+        if call.args[0] == topic:
+            return call.args[1]
+    raise AssertionError(f"{topic} 토픽이 등록되지 않았습니다.")
+
 
 def test_handle_fan_command_ignores_discovery_config_echo(ventilator_instance):
     """discovery config 토픽 echo는 HA 명령이 아니므로 무시되어야 한다."""
@@ -38,17 +49,24 @@ def test_handle_fan_command_publishes_when_mode_and_speed_off(ventilator_instanc
 
 
 def test_handle_restart_republishes_discovery(ventilator_instance):
-    ventilator_instance._publish_ha_discovery = MagicMock()
+    """TOPIC_BRIDGE_RESTART가 공유 ha_coordinator로 라우팅되어 재발행을 트리거하는지 검증."""
+    ventilator_instance.ha_coordinator.publish = MagicMock()
+    handler = _find_handler(
+        ventilator_instance.mqtt_client.register_topic_callback, TOPIC_BRIDGE_RESTART
+    )
 
-    ventilator_instance._handle_restart("wallpad/bridge/config/restart", "")
+    handler(TOPIC_BRIDGE_RESTART, "")
 
-    ventilator_instance._publish_ha_discovery.assert_called_once_with()
+    ventilator_instance.ha_coordinator.publish.assert_called_once_with()
 
 
 def test_handle_remove_republishes_discovery_with_remove_flag(ventilator_instance):
     """Ventilator도 Panel과 동등하게 remove 커맨드를 지원해야 한다."""
-    ventilator_instance._publish_ha_discovery = MagicMock()
+    ventilator_instance.ha_coordinator.publish = MagicMock()
+    handler = _find_handler(
+        ventilator_instance.mqtt_client.register_topic_callback, TOPIC_BRIDGE_REMOVE
+    )
 
-    ventilator_instance._handle_remove("wallpad/bridge/config/remove", "")
+    handler(TOPIC_BRIDGE_REMOVE, "")
 
-    ventilator_instance._publish_ha_discovery.assert_called_once_with(remove=True)
+    ventilator_instance.ha_coordinator.publish.assert_called_once_with(remove=True)
