@@ -24,6 +24,9 @@ graph LR
 
 ## 주요 구성 요소 (Key Components)
 
+> **의존성 방향 규칙 (Dependency Rule):**
+> 프로젝트의 의존성은 항상 `apps/` 계층에서 인프라(`transport/`, `protocol/`, `mqtt/` 등) 방향으로 단방향으로 흐릅니다. 인프라 계층은 `apps/` 계층의 세부 구현을 알지 못하며 직접 참조해서는 안 됩니다.
+
 ### Transport 계층 (`src/wallpad/transport/`)
 
 연결 생성과 비동기 I/O 추상화를 담당합니다. 기기 클래스(`Panel`, `Ventilator`)는 transport를 직접 생성하지 않고, 팩토리 함수가 생성한 인스턴스를 주입받습니다.
@@ -43,14 +46,14 @@ graph LR
 
 ### 기기 계층
 
-- **[`Panel`](../src/wallpad/panel/panel.py) 클래스**
+- **[`Panel`](../src/wallpad/apps/panel/panel.py) 클래스**
   - 이 프로젝트의 코어 모듈입니다.
   - 초기화 시 `BaseTransport`를 주입받아, `start()`에서 두 개의 asyncio 태스크 — RS485 수신 루프(`receive_packets()`)와 상태 동기화 워커(`StateSynchronizer.run()`) — 를 생성합니다.
   - 양방향 메시지 변환과 라우팅을 담당하며, 상태 소유·갱신 규칙과 패킷 조립은
     각 `CategoryController`에 위임합니다. `controller_map[(device, room)]`으로
     대상 컨트롤러를 O(1) 조회해, 기기 종류별 `if/elif` 분기 없이 위임합니다.
 
-- **기기 계층 트리 ([`Room`](../src/wallpad/panel/devices/room.py) → [`CategoryController`](../src/wallpad/panel/devices/controller.py) → SubDevice)**
+- **기기 계층 트리 ([`Room`](../src/wallpad/apps/panel/devices/room.py) → [`CategoryController`](../src/wallpad/apps/panel/devices/controller.py) → SubDevice)**
   - Panel은 자식 기기를 `Room → CategoryController → SubDevice(leaf)` 트리로 보유합니다.
     방(`Room`)이 라우팅의 첫 분기점이고, 그 아래 한 카테고리(조명·콘센트·온도조절기 등)를
     `CategoryController`가 묶습니다. 전역 기기(엘리베이터·가스·팬)는 가상 방 `wallpad`에 속합니다.
@@ -60,15 +63,15 @@ graph LR
   - 이 상태는 `StateSynchronizer`가 순회하는 `device_states` 인덱스와 **동일한 객체**로
     연결되어(shared identity), 컨트롤러의 상태 변이가 곧 `device_states`에 반영됩니다.
 
-- **[`StateSynchronizer`](../src/wallpad/panel/synchronizer.py) 클래스**
+- **[`StateSynchronizer`](../src/wallpad/apps/panel/synchronizer.py) 클래스**
   - HA가 원하는 상태(`set`)와 RS485 실제 상태(`state`)를 맞추는 워커입니다.
   - 성격이 다른 두 루프를 함께 돕니다. `poll`은 `scan_interval`마다 방 전체에 `조회`를 브로드캐스트해 상태를 확인하고, `reconcile`은 HA 명령으로 걸린 `set`을 디바이스가 확인해줄 때까지 재전송합니다.
 
-- **[`Ventilator`](../src/wallpad/ventilator/ventilator.py) 클래스**
+- **[`Ventilator`](../src/wallpad/apps/ventilator/ventilator.py) 클래스**
   - 전열교환기(환기장치) 연동 모듈입니다.
   - 벽 조절기(ctrl)와 환기 유닛(unit) 두 개의 `BaseTransport`를 주입받아 중간자(MITM) 방식으로 동작합니다.
 
-- **디바이스 모델(leaf) ([Light](../src/wallpad/panel/devices/light.py) / [Plug](../src/wallpad/panel/devices/plug.py) / [Thermostat](../src/wallpad/panel/devices/thermostat.py) 등)**
+- **디바이스 모델(leaf) ([Light](../src/wallpad/apps/panel/devices/light.py) / [Plug](../src/wallpad/apps/panel/devices/plug.py) / [Thermostat](../src/wallpad/apps/panel/devices/thermostat.py) 등)**
   - SubDevice(leaf)는 HA 쪽 표면(Discovery 페이로드·명령 해석 `resolve_command`·상태 발행)만
     담당합니다.
   - 상태 소유와 RS485 Hex 패킷 조립(`make_packet`)은 모두 상위 `CategoryController`가
@@ -126,7 +129,7 @@ graph LR
 
 ### 동작 차이 요약
 
-| 구분 | [Panel 클래스](../src/wallpad/panel/panel.py) | [Ventilator 클래스](../src/wallpad/ventilator/ventilator.py) |
+| 구분 | [Panel 클래스](../src/wallpad/apps/panel/panel.py) | [Ventilator 클래스](../src/wallpad/apps/ventilator/ventilator.py) |
 | :--- | :--- | :--- |
 | **제어 대상** | 조명, 플러그, 보일러, 가스, 엘리베이터 등 | 그렉스 전열교환기(환기 장치) |
 | **연결 방식** | 단일 회선 (RS485 Bus 접속) | 이중 회선 (벽 조절기 ↔ 브릿지 ↔ 환기 장치) |

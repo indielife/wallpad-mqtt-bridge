@@ -4,15 +4,15 @@ import logging.handlers
 import os
 import os.path
 
+from wallpad.apps.panel import Panel
+from wallpad.apps.ventilator import Ventilator
 from wallpad.bridge import Bridge
 from wallpad.config import AppConfig
 from wallpad.mqtt import MqttClient
-from wallpad.panel import Panel
 from wallpad.transport import (
     create_panel_transport,
     create_ventilator_transports,
 )
-from wallpad.ventilator import Ventilator
 from wallpad.version import SW_VERSION
 
 logger = logging.getLogger(__name__)
