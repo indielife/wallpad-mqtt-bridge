@@ -1,6 +1,7 @@
 import time
 
 from wallpad.devices.base import BaseDevice
+from wallpad.devices.packet_builder import PacketBuilder
 from wallpad.panel.state import RoomState, SubDeviceState
 
 
@@ -17,11 +18,18 @@ class CategoryController:
     연결되어, 컨트롤러의 상태 변이가 곧 `device_states`에 반영됩니다.
     """
 
-    def __init__(self, category: str, room: str, state: RoomState | None = None):
+    def __init__(
+        self,
+        category: str,
+        room: str,
+        state: RoomState | None = None,
+        packet_builder: "PacketBuilder | None" = None,
+    ):
         self.category = category
         self.room = room
         self.sub_devices: list[BaseDevice] = []
         self.state = state
+        self.packet_builder = packet_builder
 
     def add_sub_device(self, device: BaseDevice) -> None:
         self.sub_devices.append(device)
@@ -56,7 +64,11 @@ class CategoryController:
             sub_state.last = "state"
             sub_state.count = 0
 
-    # --- 패킷 조립 위임 (#131) ---
+    # --- 패킷 조립 위임 (#131, #165) ---
+
+    def build_packet(self, cmd: str, target: str, value: str) -> str | None:
+        """카테고리별로 자기 상태를 사용해 패킷을 조립합니다. 서브클래스가 구현합니다."""
+        raise NotImplementedError
 
     def make_packet(self, cmd: str, target: str, value: str) -> str | None:
         """명령 대상 leaf를 찾아 패킷 조립을 위임합니다.
@@ -102,4 +114,32 @@ class SwitchController(CategoryController):
         for leaf in self.sub_devices:
             if leaf.sub_device == target:
                 return leaf
+        return None
+
+    def build_packet(self, cmd: str, target: str, value: str) -> str | None:
+        device_type = self.category
+
+        value_hex = ""
+        all_device = device_type + "0"
+        for i in range(1, 9):
+            sub_device = device_type + str(i)
+            if target != sub_device:
+                if target == all_device:
+                    value_hex += "ff" if value == "on" and sub_device in self.state else "00"
+                else:
+                    if sub_device in self.state and self.state[sub_device].state == "on":
+                        value_hex += "ff"
+                    else:
+                        value_hex += "00"
+            else:
+                value_hex += "ff" if value == "on" else "00"
+
+        if self.packet_builder:
+            return self.packet_builder.encode(
+                src=device_type,
+                dst="wallpad",
+                room=self.room,
+                cmd=cmd,
+                value_hex=value_hex,
+            )
         return None

@@ -24,6 +24,19 @@ class ElevatorController(CategoryController):
         sub_state.last = "state"
         sub_state.count = 0
 
+    def build_packet(self, cmd: str, target: str, value: str) -> str | None:
+        value_hex = "0000000000000000"
+
+        if self.packet_builder:
+            return self.packet_builder.encode(
+                src="wallpad",
+                dst="elevator",
+                room=self.room,
+                cmd="on",
+                value_hex=value_hex,
+            )
+        return None
+
 
 class Elevator(PanelDevice):
     def __init__(

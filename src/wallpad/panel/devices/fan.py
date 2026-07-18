@@ -33,8 +33,33 @@ class FanController(CategoryController):
                 state["speed"].state = "off" if v == "off" else default_speed
             else:
                 sub_state.state = v
-                state["mode"].state = "off" if v == "off" else "on"
             self.recover_if_confirmed(sub_state)
+
+    def build_packet(self, cmd: str, target: str, value: str) -> str | None:
+        from wallpad.protocol.kocom.constants import KOCOM_HEX_BY_FAN_SPEED
+
+        value_hex = ""
+        try:
+            mode = self.state.get("mode", {}).get("set", "off")
+            speed = self.state.get("speed", {}).get("set", "off")
+            if mode == "on":
+                value_hex += "1100"
+            elif mode == "off":
+                value_hex += "0001"
+            value_hex += KOCOM_HEX_BY_FAN_SPEED.get(speed, "0")
+            value_hex += "00000000000"
+        except Exception:
+            return None
+
+        if self.packet_builder:
+            return self.packet_builder.encode(
+                src=self.category,
+                dst="wallpad",
+                room=self.room,
+                cmd=cmd,
+                value_hex=value_hex,
+            )
+        return None
 
 
 class Fan(PanelDevice):

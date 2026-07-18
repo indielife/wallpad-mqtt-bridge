@@ -32,8 +32,33 @@ class ThermostatController(CategoryController):
                 sub_state.state = v
             else:
                 sub_state.state = int(float(v))
-                state["mode"].state = "heat"
             self.recover_if_confirmed(sub_state)
+
+    def build_packet(self, cmd: str, target: str, value: str) -> str | None:
+        value_hex = ""
+        try:
+            mode = self.state.get("mode", {}).get("set", "off")
+            target_temp = self.state.get("target_temp", {}).get("set", 22.0)
+            if mode == "heat":
+                value_hex += "1100"
+            elif mode == "off":
+                value_hex += "0100"
+            else:
+                value_hex += "1101"
+            value_hex += f"{int(float(target_temp)):02x}"
+            value_hex += "0000000000"
+        except Exception:
+            return None
+
+        if self.packet_builder:
+            return self.packet_builder.encode(
+                src=self.category,
+                dst="wallpad",
+                room=self.room,
+                cmd=cmd,
+                value_hex=value_hex,
+            )
+        return None
 
 
 class Thermostat(PanelDevice):
