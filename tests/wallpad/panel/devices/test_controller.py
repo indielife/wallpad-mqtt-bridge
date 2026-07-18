@@ -67,6 +67,17 @@ def test_switch_controller_make_packet_light(packet_builder):
     assert len(packet) == len(expected_body) + 2 + 4
 
 
+def test_switch_controller_make_packet_unknown_target_returns_none(packet_builder):
+    state = RoomState()
+    state["light1"] = SubDeviceState(state="off")
+
+    controller = LightController(
+        DEVICE_LIGHT, "livingroom", state=state, packet_builder=packet_builder
+    )
+
+    assert controller.make_packet("상태", "light9", "on") is None
+
+
 def test_switch_controller_make_packet_plug(packet_builder):
     state = RoomState()
     state["plug1"] = SubDeviceState(state="on")

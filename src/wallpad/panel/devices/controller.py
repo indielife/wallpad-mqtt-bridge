@@ -87,6 +87,9 @@ class SwitchController(CategoryController):
             self.recover_if_confirmed(sub_state)
 
     def make_packet(self, cmd: str, target: str, value: str) -> str | None:
+        if target not in self.state:
+            return None
+
         device_type = self.category
 
         value_hex = ""
