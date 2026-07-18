@@ -60,7 +60,9 @@ def test_panel_make_packet_thermostat_temp_format():
     thermo_state = RoomState()
     thermo_state["mode"] = SubDeviceState(state="heat", set_val="heat")
     thermo_state["target_temp"] = SubDeviceState(state=25.0, set_val=25.0)
-    thermo_ctrl = ThermostatController(DEVICE_THERMOSTAT, "room1", state=thermo_state)
+    thermo_ctrl = ThermostatController(
+        DEVICE_THERMOSTAT, "room1", state=thermo_state, packet_builder=panel.packet_builder
+    )
     thermo_ctrl.add_sub_device(
         Thermostat(
             name_prefix="test",
