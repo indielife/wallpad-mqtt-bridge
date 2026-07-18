@@ -15,13 +15,14 @@
 sequenceDiagram
     participant main
     participant Panel
+    participant Coordinator as ha_coordinator
     participant paho as paho thread
     participant aloop as asyncio loop
     participant Broker as MQTT Broker
     participant HA as Home Assistant
 
     main->>Panel: __init__()
-    Note over Panel: _register_topic_routes(), ha_ready 미설정, _loop None
+    Note over Panel: _register_topic_routes(), ha_coordinator 생성(ha_ready 미설정), _loop None
     main->>paho: mqtt.connect()
     main->>aloop: await panel.start()
     aloop->>aloop: await transport.connect()
@@ -30,17 +31,18 @@ sequenceDiagram
     aloop->>aloop: _loop 할당
     Note over aloop: synchronizer.run() 대기 - await ha_ready.wait()
 
-    paho-->>Panel: on_connect()
-    Panel->>Panel: _publish_ha_discovery()
-    Note over Panel: ha_ready.clear(), ha_registry 설정
-    Panel->>Broker: discovery 토픽 발행 (retain)
+    paho-->>Coordinator: on_connect()
+    Coordinator->>Coordinator: publish()
+    Note over Coordinator: ha_ready.clear(), expected_echo_topic 설정
+    Coordinator->>Broker: discovery 토픽 발행 (retain)
     Broker->>HA: discovery 수신
 
     HA-->>Broker: retained config 에코백
     Broker-->>paho: on_message()
-    Note over paho: ha_ready 미설정, topic이 ha_registry와 일치
+    paho->>Coordinator: handle_echo()
+    Note over Coordinator: topic이 expected_echo_topic과 일치
 
-    paho->>aloop: call_soon_threadsafe(ha_ready.set)
+    Coordinator->>aloop: call_soon_threadsafe(ha_ready.set)
     aloop->>aloop: ha_ready.set()
     Note over aloop: synchronizer.run() 재개 - RS485 폴링 시작
 ```

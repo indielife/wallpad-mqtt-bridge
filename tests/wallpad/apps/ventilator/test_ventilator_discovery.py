@@ -40,7 +40,7 @@ def ventilator_factory():
 def test_ventilator_publish_ha_discovery(snapshot, ventilator_factory):
     ventilator, mock_mqtt_instance = ventilator_factory()
 
-    ventilator._publish_ha_discovery()
+    ventilator.ha_coordinator.publish()
 
     publish_calls = mock_mqtt_instance.publish.call_args_list
     assert len(publish_calls) > 0

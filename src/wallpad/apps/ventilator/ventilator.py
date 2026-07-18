@@ -5,13 +5,8 @@ import logging
 from wallpad.apps.ventilator.devices import VentilatorController, VentilatorUnit
 from wallpad.apps.ventilator.state import VentilatorState
 from wallpad.config import AppConfig
-from wallpad.mqtt import (
-    HA_FAN,
-    HA_SENSOR,
-    TOPIC_BRIDGE_REMOVE,
-    TOPIC_BRIDGE_RESTART,
-    MqttClient,
-)
+from wallpad.ha.discovery import HaDiscoveryCoordinator
+from wallpad.mqtt import HA_FAN, HA_SENSOR, MqttClient
 from wallpad.protocol.grex import constants as grex_const
 from wallpad.protocol.grex.constants import (
     PREFIX_CONTROLLER_ERROR,
@@ -41,12 +36,6 @@ class Ventilator:
         self.state = VentilatorState()
 
         self.default_speed = config.ventilator_default_speed
-        if self.default_speed not in ["low", "medium", "high"]:
-            logger.info(
-                "[Error] Grex DEFAULT_SPEED 설정오류로 low로 설정. %s -> low",
-                self.default_speed,
-            )
-            self.default_speed = "low"
 
         self.packet_builder = GrexPacketBuilder()
         self.parser = GrexPacketParser()
@@ -62,7 +51,9 @@ class Ventilator:
         )
         self.devices = [self.unit, self.controller]
 
-        self.mqtt_client.register_connect_callback(self.on_connect)
+        self.ha_coordinator = HaDiscoveryCoordinator(self.mqtt_client, self.devices)
+
+        self.mqtt_client.register_connect_callback(self.ha_coordinator.on_connect)
         self._register_topic_routes()
 
     async def start(self) -> list[asyncio.Task]:
@@ -72,21 +63,12 @@ class Ventilator:
         self._task_vent = asyncio.create_task(self.receive_packets(self.ventilator_transport))
         return [self._task_ctrl, self._task_vent]
 
-    def on_connect(self, *_):
-        self._publish_ha_discovery()
-
     def _register_topic_routes(self) -> None:
         for device in self.devices:
             for topic in device.get_subscribe_topics():
                 self.mqtt_client.register_topic_callback(topic, self._handle_fan_command)
 
-        self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_RESTART, self._handle_restart)
-        self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_REMOVE, self._handle_remove)
-
-    def _publish_ha_discovery(self, remove=False):
-        for device in self.devices:
-            for topic, payload in device.get_discovery_payloads(remove=remove):
-                self.mqtt_client.publish(topic, payload, retain=True)
+        self.ha_coordinator.register_routes()
 
     def _handle_fan_command(self, topic: str, payload: str) -> None:
         key = self.unit.resolve_command_key(topic)
@@ -106,14 +88,6 @@ class Ventilator:
 
         if self.state.desired["mode"] == "off" and self.state.desired["speed"] == "off":
             self.publish_state_to_ha(HA_FAN, self.state.desired)
-
-    def _handle_restart(self, topic: str, payload: str) -> None:
-        self._publish_ha_discovery()
-        logger.info("[From HA]HomeAssistant Restart")
-
-    def _handle_remove(self, topic: str, payload: str) -> None:
-        self._publish_ha_discovery(remove=True)
-        logger.info("[From HA]HomeAssistant Remove")
 
     def publish_state_to_ha(self, target, value):
         if target == HA_FAN:

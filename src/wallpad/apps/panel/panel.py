@@ -7,11 +7,10 @@ from wallpad.apps.panel.factory import DeviceFactory
 from wallpad.apps.panel.synchronizer import StateSynchronizer
 from wallpad.config import AppConfig
 from wallpad.devices.base import BaseDevice
+from wallpad.ha.discovery import HandshakeHaDiscoveryCoordinator
 from wallpad.mqtt import (
     TOPIC_BRIDGE_CHECKSUM,
     TOPIC_BRIDGE_PACKET,
-    TOPIC_BRIDGE_REMOVE,
-    TOPIC_BRIDGE_RESTART,
     TOPIC_BRIDGE_SCAN,
     MqttClient,
 )
@@ -92,16 +91,9 @@ class Panel:
 
         self.name = config.wallpad_manufacturer
         self.default_speed = config.kocom_default_speed
-        if self.default_speed not in ["low", "medium", "high"]:
-            logger.info(
-                "[Error] Kocom DEFAULT_SPEED 설정오류로 low로 설정. %s -> low",
-                self.default_speed,
-            )
-            self.default_speed = "low"
 
-        self.ha_registry = False
-        self.ha_ready = asyncio.Event()
         self.scan_packet_buf = []
+        self._loop: asyncio.AbstractEventLoop | None = None
 
         self.packet_builder = KocomPacketBuilder(
             room_rev=config.kocom_room_rev, room_thermostat_rev=config.kocom_room_thermostat_rev
@@ -122,8 +114,14 @@ class Panel:
         }
         logger.debug("[Init] command_registry keys: %s", list(self.command_registry.keys()))
 
-        self._loop: asyncio.AbstractEventLoop | None = None
-        self.mqtt_client.register_connect_callback(self.on_connect)
+        self.ha_coordinator = HandshakeHaDiscoveryCoordinator(
+            mqtt_client=self.mqtt_client,
+            devices=self.devices,
+            loop_provider=lambda: self._loop,
+        )
+        self.ha_ready = self.ha_coordinator.ha_ready
+
+        self.mqtt_client.register_connect_callback(self.ha_coordinator.on_connect)
         self._register_topic_routes()
 
         self.synchronizer = StateSynchronizer(
@@ -141,9 +139,6 @@ class Panel:
         self._loop = asyncio.get_running_loop()
         return [self._task_read, self._task_sync]
 
-    def on_connect(self, *_):
-        self._publish_ha_discovery()
-
     def _register_topic_routes(self) -> None:
         for device in self.devices:
             command_topics = device.get_command_topics()
@@ -152,48 +147,17 @@ class Panel:
             command_topics_set = set(command_topics)
             for topic in device.get_subscribe_topics():
                 if topic not in command_topics_set:
-                    self.mqtt_client.register_topic_callback(topic, self._handle_discovery_echo)
+                    self.mqtt_client.register_topic_callback(topic, self.ha_coordinator.handle_echo)
 
-        self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_RESTART, self._handle_restart)
-        self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_REMOVE, self._handle_remove)
+        self.ha_coordinator.register_routes()
         self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_SCAN, self._handle_scan)
         self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_PACKET, self._handle_packet_debug)
         self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_CHECKSUM, self._handle_checksum_debug)
-
-    def _publish_ha_discovery(self, remove=False):
-        publish_list = []
-        self.ha_registry = False
-        self.ha_ready.clear()
-        ha_topic = False
-
-        for device in self.devices:
-            for topic, payload in device.get_discovery_payloads(remove=remove):
-                publish_list.append({topic: payload})
-                ha_topic = topic
-
-        for ha in publish_list:
-            for topic, payload in ha.items():
-                self.mqtt_client.publish(topic, payload, retain=True)
-
-        self.ha_registry = ha_topic
 
     def _handle_device_command(self, topic: str, payload: str) -> None:
         if not self.ha_ready.is_set():
             return
         self.parse_message(topic.split("/"), payload)
-
-    def _handle_discovery_echo(self, topic: str, payload: str) -> None:
-        logger.info("Message: %s = %s", topic, payload)
-        if self.ha_registry is not False and self.ha_registry == topic and self._loop:
-            self._loop.call_soon_threadsafe(self.ha_ready.set)
-
-    def _handle_restart(self, topic: str, payload: str) -> None:
-        self._publish_ha_discovery()
-        logger.info("[From HA]HomeAssistant Restart")
-
-    def _handle_remove(self, topic: str, payload: str) -> None:
-        self._publish_ha_discovery(remove=True)
-        logger.info("[From HA]HomeAssistant Remove")
 
     def _handle_scan(self, topic: str, payload: str) -> None:
         self.device_states.reset_scan_states()

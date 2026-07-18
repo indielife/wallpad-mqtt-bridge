@@ -8,6 +8,19 @@ from wallpad.version import SW_VERSION
 
 logger = logging.getLogger(__name__)
 
+VALID_SPEEDS = ("low", "medium", "high")
+
+
+def _normalize_speed(value: str, label: str) -> str:
+    """default_speed 설정값을 검증하고, 유효하지 않으면 low로 강등한다.
+
+    Kocom(Panel)·Grex(Ventilator) 양쪽이 이 함수로 정규화된 값만 읽는다.
+    """
+    if value not in VALID_SPEEDS:
+        logger.info("[Error] %s DEFAULT_SPEED 설정오류로 low로 설정. %s -> low", label, value)
+        return "low"
+    return value
+
 
 @dataclass
 class RoomConfig:
@@ -133,7 +146,9 @@ class AppConfig:
         self.init_temp = adv.get("init_temp", self.init_temp)
         self.scan_interval = adv.get("scan_interval", self.scan_interval)
         self.packet_delay = adv.get("packet_delay", self.packet_delay)
-        self.kocom_default_speed = adv.get("default_speed", self.kocom_default_speed)
+        self.kocom_default_speed = _normalize_speed(
+            adv.get("default_speed", self.kocom_default_speed), "Kocom"
+        )
         self.log_level = adv.get("loglevel", self.log_level).lower()
 
         # 6. 방 기반 기기 설정 (wallpad 섹션 하위)
@@ -165,7 +180,9 @@ class AppConfig:
         self.ventilator_ctrl_port = vent_serial.get("controller_port", "")
         self.ventilator_unit_port = vent_serial.get("ventilator_port", "")
 
-        self.ventilator_default_speed = vent.get("default_speed", self.ventilator_default_speed)
+        self.ventilator_default_speed = _normalize_speed(
+            vent.get("default_speed", self.ventilator_default_speed), "Grex"
+        )
 
     def validate(self) -> None:
         """AppConfig 필수값 검증. 유효하지 않으면 ValueError를 발생시킵니다."""

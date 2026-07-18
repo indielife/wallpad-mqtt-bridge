@@ -111,6 +111,29 @@ def test_app_config_load(mock_isfile):
         assert config.ventilator_default_speed == "low"
 
 
+@patch.dict(
+    os.environ, {"MQTT_HOST": "", "MQTT_USERNAME": "", "MQTT_PASSWORD": "", "WALLPAD_HOST": ""}
+)
+@patch("wallpad.config.os.path.isfile", return_value=True)
+def test_app_config_default_speed_fallback(mock_isfile):
+    """advanced/ventilator의 default_speed가 유효하지 않으면 low로 강등되는지 검증합니다.
+
+    Panel/Ventilator가 각자 중복 구현하던 강등 로직을 config 로드 계층으로
+    모았으므로, 정규화 검증도 여기서 한다.
+    """
+    invalid_options = json.loads(json.dumps(SAMPLE_OPTIONS_JSON))
+    invalid_options["advanced"]["default_speed"] = "invalid_speed"
+    invalid_options["ventilator"]["default_speed"] = "invalid_speed"
+
+    mock_file = mock_open(read_data=json.dumps(invalid_options))
+    with patch("builtins.open", mock_file):
+        config = AppConfig(options_path="/fake/path.json")
+        config.load()
+
+        assert config.kocom_default_speed == "low"
+        assert config.ventilator_default_speed == "low"
+
+
 @patch("wallpad.config.os.path.isfile", return_value=False)
 def test_app_config_defaults(mock_isfile):
     """options.json 파일이 없을 때 기본 rooms 및 파생 매핑이 올바르게 설정되는지 검증합니다."""

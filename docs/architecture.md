@@ -25,7 +25,7 @@ graph LR
 ## 주요 구성 요소 (Key Components)
 
 > **의존성 방향 규칙 (Dependency Rule):**
-> 프로젝트의 의존성은 항상 `apps/` 계층에서 인프라(`transport/`, `protocol/`, `mqtt/` 등) 방향으로 단방향으로 흐릅니다. 인프라 계층은 `apps/` 계층의 세부 구현을 알지 못하며 직접 참조해서는 안 됩니다.
+> 프로젝트의 의존성은 항상 `apps/` 계층에서 인프라·공유 계층(`transport/`, `protocol/`, `mqtt/`, `ha/` 등) 방향으로 단방향으로 흐릅니다. 이 계층들은 `apps/` 계층의 세부 구현을 알지 못하며 직접 참조해서는 안 됩니다.
 
 ### Transport 계층 (`src/wallpad/transport/`)
 
@@ -114,10 +114,12 @@ graph LR
 
 ## HA MQTT Discovery (자동 기기 등록)
 
-브릿지 실행 초기(MQTT `on_connect`) 혹은 HA 재시작 시 `_publish_ha_discovery`를 실행합니다.
+Panel과 Ventilator는 discovery 발행·`restart`/`remove` 기동 핸들러를 각자 구현하지 않고, 공용 컴포넌트인 [`HaDiscoveryCoordinator`](../src/wallpad/ha/discovery.py)를 조립해 사용합니다. Panel처럼 발행 후 에코 기반 준비 핸드셰이크가 필요한 쪽은 서브클래스 [`HandshakeHaDiscoveryCoordinator`](../src/wallpad/ha/discovery.py)를 씁니다.
+
+- 브릿지 실행 초기(MQTT `on_connect`) 혹은 HA `restart`/`remove` 커맨드 수신 시 코디네이터의 `publish()`가 실행됩니다.
 - 활성화된 기기들로부터 디스커버리 정보를 취합하여 `homeassistant/<component>/<device_id>/config` 토픽으로 MQTT 메시지를 발행합니다.
-- 이 정보를 받은 Home Assistant는 별도의 수동 구성 없이 대시보드 및 기기 목록에 월패드 구성 요소를 자동으로 추가합니다.
-- 발행 직후 `ha_ready`(`asyncio.Event`)를 내려, HA가 retained config를 에코백하여 discovery 등록이 확인되기 전까지 제어 명령 처리와 RS485 폴링을 차단합니다.
+- 이 정보를 받은 Home Assistant는 별도의 수동 구성 없이 대시보드 및 기기 목록에 구성 요소를 자동으로 추가합니다.
+- Panel은 발행 직전 `ha_ready`(`asyncio.Event`, 코디네이터가 소유)를 클리어하여, HA가 retained config를 에코백해 discovery 등록이 확인되기 전까지 제어 명령 처리와 RS485 폴링을 차단합니다. Ventilator는 양방향 실시간 패킷으로 상태를 수집하므로 이 핸드셰이크가 없습니다.
 
 주요 시나리오별 시퀀스 다이어그램은 [sequences.md](sequences.md)를 참조합니다.
 
