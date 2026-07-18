@@ -66,13 +66,9 @@ class CategoryController:
 
     # --- 패킷 조립 위임 (#131, #165) ---
 
-    def build_packet(self, cmd: str, target: str, value: str) -> str | None:
+    def make_packet(self, cmd: str, target: str, value: str) -> str | None:
         """카테고리별로 자기 상태를 사용해 패킷을 조립합니다. 서브클래스가 구현합니다."""
         raise NotImplementedError
-
-    def make_packet(self, cmd: str, target: str, value: str) -> str | None:
-        """명령 대상에 대해 직접 패킷 조립을 수행합니다."""
-        return self.build_packet(cmd=cmd, target=target, value=value)
 
 
 class SwitchController(CategoryController):
@@ -94,7 +90,7 @@ class SwitchController(CategoryController):
             sub_state.state = v
             self.recover_if_confirmed(sub_state)
 
-    def build_packet(self, cmd: str, target: str, value: str) -> str | None:
+    def make_packet(self, cmd: str, target: str, value: str) -> str | None:
         device_type = self.category
 
         value_hex = ""

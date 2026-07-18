@@ -35,7 +35,7 @@ class ThermostatController(CategoryController):
                 state["mode"].state = "heat"
             self.recover_if_confirmed(sub_state)
 
-    def build_packet(self, cmd: str, target: str, value: str) -> str | None:
+    def make_packet(self, cmd: str, target: str, value: str) -> str | None:
         value_hex = ""
         try:
             mode = self.state.get("mode", {}).get("set", "off")

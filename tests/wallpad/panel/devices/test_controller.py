@@ -41,7 +41,7 @@ def packet_builder():
     return KocomPacketBuilder(room_rev=room_rev, room_thermostat_rev=room_thermostat_rev)
 
 
-def test_switch_controller_build_packet_light(packet_builder):
+def test_switch_controller_make_packet_light(packet_builder):
     state = RoomState()
     state["light1"] = SubDeviceState(state="off")
     state["light2"] = SubDeviceState(state="on")
@@ -51,7 +51,7 @@ def test_switch_controller_build_packet_light(packet_builder):
         DEVICE_LIGHT, "livingroom", state=state, packet_builder=packet_builder
     )
 
-    packet = controller.build_packet("상태", "light1", "on")
+    packet = controller.make_packet("상태", "light1", "on")
 
     expected_body = (
         "aa5530bc00"  # Header
@@ -67,7 +67,7 @@ def test_switch_controller_build_packet_light(packet_builder):
     assert len(packet) == len(expected_body) + 2 + 4
 
 
-def test_switch_controller_build_packet_plug(packet_builder):
+def test_switch_controller_make_packet_plug(packet_builder):
     state = RoomState()
     state["plug1"] = SubDeviceState(state="on")
     state["plug2"] = SubDeviceState(state="off")
@@ -76,7 +76,7 @@ def test_switch_controller_build_packet_plug(packet_builder):
         DEVICE_PLUG, "livingroom", state=state, packet_builder=packet_builder
     )
 
-    packet = controller.build_packet("상태", "plug2", "on")
+    packet = controller.make_packet("상태", "plug2", "on")
 
     expected_body = (
         "aa5530bc00"
@@ -90,7 +90,7 @@ def test_switch_controller_build_packet_plug(packet_builder):
     assert packet.startswith(expected_body)
 
 
-def test_thermostat_controller_build_packet(packet_builder):
+def test_thermostat_controller_make_packet(packet_builder):
     state = RoomState()
     state["mode"] = SubDeviceState(state="heat", set_val="heat")
     state["target_temp"] = SubDeviceState(state=25.0, set_val=25.0)
@@ -99,7 +99,7 @@ def test_thermostat_controller_build_packet(packet_builder):
         DEVICE_THERMOSTAT, "room1", state=state, packet_builder=packet_builder
     )
 
-    packet = controller.build_packet("상태", "", "")
+    packet = controller.make_packet("상태", "", "")
 
     expected_body = (
         "aa5530bc00"
@@ -113,14 +113,14 @@ def test_thermostat_controller_build_packet(packet_builder):
     assert packet.startswith(expected_body)
 
 
-def test_fan_controller_build_packet(packet_builder):
+def test_fan_controller_make_packet(packet_builder):
     state = RoomState()
     state["mode"] = SubDeviceState(state="on", set_val="on")
     state["speed"] = SubDeviceState(state="medium", set_val="medium")
 
     controller = FanController(DEVICE_FAN, "wallpad", state=state, packet_builder=packet_builder)
 
-    packet = controller.build_packet("상태", "fan", "on")
+    packet = controller.make_packet("상태", "fan", "on")
 
     expected_body = (
         "aa5530bc00"
@@ -134,13 +134,13 @@ def test_fan_controller_build_packet(packet_builder):
     assert packet.startswith(expected_body)
 
 
-def test_gas_controller_build_packet(packet_builder):
+def test_gas_controller_make_packet(packet_builder):
     state = RoomState()
     state["gas"] = SubDeviceState(state="off", set_val="off")
 
     controller = GasController(DEVICE_GAS, "wallpad", state=state, packet_builder=packet_builder)
 
-    packet = controller.build_packet("상태", "gas", "off")
+    packet = controller.make_packet("상태", "gas", "off")
 
     expected_body = (
         "aa5530bc00"
@@ -154,7 +154,7 @@ def test_gas_controller_build_packet(packet_builder):
     assert packet.startswith(expected_body)
 
 
-def test_elevator_controller_build_packet(packet_builder):
+def test_elevator_controller_make_packet(packet_builder):
     state = RoomState()
     state["elevator"] = SubDeviceState(state="off", set_val="off")
 
@@ -162,7 +162,7 @@ def test_elevator_controller_build_packet(packet_builder):
         DEVICE_ELEVATOR, "wallpad", state=state, packet_builder=packet_builder
     )
 
-    packet = controller.build_packet("상태", "elevator", "on")
+    packet = controller.make_packet("상태", "elevator", "on")
 
     expected_body = (
         "aa5530bc00"

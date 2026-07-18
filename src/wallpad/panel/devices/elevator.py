@@ -24,7 +24,7 @@ class ElevatorController(CategoryController):
         sub_state.last = "state"
         sub_state.count = 0
 
-    def build_packet(self, cmd: str, target: str, value: str) -> str | None:
+    def make_packet(self, cmd: str, target: str, value: str) -> str | None:
         value_hex = "0000000000000000"
 
         if self.packet_builder:

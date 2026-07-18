@@ -36,7 +36,7 @@ class FanController(CategoryController):
                 state["mode"].state = "off" if v == "off" else "on"
             self.recover_if_confirmed(sub_state)
 
-    def build_packet(self, cmd: str, target: str, value: str) -> str | None:
+    def make_packet(self, cmd: str, target: str, value: str) -> str | None:
 
         value_hex = ""
         try:
