@@ -46,7 +46,7 @@ class Gas(PanelDevice):
         name_prefix: str,
         sw_version: str,
         hw_info: HardwareInfo,
-        topics: TopicContext | None = None,
+        topics: TopicContext,
     ):
         # 가스 밸브도 엘리베이터처럼 'wallpad' 방에 종속된 'gas' 장치입니다.
         super().__init__(

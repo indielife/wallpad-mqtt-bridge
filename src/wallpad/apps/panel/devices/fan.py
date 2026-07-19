@@ -66,7 +66,7 @@ class Fan(PanelDevice):
         name_prefix: str,
         sw_version: str,
         hw_info: HardwareInfo,
-        topics: TopicContext | None = None,
+        topics: TopicContext,
     ):
         super().__init__(
             name_prefix=name_prefix,

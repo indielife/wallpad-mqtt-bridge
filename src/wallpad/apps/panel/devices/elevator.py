@@ -43,7 +43,7 @@ class Elevator(PanelDevice):
         name_prefix: str,
         sw_version: str,
         hw_info: HardwareInfo,
-        topics: TopicContext | None = None,
+        topics: TopicContext,
     ):
         # 엘리베이터는 기본적으로 'wallpad' 방에 종속된 'elevator' 장치입니다.
         super().__init__(
