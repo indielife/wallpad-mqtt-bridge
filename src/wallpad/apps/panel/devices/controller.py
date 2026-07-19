@@ -22,7 +22,7 @@ class CategoryController:
         self,
         category: str,
         room: str,
-        state: RoomState | None = None,
+        state: RoomState,
         packet_builder: "PacketBuilder | None" = None,
     ):
         self.category = category
