@@ -52,6 +52,7 @@ jobs:
           settings: |
             {
               "model": {
+                "name": "gemini-2.5-flash",
                 "maxSessionTurns": 25
               },
               "telemetry": {
