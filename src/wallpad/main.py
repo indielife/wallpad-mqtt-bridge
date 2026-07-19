@@ -96,6 +96,7 @@ async def main():
     logger.info("    Wallpad MQTT Bridge Add-on  %s", SW_VERSION)
     logger.info("========================================================")
 
+    assert config.mqtt_config is not None, "MQTT 설정이 로드되지 않았습니다."
     mqtt_client = MqttClient(config.mqtt_config)
     Bridge(mqtt_client)
 
