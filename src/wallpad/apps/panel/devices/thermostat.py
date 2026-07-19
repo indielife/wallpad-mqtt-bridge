@@ -50,15 +50,13 @@ class ThermostatController(CategoryController):
         except Exception:
             return None
 
-        if self.packet_builder:
-            return self.packet_builder.encode(
-                src=self.category,
-                dst="wallpad",
-                room=self.room,
-                cmd=cmd,
-                value_hex=value_hex,
-            )
-        return None
+        return self.packet_builder.encode(
+            src=self.category,
+            dst="wallpad",
+            room=self.room,
+            cmd=cmd,
+            value_hex=value_hex,
+        )
 
 
 class Thermostat(PanelDevice):

@@ -26,15 +26,13 @@ class ElevatorController(CategoryController):
     def make_packet(self, cmd: str, target: str, value: str) -> str | None:
         value_hex = "0000000000000000"
 
-        if self.packet_builder:
-            return self.packet_builder.encode(
-                src="wallpad",
-                dst="elevator",
-                room=self.room,
-                cmd="on",
-                value_hex=value_hex,
-            )
-        return None
+        return self.packet_builder.encode(
+            src="wallpad",
+            dst="elevator",
+            room=self.room,
+            cmd="on",
+            value_hex=value_hex,
+        )
 
 
 class Elevator(PanelDevice):

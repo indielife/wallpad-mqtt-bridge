@@ -6,6 +6,8 @@ from wallpad.protocol.grex.packet_builder import GrexPacketBuilder
 class VentilatorDevice(BaseDevice):
     """환기장치 기기들이 공유하는 식별자·메타데이터 기반 클래스입니다."""
 
+    packet_builder: GrexPacketBuilder | None
+
     def __init__(
         self,
         sw_version: str,

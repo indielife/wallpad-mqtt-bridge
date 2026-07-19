@@ -29,15 +29,13 @@ class GasController(CategoryController):
     def make_packet(self, cmd: str, target: str, value: str) -> str | None:
         value_hex = "0000000000000000"
 
-        if self.packet_builder:
-            return self.packet_builder.encode(
-                src=self.category,
-                dst="wallpad",
-                room=self.room,
-                cmd="off",
-                value_hex=value_hex,
-            )
-        return None
+        return self.packet_builder.encode(
+            src=self.category,
+            dst="wallpad",
+            room=self.room,
+            cmd="off",
+            value_hex=value_hex,
+        )
 
 
 class Gas(PanelDevice):
