@@ -15,6 +15,7 @@ dev = [
     "commitizen>=4.16.3",
     "cz-conventional-gitmoji>=0.7.0",
     "pre-commit>=4.6.0",
+    "pyright>=1.1.411",
     "pytest>=9.0.3",
     "pytest-asyncio>=1.4.0",
     "ruff>=0.15.16",
@@ -29,3 +30,18 @@ tag_format = "v$version"
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 asyncio_mode = "auto"
+
+[tool.pyright]
+typeCheckingMode = "basic"
+include = ["src"]
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.12"
+reportMissingTypeStubs = false
+# TODO(#177): 아래 규칙들을 하나씩 해소하고 error로 복귀시킬 것
+reportOptionalMemberAccess = "warning"
+reportOptionalSubscript = "warning"
+reportOperatorIssue = "warning"
+reportAttributeAccessIssue = "warning"
+reportIncompatibleMethodOverride = "warning"
+reportArgumentType = "warning"
