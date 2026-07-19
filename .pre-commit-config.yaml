@@ -30,6 +30,11 @@ repos:
 
 - repo: local
   hooks:
+  - id: commit-title-no-issue-number
+    name: "🔍 커밋 제목에 이슈 번호 금지"
+    entry: scripts/check-commit-title.sh
+    language: script
+    stages: [commit-msg]
   - id: pytest
     name: "🧪 pytest"
     entry: .venv/bin/pytest
