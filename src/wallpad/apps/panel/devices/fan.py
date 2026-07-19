@@ -101,7 +101,7 @@ class Fan(PanelDevice):
     def get_ha_state_messages(self, value) -> list[tuple[str, dict]]:
         return [(self.topics.state_topic, value)]
 
-    def resolve_command(self, _command: str, payload: str) -> tuple[str, str, str, str] | None:
+    def resolve_command(self, command: str, payload: str) -> tuple[str, str, str, str] | None:
         return (DEVICE_FAN, self.room, "", payload)
 
     def get_optimistic_state(self, device_states) -> dict | None:

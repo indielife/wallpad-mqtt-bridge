@@ -103,7 +103,7 @@ class Gas(PanelDevice):
             (self.topics.switch_state_topic, data),
         ]
 
-    def resolve_command(self, _command: str, payload: str) -> tuple[str, str, str, str] | None:
+    def resolve_command(self, command: str, payload: str) -> tuple[str, str, str, str] | None:
         if payload == "on":
             logger.warning("Cannot set GAS to ON from HA")
             return None
