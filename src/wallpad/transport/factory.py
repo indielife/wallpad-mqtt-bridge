@@ -10,7 +10,7 @@ from wallpad.transport.socket import SocketTransport
 logger = logging.getLogger(__name__)
 
 
-def create_panel_transport(config: AppConfig) -> BaseTransport:
+def create_panel_transport(config: AppConfig) -> BusArbitrationTransport:
     """Panel 연결 타입에 맞는 transport를 생성해, RS485 버스 중재로 감싸 반환합니다."""
     if config.comm_type == "serial":
         logger.info("Panel Serial Port: %s", config.serial_port)
