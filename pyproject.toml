@@ -39,13 +39,6 @@ venvPath = "."
 venv = ".venv"
 pythonVersion = "3.12"
 reportMissingTypeStubs = false
-# TODO(#177): 아래 규칙들을 하나씩 해소하고 error로 복귀시킬 것
-reportOptionalMemberAccess = "warning"
-reportOptionalSubscript = "warning"
-reportOperatorIssue = "warning"
-reportAttributeAccessIssue = "warning"
-reportIncompatibleMethodOverride = "warning"
-reportArgumentType = "warning"
 
 [tool.bandit]
 exclude_dirs = ["tests"]
