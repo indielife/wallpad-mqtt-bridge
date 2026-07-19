@@ -260,7 +260,7 @@ class Panel:
                 e,
             )
 
-    def _schedule_write(self, data: str) -> None:
+    def _schedule_write(self, data: str | None) -> None:
         if data and self._loop:
             asyncio.run_coroutine_threadsafe(
                 self.transport.write_if_idle(bytes.fromhex(data)), self._loop
@@ -300,7 +300,8 @@ class Panel:
         else:
             logger.info("[To %s] %s/%s -> 조회", self.name, device, room)
         logger.debug("[To RS485] %s", packet)
-        log_frame("To", self.name, parsed_frame)
+        if parsed_frame is not None:
+            log_frame("To", self.name, parsed_frame)
 
         if device == DEVICE_ELEVATOR:
             self.publish_state_to_ha(DEVICE_ELEVATOR, DEVICE_WALLPAD, "on")

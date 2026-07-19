@@ -16,6 +16,8 @@ def create_panel_transport(config: AppConfig) -> BusArbitrationTransport:
         logger.info("Panel Serial Port: %s", config.serial_port)
         inner = ReconnectingTransport(SerialTransport(config.serial_port, 9600))
     else:
+        assert config.socket_host is not None, "socket_host가 설정되지 않았습니다."
+        assert config.socket_port is not None, "socket_port가 설정되지 않았습니다."
         inner = ReconnectingTransport(SocketTransport(config.socket_host, config.socket_port))
     return BusArbitrationTransport(inner)
 
