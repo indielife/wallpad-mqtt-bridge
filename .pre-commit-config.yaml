@@ -1,6 +1,7 @@
 default_install_hook_types:
   - pre-commit
   - commit-msg
+  - pre-push
 
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -36,3 +37,17 @@ repos:
     pass_filenames: false
     always_run: true
     stages: [pre-commit]
+  - id: bandit
+    name: "🔒 bandit"
+    entry: .venv/bin/bandit -r src -ll -c pyproject.toml
+    language: system
+    pass_filenames: false
+    always_run: true
+    stages: [pre-commit]
+  - id: pyright
+    name: "🔍 pyright"
+    entry: .venv/bin/pyright
+    language: system
+    pass_filenames: false
+    always_run: true
+    stages: [pre-push]
