@@ -40,5 +40,24 @@ venv = ".venv"
 pythonVersion = "3.12"
 reportMissingTypeStubs = false
 
+# src를 strict로 올릴 때를 대비한 tests 오버라이드 틀(지금은 휴면).
+# 이 블록은 strict 전용 노이즈(픽스처 미타입·private 접근 등)만 끈다.
+# tests는 아직 include에 넣지 않았다: 테스트 코드에 reportOptionalMemberAccess
+# (None 접근) 등 basic 위반이 남아 있어, 그걸 정리한 뒤 include에 "tests"를
+# 추가하면 된다. 그때는 이 오버라이드가 strict 소음만 걸러 주므로 재작업이 없다.
+# (pyright가 executionEnvironments 안의 typeCheckingMode를 아직 미지원:
+#  microsoft/pyright#8263, basedpyright#1639 대기 — 그래서 룰을 개별로 지정)
+[[tool.pyright.executionEnvironments]]
+root = "tests"
+reportPrivateUsage = "none"
+reportUnknownParameterType = "none"
+reportMissingParameterType = "none"
+reportUnknownMemberType = "none"
+reportUnknownArgumentType = "none"
+reportUnknownVariableType = "none"
+reportMissingTypeArgument = "none"
+reportUntypedFunctionDecorator = "none"
+reportUnusedFunction = "none"
+
 [tool.bandit]
 exclude_dirs = ["tests"]
