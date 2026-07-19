@@ -31,7 +31,7 @@ jobs:
         run: uv run ruff format --check .
 
   static-analysis:
-    name: Static analysis (pyright)
+    name: Static analysis (pyright + bandit)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,6 +49,9 @@ jobs:
 
       - name: pyright
         run: uv run pyright
+
+      - name: bandit
+        run: uv run bandit -r src -ll -c pyproject.toml
 
   commit-lint:
     name: Commit lint (commitizen + gitmoji)

@@ -37,6 +37,13 @@ repos:
     pass_filenames: false
     always_run: true
     stages: [pre-commit]
+  - id: bandit
+    name: "🔒 bandit"
+    entry: .venv/bin/bandit -r src -ll -c pyproject.toml
+    language: system
+    pass_filenames: false
+    always_run: true
+    stages: [pre-commit]
   - id: pyright
     name: "🔍 pyright"
     entry: .venv/bin/pyright
