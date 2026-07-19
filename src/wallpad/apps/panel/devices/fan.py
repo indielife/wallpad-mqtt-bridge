@@ -49,15 +49,13 @@ class FanController(CategoryController):
         except Exception:
             return None
 
-        if self.packet_builder:
-            return self.packet_builder.encode(
-                src=self.category,
-                dst="wallpad",
-                room=self.room,
-                cmd=cmd,
-                value_hex=value_hex,
-            )
-        return None
+        return self.packet_builder.encode(
+            src=self.category,
+            dst="wallpad",
+            room=self.room,
+            cmd=cmd,
+            value_hex=value_hex,
+        )
 
 
 class Fan(PanelDevice):
@@ -66,7 +64,7 @@ class Fan(PanelDevice):
         name_prefix: str,
         sw_version: str,
         hw_info: HardwareInfo,
-        topics: TopicContext | None = None,
+        topics: TopicContext,
     ):
         super().__init__(
             name_prefix=name_prefix,
@@ -101,7 +99,7 @@ class Fan(PanelDevice):
     def get_ha_state_messages(self, value) -> list[tuple[str, dict]]:
         return [(self.topics.state_topic, value)]
 
-    def resolve_command(self, _command: str, payload: str) -> tuple[str, str, str, str] | None:
+    def resolve_command(self, command: str, payload: str) -> tuple[str, str, str, str] | None:
         return (DEVICE_FAN, self.room, "", payload)
 
     def get_optimistic_state(self, device_states) -> dict | None:

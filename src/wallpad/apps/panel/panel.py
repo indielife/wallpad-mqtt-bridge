@@ -25,7 +25,7 @@ from wallpad.protocol.kocom.constants import (
 )
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 from wallpad.protocol.kocom.parser import KocomPacketParser
-from wallpad.transport import BaseTransport
+from wallpad.transport.bus_arbitration import BusArbitrationTransport
 
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
 
@@ -83,7 +83,7 @@ class Panel:
         self,
         config: AppConfig,
         mqtt_client: MqttClient,
-        transport: BaseTransport,
+        transport: BusArbitrationTransport,
     ):
         self.config = config
         self.mqtt_client = mqtt_client
@@ -260,10 +260,10 @@ class Panel:
                 e,
             )
 
-    def _schedule_write(self, data: str) -> None:
+    def _schedule_write(self, data: str | None) -> None:
         if data and self._loop:
             asyncio.run_coroutine_threadsafe(
-                self.transport.write_if_idle(bytearray.fromhex(data)), self._loop
+                self.transport.write_if_idle(bytes.fromhex(data)), self._loop
             )
 
     def set_list(self, device, room, value):
@@ -292,7 +292,7 @@ class Panel:
 
         parsed_frame = self.parser.parse_frame(packet, self.device_states)
 
-        if not await self.transport.write_if_idle(bytearray.fromhex(packet)):
+        if not await self.transport.write_if_idle(bytes.fromhex(packet)):
             return
 
         if cmd == "상태":
@@ -300,7 +300,8 @@ class Panel:
         else:
             logger.info("[To %s] %s/%s -> 조회", self.name, device, room)
         logger.debug("[To RS485] %s", packet)
-        log_frame("To", self.name, parsed_frame)
+        if parsed_frame is not None:
+            log_frame("To", self.name, parsed_frame)
 
         if device == DEVICE_ELEVATOR:
             self.publish_state_to_ha(DEVICE_ELEVATOR, DEVICE_WALLPAD, "on")

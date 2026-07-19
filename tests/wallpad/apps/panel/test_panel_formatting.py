@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 from wallpad.apps.panel.devices import Thermostat, ThermostatController
 from wallpad.apps.panel.panel import DEVICE_THERMOSTAT, Panel
 from wallpad.apps.panel.state import RoomState, SubDeviceState
+from wallpad.apps.panel.topic import TopicBuilder
 from wallpad.protocol.kocom import constants as kocom_const
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 from wallpad.protocol.kocom.parser import KocomPacketParser
@@ -69,6 +70,7 @@ def test_panel_make_packet_thermostat_temp_format():
             room="room1",
             sw_version="1.0",
             hw_info=kocom_const.HARDWARE,
+            topics=TopicBuilder.for_thermostat(room="room1"),
         )
     )
     panel.controller_map = {(DEVICE_THERMOSTAT, "room1"): thermo_ctrl}

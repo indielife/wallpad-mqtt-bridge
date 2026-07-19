@@ -65,7 +65,7 @@ class AppConfig:
         self.sw_version = SW_VERSION
 
         # 1. MQTT Broker 설정
-        self.mqtt_config: MqttConfig = None
+        self.mqtt_config: MqttConfig | None = None
 
         # 2. Wallpad 설정
         self._wallpad_enabled = True

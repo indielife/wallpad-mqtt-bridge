@@ -138,7 +138,7 @@ class Ventilator:
         m_packet = self.unit.build_response_packet("off", "off")
         m_chksum = self.parser.validate_checksum(m_packet)
         if m_chksum[0]:
-            await self.controller_transport.write(bytearray.fromhex(m_packet))
+            await self.controller_transport.write(bytes.fromhex(m_packet))
         logger.debug("[From RS485] error code: E1")
 
     async def handle_controller_status(self, parsed):
@@ -192,9 +192,9 @@ class Ventilator:
             )
 
         if response_packet != "":
-            await self.controller_transport.write(bytearray.fromhex(response_packet))
+            await self.controller_transport.write(bytes.fromhex(response_packet))
         if control_packet != "":
-            await self.ventilator_transport.write(bytearray.fromhex(control_packet))
+            await self.ventilator_transport.write(bytes.fromhex(control_packet))
 
     def handle_ventilator_status(self, parsed):
         p_speed = parsed["speed"]

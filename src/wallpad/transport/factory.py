@@ -10,12 +10,14 @@ from wallpad.transport.socket import SocketTransport
 logger = logging.getLogger(__name__)
 
 
-def create_panel_transport(config: AppConfig) -> BaseTransport:
+def create_panel_transport(config: AppConfig) -> BusArbitrationTransport:
     """Panel 연결 타입에 맞는 transport를 생성해, RS485 버스 중재로 감싸 반환합니다."""
     if config.comm_type == "serial":
         logger.info("Panel Serial Port: %s", config.serial_port)
         inner = ReconnectingTransport(SerialTransport(config.serial_port, 9600))
     else:
+        assert config.socket_host is not None, "socket_host가 설정되지 않았습니다."
+        assert config.socket_port is not None, "socket_port가 설정되지 않았습니다."
         inner = ReconnectingTransport(SocketTransport(config.socket_host, config.socket_port))
     return BusArbitrationTransport(inner)
 

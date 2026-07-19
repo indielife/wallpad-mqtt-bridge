@@ -2,7 +2,7 @@ import time
 
 from wallpad.apps.panel.state import RoomState, SubDeviceState
 from wallpad.devices.base import BaseDevice
-from wallpad.devices.packet_builder import PacketBuilder
+from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 
 
 class CategoryController:
@@ -22,8 +22,8 @@ class CategoryController:
         self,
         category: str,
         room: str,
-        state: RoomState | None = None,
-        packet_builder: "PacketBuilder | None" = None,
+        state: RoomState,
+        packet_builder: KocomPacketBuilder,
     ):
         self.category = category
         self.room = room
@@ -107,12 +107,10 @@ class SwitchController(CategoryController):
             else:
                 value_hex += "ff" if value == "on" else "00"
 
-        if self.packet_builder:
-            return self.packet_builder.encode(
-                src=device_type,
-                dst="wallpad",
-                room=self.room,
-                cmd=cmd,
-                value_hex=value_hex,
-            )
-        return None
+        return self.packet_builder.encode(
+            src=device_type,
+            dst="wallpad",
+            room=self.room,
+            cmd=cmd,
+            value_hex=value_hex,
+        )

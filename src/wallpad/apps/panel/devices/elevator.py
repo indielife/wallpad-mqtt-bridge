@@ -26,15 +26,13 @@ class ElevatorController(CategoryController):
     def make_packet(self, cmd: str, target: str, value: str) -> str | None:
         value_hex = "0000000000000000"
 
-        if self.packet_builder:
-            return self.packet_builder.encode(
-                src="wallpad",
-                dst="elevator",
-                room=self.room,
-                cmd="on",
-                value_hex=value_hex,
-            )
-        return None
+        return self.packet_builder.encode(
+            src="wallpad",
+            dst="elevator",
+            room=self.room,
+            cmd="on",
+            value_hex=value_hex,
+        )
 
 
 class Elevator(PanelDevice):
@@ -43,7 +41,7 @@ class Elevator(PanelDevice):
         name_prefix: str,
         sw_version: str,
         hw_info: HardwareInfo,
-        topics: TopicContext | None = None,
+        topics: TopicContext,
     ):
         # 엘리베이터는 기본적으로 'wallpad' 방에 종속된 'elevator' 장치입니다.
         super().__init__(
@@ -76,7 +74,7 @@ class Elevator(PanelDevice):
     def get_ha_state_messages(self, value) -> list[tuple[str, dict]]:
         return [(self.topics.state_topic, {self.sub_device: value})]
 
-    def resolve_command(self, _command: str, payload: str) -> tuple[str, str, str, str] | None:
+    def resolve_command(self, command: str, payload: str) -> tuple[str, str, str, str] | None:
         return (DEVICE_ELEVATOR, self.room, self.sub_device, payload)
 
     def get_optimistic_state(self, device_states) -> object | None:

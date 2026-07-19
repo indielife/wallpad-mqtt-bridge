@@ -29,15 +29,13 @@ class GasController(CategoryController):
     def make_packet(self, cmd: str, target: str, value: str) -> str | None:
         value_hex = "0000000000000000"
 
-        if self.packet_builder:
-            return self.packet_builder.encode(
-                src=self.category,
-                dst="wallpad",
-                room=self.room,
-                cmd="off",
-                value_hex=value_hex,
-            )
-        return None
+        return self.packet_builder.encode(
+            src=self.category,
+            dst="wallpad",
+            room=self.room,
+            cmd="off",
+            value_hex=value_hex,
+        )
 
 
 class Gas(PanelDevice):
@@ -46,7 +44,7 @@ class Gas(PanelDevice):
         name_prefix: str,
         sw_version: str,
         hw_info: HardwareInfo,
-        topics: TopicContext | None = None,
+        topics: TopicContext,
     ):
         # 가스 밸브도 엘리베이터처럼 'wallpad' 방에 종속된 'gas' 장치입니다.
         super().__init__(
@@ -103,7 +101,7 @@ class Gas(PanelDevice):
             (self.topics.switch_state_topic, data),
         ]
 
-    def resolve_command(self, _command: str, payload: str) -> tuple[str, str, str, str] | None:
+    def resolve_command(self, command: str, payload: str) -> tuple[str, str, str, str] | None:
         if payload == "on":
             logger.warning("Cannot set GAS to ON from HA")
             return None

@@ -83,7 +83,7 @@ class ScanState(dict):
 class RoomState(dict):
     """방(또는 월패드) 내부의 스캔 상태 및 기기별 상태 컬렉션"""
 
-    def __init__(self, scan: ScanState = None):
+    def __init__(self, scan: ScanState | None = None):
         super().__init__()
         self.scan = scan if scan is not None else ScanState()
         self["scan"] = self.scan
