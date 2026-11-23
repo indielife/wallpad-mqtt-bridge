@@ -79,3 +79,35 @@ async def test_repeated_bus_deferral_does_not_flood_diagnostic_topic(e2e_panel):
         await panel.synchronizer.sync_once(now)
     assert len(mqtt.json_for(topic)) == 2
     assert mqtt.json_for(topic)[-1]["reason"] == "bus_busy"
+
+
+async def test_initially_busy_bus_reports_reason_once_without_attempts(e2e_panel, caplog):
+    panel, mqtt, transport = e2e_panel
+    topic = "wallpad/diagnostic/heating/livingroom"
+    caplog.set_level("DEBUG")
+    mqtt.deliver("homeassistant/climate/livingroom/mode", "off")
+    transport.is_idle.return_value = False
+    now = time.monotonic()
+    for device in panel.device_states.values():
+        for room in device.values():
+            room.scan.tick = now
+    for _ in range(10):
+        await panel.synchronizer.sync_once(now)
+    value = mqtt.json_for(topic)[-1]
+    assert value["status"] == "pending"
+    assert value["reason"] == "bus_busy"
+    assert value["attempts"] == 0
+    assert len(mqtt.json_for(topic)) == 2
+    assert sum("event=heating_deferred" in r.message for r in caplog.records) == 1
+    transport.write_if_idle.assert_not_awaited()
+
+
+async def test_initially_busy_bus_reports_reason_even_when_scan_is_due(e2e_panel):
+    panel, mqtt, transport = e2e_panel
+    mqtt.deliver("homeassistant/climate/livingroom/mode", "off")
+    transport.is_idle.return_value = False
+    await panel.synchronizer.sync_once(time.monotonic())
+    value = mqtt.json_for("wallpad/diagnostic/heating/livingroom")[-1]
+    assert value["reason"] == "bus_busy"
+    assert value["attempts"] == 0
+    transport.write_if_idle.assert_not_awaited()

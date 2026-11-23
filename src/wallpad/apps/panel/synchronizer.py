@@ -99,9 +99,13 @@ class StateSynchronizer:
         ):
             command.timeout(exhausted=command.attempts > RECONCILE_RETRY_LIMIT)
 
+        if command.ready_to_send and not self.is_bus_idle():
+            command.finish_send(command.request_id, SendResult.DEFERRED)
+            return
+
         if now - room_state.scan.tick > self.config.scan_interval:
             await self.poll_room(DEVICE_THERMOSTAT, room, room_state.scan, now)
-        elif command.status == "pending" and command.waiting_since is None and self.is_bus_idle():
+        elif command.ready_to_send:
             request_id = command.start_send()
             result = await self.send_packet(DEVICE_THERMOSTAT, room, "", "", request_id=request_id)
             command.finish_send(request_id, result)

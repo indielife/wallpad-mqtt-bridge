@@ -39,6 +39,10 @@ class HeatingCommandTracker:
     _first_send_observation: int | None = None
     _last_emitted: dict | None = field(default=None, repr=False)
 
+    @property
+    def ready_to_send(self) -> bool:
+        return self.status == "pending" and self.waiting_since is None
+
     def snapshot(self) -> dict:
         return {
             "request_id": self.request_id,
@@ -99,8 +103,9 @@ class HeatingCommandTracker:
             self._confirm_if_matching()
         elif self.status == "pending":
             if result is SendResult.DEFERRED:
-                self.reason = "bus_busy"
-                self._emit()
+                if self.reason != "bus_busy":
+                    self.reason = "bus_busy"
+                    self._log("deferred", level=logging.DEBUG)
             else:
                 self.mark_unconfirmed(result.value)
 

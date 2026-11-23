@@ -28,7 +28,7 @@ MQTT에 등록된 해당 방의 기기 페이지에서 진단 센서를 확인�
 
 | 사유 | 의미 |
 |------|------|
-| `bus_busy` | 송신 경계에서 버스 혼잡으로 전송을 연기함 |
+| `bus_busy` | 사전 정숙 검사 또는 송신 경계에서 버스 혼잡으로 전송을 연기함 |
 | `response_timeout` | 송신 후 제한 시간 내 요청값을 확인하지 못해 재시도 대기 중 |
 | `retry_exhausted` | 최초 송신과 네 번의 재시도 후에도 요청값을 확인하지 못함 |
 | `invalid` | 송신할 패킷을 생성하지 못함 |
@@ -110,6 +110,7 @@ MQTT에 등록된 해당 방의 기기 페이지에서 진단 센서를 확인�
 | `rx_discard reason=resync` | SOF를 다시 찾으며 폐기한 바이트 묶음 |
 | `rx_discard reason=incomplete` | 수신 태스크 종료 시 남은 불완전 데이터 |
 | `parse_skip`, `frame_unhandled` | 길이 부족·미지원 타입 등 해석하지 못한 프레임 |
+| `heating_deferred` | 사전 검사 또는 송신 경계의 혼잡 대기, 같은 사유는 한 번만 기록 |
 | `heating_response_timeout` | 해당 요청의 응답 확인 시간 초과 |
 | `heating_unconfirmed` | 종료 사유, 횟수, 마지막 유효 수신값·시각 |
 | `heating_confirmed` | 상태 일치와 뒤늦은 확인 여부 |
