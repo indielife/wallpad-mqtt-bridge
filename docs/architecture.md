@@ -85,7 +85,8 @@ graph LR
 
 1. **패킷 수신 태스크 (`receive_packets()`)**
    - `transport.read(1)`로 시리얼/소켓 연결에서 바이트를 한 개씩 읽어 버퍼에 쌓습니다.
-   - 버퍼 앞머리의 start-of-frame(SOF) 바이트가 파서의 `SOF_LENGTH_MAP`에 있으면, 해당 프레임 길이만큼 모아 체크섬을 검증합니다. 검증에 실패하면 한 바이트씩 밀며 재동기화합니다.
+   - 버퍼 앞머리의 SOF가 파서의 `SOF_LENGTH_MAP`에 있으면 해당 길이만큼 모아
+     종료 바이트와 체크섬을 검증합니다. 실패하면 한 바이트씩 밀며 재동기화합니다.
 2. **패킷 파싱 (`process_packet()` → `parser.parse_frame()`)**
    - 수신 완료된 패킷에서 목적지(Destination), 출발지(Source), 명령(Command), 제어 대상, 상태 값 등을 분석합니다.
    - 분석 결과에 갱신 대상이 있으면 `set_list()`가 대상 `(device, room)`의 `CategoryController`를 `controller_map`으로 찾아 `apply_rs485_state`로 상태를 반영합니다.
@@ -100,15 +101,28 @@ graph LR
 
 1. **제어 명령 수신 (`on_message` & `parse_message`)**
    - Home Assistant 대시보드나 자동화 규칙에 의해 기기 제어가 트리거되면, HA는 MQTT 제어 토픽으로 메시지를 발행합니다.
-   - 브릿지는 명령 토픽별로 등록해 둔 콜백(`_handle_device_command`)으로 이를 수신하고, `parse_message()`가 `command_registry`에서 대상 디바이스를 찾아 `device.resolve_command()`로 명령을 해석합니다.
+   - 브릿지는 명령 토픽별 콜백으로 수신한 명령을 이벤트 루프에 예약합니다.
+     `parse_message()`가 `command_registry`에서 대상 디바이스를 찾아 명령을 해석합니다.
 2. **목표 상태 기록**
    - 해석한 명령을 대상 `CategoryController`(`controller_map` 조회)의 `apply_ha_command`로 반영하여 해당 기기의 목표 제어 값(`set`)을 기록합니다.
    - 낙관적(optimistic) 반영이 가능한 기기는 즉시 `publish_state_to_ha()`로 HA에 상태를 되돌려 UI 반응성을 확보합니다.
 3. **상태 동기화 워커 (`StateSynchronizer.run()`)**
-   - 이벤트 루프에서 주기적으로 도는 워커가 버스가 정숙(`is_idle`)한 순간에만 `sync_once()` → `sync_room()`을 수행하며, HA가 설정한 목표 값(`set`)과 실제 기기 상태(`state`)의 차이를 감시합니다.
-   - 차이가 있으면 `reconcile_device()`가 `send_packet()`을 호출합니다.
+   - 이벤트 루프에서 주기적으로 `sync_once()` → `sync_room()`을 수행합니다.
+     응답 대기 시간 초과는 버스 혼잡과 무관하게 처리하고, 실제 송신은 정숙할 때 시도합니다.
+   - 대기 중인 명령은 기기별 동기화 경로에서 `send_packet()`을 호출합니다.
    - 패킷 생성은 `Panel.make_packet()`이 `controller_map`으로 대상 `CategoryController`를 찾아 위임하고, 컨트롤러가 자기 상태(`RoomState`)를 사용해 `make_packet()`으로 **RS485 Hex 패킷**을 직접 조립하는 흐름으로 이뤄집니다.
    - 최종적으로 `transport.write_if_idle()`를 통해, 버스가 정숙할 때만 EW11(시리얼/소켓)로 데이터를 내보냅니다. 확인 응답이 없으면 워커가 정책에 따라 재전송합니다.
+
+### 난방 명령 확인
+
+난방은 방별로 하나의 요청을 추적하며, 모드·목표 온도를 한 제어 프레임으로 전송합니다.
+HA의 낙관적 표시는 유지하고, 실제 송신 이후 받은 유효 상태가 요청값과 일치하는지 확인합니다.
+송신 연기는 재시도 예산을 소비하지 않으며, 송신 완료부터 단조 시계로 응답 대기를 계산합니다.
+새 요청은 이전 요청을 대체하고, 이전 송신 결과가 새 요청을 덮어쓰지 않습니다.
+
+확인 상태와 마지막 수신 정보는 같은 방의 HA 진단 센서로 발행합니다.
+명령 미확인과 기기 가용성은 구분하며, 센서는 기존 Discovery 등록·삭제 절차를 따릅니다.
+정책과 운영상의 한계는 [난방 진단 가이드](heating_diagnostics.md)를 참조하세요.
 
 ---
 

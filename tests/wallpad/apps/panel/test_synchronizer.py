@@ -235,3 +235,18 @@ async def test_retry_budget_is_initial_send_plus_four_retries(synchronizer, monk
     assert synchronizer.send_packet.await_count == 5
     assert state.last == "state"
     assert sum("event=retry_exhausted" in r.message for r in caplog.records) == 1
+
+
+async def test_failed_write_cannot_cancel_a_replacement_command(synchronizer):
+    from wallpad.apps.panel.state import SubDeviceState
+
+    state = SubDeviceState(state="off", set_val="on", last="set")
+
+    async def fail_while_replaced(*args):
+        state.set = "off"
+        state.last = "set"
+        return SendResult.FAILED
+
+    synchronizer.send_packet.side_effect = fail_while_replaced
+    await synchronizer.reconcile_device(DEVICE_LIGHT, "livingroom", "light1", state, 500.0)
+    assert state.last == "set"

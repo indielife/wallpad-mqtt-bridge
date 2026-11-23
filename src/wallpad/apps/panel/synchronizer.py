@@ -129,6 +129,9 @@ class StateSynchronizer:
         if sub_state.last == "set" and self.is_bus_idle():
             value = sub_state.set
             result = await self.send_packet(device, room, sub_device, value)
+            # 성공·실패 어느 결과도 쓰기 대기 중 도착한 새 요청이나 응답을 지우면 안 된다.
+            if sub_state.last != "set" or sub_state.set != value:
+                return
             if result is SendResult.DEFERRED:
                 return
             if result is not SendResult.SENT:
@@ -141,9 +144,6 @@ class StateSynchronizer:
                 )
                 sub_state.last = "state"
                 sub_state.count = 0
-                return
-            # 쓰기를 기다리는 동안 도착한 응답이나 새 요청을 덮어쓰지 않는다.
-            if sub_state.last != "set" or sub_state.set != value:
                 return
             sub_state.last = time.monotonic()
             if device == DEVICE_GAS:

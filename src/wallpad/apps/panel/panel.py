@@ -155,7 +155,6 @@ class Panel:
         await self.transport.connect()
         self._task_read = asyncio.create_task(self.receive_packets())
         self._task_sync = asyncio.create_task(self.synchronizer.run())
-        self._loop = asyncio.get_running_loop()
         return [self._task_read, self._task_sync]
 
     def _register_topic_routes(self) -> None:

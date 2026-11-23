@@ -137,7 +137,7 @@ class HeatingCommandTracker:
         logger.log(
             level,
             "event=heating_%s room=%s request_id=%s status=%s requested=%s "
-            "attempts=%s reason=%s late=%s",
+            "attempts=%s reason=%s late=%s last_received=%s last_received_at=%s",
             event,
             self.room,
             self.request_id,
@@ -146,6 +146,8 @@ class HeatingCommandTracker:
             self.attempts,
             self.reason,
             self.confirmed_late,
+            self.last_received,
+            self.last_received_at,
         )
         self._emit()
 
