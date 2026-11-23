@@ -208,30 +208,54 @@ class Panel:
 
     async def receive_packets(self):
         buf = []
-        while True:
-            hex_byte = (await self.transport.read(1)).hex()
-            buf.append(hex_byte)
+        discarded = []
 
-            while len(buf) >= 2:
-                sof = buf[0] + buf[1]
-                if sof not in self.parser.SOF_LENGTH_MAP:
-                    buf.pop(0)
-                    continue
+        def _flush_discarded():
+            if discarded:
+                logger.debug("event=rx_discard reason=resync raw=%s", "".join(discarded))
+                discarded.clear()
 
-                expected_len = self.parser.SOF_LENGTH_MAP[sof]
-                if len(buf) < expected_len:
-                    break
+        try:
+            while True:
+                hex_byte = (await self.transport.read(1)).hex()
+                buf.append(hex_byte)
 
-                packet = "".join(buf[:expected_len])
-                if self.parser.validate_checksum(packet)[0]:
-                    self.process_packet(packet)
-                    buf = buf[expected_len:]
-                else:
-                    buf.pop(0)
+                while len(buf) >= 2:
+                    sof = buf[0] + buf[1]
+                    if sof not in self.parser.SOF_LENGTH_MAP:
+                        discarded.append(buf.pop(0))
+                        if len(discarded) >= 64:
+                            _flush_discarded()
+                        continue
+
+                    expected_len = self.parser.SOF_LENGTH_MAP[sof]
+                    if len(buf) < expected_len:
+                        break
+
+                    packet = "".join(buf[:expected_len])
+                    valid, expected_checksum = self.parser.validate_checksum(packet)
+                    if valid:
+                        _flush_discarded()
+                        logger.debug("event=rx_frame raw=%s", packet)
+                        self.process_packet(packet)
+                        buf = buf[expected_len:]
+                    else:
+                        logger.debug(
+                            "event=rx_discard reason=checksum raw=%s expected=%s received=%s",
+                            packet,
+                            expected_checksum,
+                            packet[36:38],
+                        )
+                        discarded.append(buf.pop(0))
+        finally:
+            _flush_discarded()
+            if buf:
+                logger.debug("event=rx_discard reason=incomplete raw=%s", "".join(buf))
 
     def process_packet(self, packet, source="kocom"):
         parsed_frame = self.parser.parse_frame(packet, self.device_states)
         if parsed_frame is None:
+            logger.debug("event=frame_unhandled source=%s raw=%s", source, packet)
             return
 
         try:

@@ -82,3 +82,46 @@ async def test_sof_byte_in_payload_does_not_break_frame(panel):
         await panel.receive_packets()
 
     panel.process_packet.assert_called_once_with(valid_packet_with_aa)
+
+
+async def test_corrupt_frame_and_garbage_are_diagnosed_then_recover(panel, caplog):
+    """폐기 원본과 이유를 남기면서 뒤따르는 정상 프레임을 복구한다."""
+    caplog.set_level("DEBUG")
+    panel.transport.read.side_effect = _byte_seq(
+        "b1b2" + INVALID_CHECKSUM + VALID_PACKET, asyncio.CancelledError()
+    )
+
+    with pytest.raises(asyncio.CancelledError):
+        await panel.receive_packets()
+
+    panel.process_packet.assert_called_once_with(VALID_PACKET)
+    assert "reason=checksum" in caplog.text
+    assert INVALID_CHECKSUM in caplog.text
+    assert "reason=resync" in caplog.text
+    assert "b1b2" in caplog.text
+    assert f"event=rx_frame raw={VALID_PACKET}" in caplog.text
+
+
+async def test_partial_frame_is_recorded_on_reader_shutdown(panel, caplog):
+    caplog.set_level("DEBUG")
+    panel.transport.read.side_effect = _byte_seq(VALID_PACKET[:12], asyncio.CancelledError())
+
+    with pytest.raises(asyncio.CancelledError):
+        await panel.receive_packets()
+
+    assert "reason=incomplete" in caplog.text
+    assert VALID_PACKET[:12] in caplog.text
+
+
+async def test_long_noise_is_logged_in_bounded_groups(panel, caplog):
+    caplog.set_level("DEBUG")
+    panel.transport.read.side_effect = _byte_seq(
+        "b1" * 200 + VALID_PACKET, asyncio.CancelledError()
+    )
+
+    with pytest.raises(asyncio.CancelledError):
+        await panel.receive_packets()
+
+    records = [r.message for r in caplog.records if "reason=resync" in r.message]
+    assert 1 < len(records) <= 5
+    assert all(len(r.split("raw=")[1]) <= 128 for r in records)

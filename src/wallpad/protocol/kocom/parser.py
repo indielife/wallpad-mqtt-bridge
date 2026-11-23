@@ -41,6 +41,7 @@ class KocomPacketParser(PacketParser):
 
     def _parse_packet(self, packet: str) -> dict | None:
         if len(packet) < self.PACKET_LENGTH:
+            logger.debug("event=parse_skip reason=length raw=%s", packet)
             return None
         p: dict = {}
         try:
@@ -58,6 +59,7 @@ class KocomPacketParser(PacketParser):
                 p["dst_device"] = packet[14:16]
                 p["dst_room"] = packet[16:18]
             else:
+                logger.debug("event=parse_skip reason=unsupported_type raw=%s", packet)
                 return None
             p["command"] = packet[18:20]
             p["value"] = packet[20:36]

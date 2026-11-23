@@ -142,3 +142,11 @@ def test_parse_frame_target_routing_elevator(parser):
     assert v is not None
     assert v["update_target"]["device"] == "elevator"
     assert v["update_target"]["room"] == "wallpad"
+
+
+def test_unsupported_frame_type_has_distinct_diagnostic(parser, caplog):
+    caplog.set_level("DEBUG")
+    packet = SEND_PACKET[:4] + "fff" + SEND_PACKET[7:]
+    assert parser.parse_frame(packet) is None
+    assert "reason=unsupported_type" in caplog.text
+    assert packet in caplog.text
