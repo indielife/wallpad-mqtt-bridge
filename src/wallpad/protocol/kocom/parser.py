@@ -13,6 +13,7 @@ from wallpad.protocol.kocom.constants import (
     KOCOM_COMMAND_BY_HEX,
     KOCOM_DEVICE_BY_HEX,
     KOCOM_FAN_SPEED_BY_HEX,
+    KOCOM_PACKET_TAIL,
     KOCOM_TYPE_BY_HEX,
 )
 
@@ -32,6 +33,20 @@ class KocomPacketParser(PacketParser):
         chk_sum = f"{(sum_packet + 1 + v_sum) % 256:02x}"
         orgin_sum = packet[36:38] if len(packet) >= 38 else ""
         return (True, chk_sum) if chk_sum == orgin_sum else (False, chk_sum)
+
+    def validate_frame(self, packet: str) -> tuple[bool, str]:
+        """수신 프레임의 경계와 체크섬을 검증하고 실패 사유를 반환한다."""
+        if len(packet) != self.PACKET_LENGTH:
+            return False, "length"
+        if packet[:4] not in self.SOF_LENGTH_MAP:
+            return False, "sof"
+        if packet[-4:] != KOCOM_PACKET_TAIL:
+            return False, "tail"
+        try:
+            valid, _ = self.validate_checksum(packet)
+        except ValueError:
+            return False, "encoding"
+        return (True, "ok") if valid else (False, "checksum")
 
     def parse_frame(self, packet: str, device_states=None) -> dict | None:
         p = self._parse_packet(packet)

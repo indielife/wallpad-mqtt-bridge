@@ -1,12 +1,16 @@
 from wallpad.devices.packet_builder import PacketBuilder
-from wallpad.protocol.kocom.constants import KOCOM_HEX_BY_COMMAND, KOCOM_HEX_BY_DEVICE
+from wallpad.protocol.kocom.constants import (
+    KOCOM_HEX_BY_COMMAND,
+    KOCOM_HEX_BY_DEVICE,
+    KOCOM_PACKET_TAIL,
+)
 
 
 class KocomPacketBuilder(PacketBuilder):
     """Kocom RS485 프로토콜에 맞추어 패킷 프레임을 조립하는 빌더입니다."""
 
     HEADER = "aa5530bc00"
-    TAIL = "0d0d"
+    TAIL = KOCOM_PACKET_TAIL
 
     def __init__(self, room_rev: dict | None = None, room_thermostat_rev: dict | None = None):
         self.room_rev = room_rev or {}

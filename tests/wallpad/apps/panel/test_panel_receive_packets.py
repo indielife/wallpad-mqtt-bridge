@@ -125,3 +125,13 @@ async def test_long_noise_is_logged_in_bounded_groups(panel, caplog):
     records = [r.message for r in caplog.records if "reason=resync" in r.message]
     assert 1 < len(records) <= 5
     assert all(len(r.split("raw=")[1]) <= 128 for r in records)
+
+
+async def test_damaged_tail_is_discarded_before_normal_frame(panel, caplog):
+    caplog.set_level("DEBUG")
+    bad_tail = VALID_PACKET[:-2] + "00"
+    panel.transport.read.side_effect = _byte_seq(bad_tail + VALID_PACKET, asyncio.CancelledError())
+    with pytest.raises(asyncio.CancelledError):
+        await panel.receive_packets()
+    panel.process_packet.assert_called_once_with(VALID_PACKET)
+    assert "reason=tail" in caplog.text

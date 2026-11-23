@@ -60,6 +60,12 @@ def flatten_device_tree(rooms: list[Room]) -> list[BaseDevice]:
     return devices
 
 
+def _log_discarded(discarded: list[str], minimum: int = 1) -> None:
+    if len(discarded) >= minimum:
+        logger.debug("event=rx_discard reason=resync raw=%s", "".join(discarded))
+        discarded.clear()
+
+
 def log_frame(direction: str, name: str, parsed_frame: dict) -> None:
     fmt = "[%s %s] %s(%s) %s(%s) -> %s(%s)"
     args = [
@@ -250,11 +256,6 @@ class Panel:
         buf = []
         discarded = []
 
-        def _flush_discarded():
-            if discarded:
-                logger.debug("event=rx_discard reason=resync raw=%s", "".join(discarded))
-                discarded.clear()
-
         try:
             while True:
                 hex_byte = (await self.transport.read(1)).hex()
@@ -264,8 +265,7 @@ class Panel:
                     sof = buf[0] + buf[1]
                     if sof not in self.parser.SOF_LENGTH_MAP:
                         discarded.append(buf.pop(0))
-                        if len(discarded) >= 64:
-                            _flush_discarded()
+                        _log_discarded(discarded, minimum=64)
                         continue
 
                     expected_len = self.parser.SOF_LENGTH_MAP[sof]
@@ -273,22 +273,24 @@ class Panel:
                         break
 
                     packet = "".join(buf[:expected_len])
-                    valid, expected_checksum = self.parser.validate_checksum(packet)
+                    valid, reason = self.parser.validate_frame(packet)
                     if valid:
-                        _flush_discarded()
+                        _log_discarded(discarded)
                         logger.debug("event=rx_frame raw=%s", packet)
                         self.process_packet(packet)
                         buf = buf[expected_len:]
                     else:
                         logger.debug(
-                            "event=rx_discard reason=checksum raw=%s expected=%s received=%s",
+                            "event=rx_discard reason=%s raw=%s expected_checksum=%s received=%s",
+                            reason,
                             packet,
-                            expected_checksum,
+                            self.parser.validate_checksum(packet)[1],
                             packet[36:38],
                         )
                         discarded.append(buf.pop(0))
+                        _log_discarded(discarded, minimum=64)
         finally:
-            _flush_discarded()
+            _log_discarded(discarded)
             if buf:
                 logger.debug("event=rx_discard reason=incomplete raw=%s", "".join(buf))
 
@@ -318,7 +320,7 @@ class Panel:
                     and update_target["device"] == DEVICE_THERMOSTAT
                     and update_target["room"] in self.heating_commands
                     and isinstance(packet, str)
-                    and self.parser.validate_checksum(packet)[0]
+                    and self.parser.validate_frame(packet)[0]
                 ):
                     self.heating_commands[update_target["room"]].observe(parsed_frame["value"])
                 self.set_list(update_target["device"], update_target["room"], parsed_frame["value"])

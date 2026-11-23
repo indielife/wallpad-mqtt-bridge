@@ -16,6 +16,7 @@ DEVICE_ELEVATOR = "elevator"
 DEVICE_FAN = "fan"
 
 # KOCOM 코콤 패킷 기본정보
+KOCOM_PACKET_TAIL = "0d0d"
 KOCOM_DEVICE_BY_HEX = {
     "01": DEVICE_WALLPAD,
     "0e": DEVICE_LIGHT,

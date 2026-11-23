@@ -182,3 +182,12 @@ async def test_other_room_response_cannot_confirm_request(e2e_panel_multiroom):
     panel.process_packet(packet)
     assert panel.heating_commands["livingroom"].status == "pending"
     assert panel.heating_commands["bedroom"].status == "idle"
+
+
+async def test_damaged_tail_cannot_confirm_heating_command(e2e_panel):
+    panel, mqtt, _ = e2e_panel
+    mqtt.deliver("homeassistant/climate/livingroom/target_temp", "22")
+    await _sync(panel)
+    packet = "aa5530d00036000100001100160014000000720d00"
+    panel.process_packet(packet)
+    assert panel.heating_commands["livingroom"].status == "pending"
