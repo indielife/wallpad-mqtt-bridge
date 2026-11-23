@@ -3,10 +3,11 @@ import logging
 import time
 from collections.abc import Awaitable, Callable
 
+from wallpad.apps.panel.heating_commands import HeatingCommandTracker
 from wallpad.apps.panel.send_result import SendResult
 from wallpad.apps.panel.state import KocomStateManager, RoomState, ScanState, SubDeviceState
 from wallpad.config import AppConfig
-from wallpad.protocol.kocom.constants import DEVICE_ELEVATOR, DEVICE_GAS
+from wallpad.protocol.kocom.constants import DEVICE_ELEVATOR, DEVICE_GAS, DEVICE_THERMOSTAT
 
 logger = logging.getLogger(__name__)
 
@@ -39,12 +40,14 @@ class StateSynchronizer:
         config: AppConfig,
         is_bus_idle: IsBusIdle,
         ha_ready: asyncio.Event,
+        heating_commands: dict[str, HeatingCommandTracker] | None = None,
     ) -> None:
         self.device_states = device_states
         self.send_packet = send_packet
         self.config = config
         self.is_bus_idle = is_bus_idle
         self.ha_ready = ha_ready
+        self.heating_commands = heating_commands if heating_commands is not None else {}
 
     async def run(self) -> None:
         await self.ha_ready.wait()
@@ -62,6 +65,9 @@ class StateSynchronizer:
                 await self.sync_room(device, room, room_state, now)
 
     async def sync_room(self, device: str, room: str, room_state: RoomState, now: float) -> None:
+        if device == DEVICE_THERMOSTAT and room in self.heating_commands:
+            await self._sync_heating(room, room_state, now)
+            return
         if device == DEVICE_ELEVATOR:
             for sub_device, sub_state in room_state.sub_devices.items():
                 await self.reconcile_device(device, room, sub_device, sub_state, now)
@@ -83,6 +89,27 @@ class StateSynchronizer:
             for sub_device, sub_state in room_state.sub_devices.items():
                 if sub_device not in waiting:
                     await self.reconcile_device(device, room, sub_device, sub_state, now)
+
+    async def _sync_heating(self, room: str, room_state: RoomState, now: float) -> None:
+        command = self.heating_commands[room]
+        if (
+            command.status == "pending"
+            and command.waiting_since is not None
+            and now - command.waiting_since > RECONCILE_RETRY_INTERVAL
+        ):
+            command.timeout(exhausted=command.attempts > RECONCILE_RETRY_LIMIT)
+
+        if now - room_state.scan.tick > self.config.scan_interval:
+            await self.poll_room(DEVICE_THERMOSTAT, room, room_state.scan, now)
+        elif command.status == "pending" and command.waiting_since is None and self.is_bus_idle():
+            request_id = command.start_send()
+            result = await self.send_packet(DEVICE_THERMOSTAT, room, "", "", request_id=request_id)
+            command.finish_send(request_id, result)
+
+        if command.status in ("confirmed", "unconfirmed"):
+            for sub_state in room_state.sub_devices.values():
+                sub_state.last = "state"
+                sub_state.count = 0
 
     async def poll_room(self, device: str, room: str, scan_state: ScanState, now: float) -> None:
         if self.is_bus_idle() and now - scan_state.last > POLL_STEP_INTERVAL:
