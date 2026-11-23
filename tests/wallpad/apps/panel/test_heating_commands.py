@@ -76,7 +76,8 @@ async def test_new_request_during_write_cannot_inherit_old_result(e2e_panel):
     panel, mqtt, transport = e2e_panel
     mqtt.deliver("homeassistant/climate/livingroom/target_temp", "25")
 
-    async def replace_request(data):
+    async def replace_request(data, *, on_write=None):
+        on_write()
         mqtt.deliver("homeassistant/climate/livingroom/target_temp", "26")
         return True
 
@@ -133,7 +134,8 @@ async def test_response_during_write_is_not_lost(e2e_panel):
     panel, mqtt, transport = e2e_panel
     mqtt.deliver("homeassistant/climate/livingroom/target_temp", "22")
 
-    async def reply(data):
+    async def reply(data, *, on_write=None):
+        on_write()
         panel.process_packet("aa5530d00036000100001100160014000000720d0d")
         return True
 

@@ -28,6 +28,7 @@ from wallpad.protocol.kocom.constants import (
 )
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 from wallpad.protocol.kocom.parser import KocomPacketParser
+from wallpad.transport.base import WriteCallback
 from wallpad.transport.bus_arbitration import BusArbitrationTransport
 
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
@@ -341,10 +342,17 @@ class Panel:
             )
 
     async def _write_packet(
-        self, packet: str, source: str, request_id: int | None = None
+        self,
+        packet: str,
+        source: str,
+        request_id: int | None = None,
+        on_write: WriteCallback | None = None,
     ) -> SendResult:
         try:
-            sent = await self.transport.write_if_idle(bytes.fromhex(packet))
+            if on_write is None:
+                sent = await self.transport.write_if_idle(bytes.fromhex(packet))
+            else:
+                sent = await self.transport.write_if_idle(bytes.fromhex(packet), on_write=on_write)
         except Exception:
             logger.exception("event=tx_failed source=%s raw=%s", source, packet)
             return SendResult.FAILED
@@ -384,7 +392,14 @@ class Panel:
         parsed_frame = self.parser.parse_frame(packet, self.device_states)
 
         result = await self._write_packet(
-            packet, source="poll" if cmd == "조회" else "control", request_id=request_id
+            packet,
+            source="poll" if cmd == "조회" else "control",
+            request_id=request_id,
+            on_write=(
+                partial(self.heating_commands[room].mark_write_started, request_id)
+                if request_id is not None
+                else None
+            ),
         )
         if result is not SendResult.SENT:
             return result

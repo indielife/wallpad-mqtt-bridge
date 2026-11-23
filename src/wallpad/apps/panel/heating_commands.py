@@ -35,7 +35,7 @@ class HeatingCommandTracker:
     reason: str | None = None
     confirmed_late: bool = False
     _observations: int = 0
-    _send_observation: int = 0
+    _send_observation: int | None = None
     _first_send_observation: int | None = None
     _last_emitted: dict | None = field(default=None, repr=False)
 
@@ -66,11 +66,17 @@ class HeatingCommandTracker:
         self.reason = None
         self.confirmed_late = False
         self._first_send_observation = None
+        self._send_observation = None
         self._log("requested")
 
     def start_send(self) -> int:
-        self._send_observation = self._observations
+        self._send_observation = None
         return self.request_id
+
+    def mark_write_started(self, request_id: int) -> None:
+        """실제 쓰기 경계마다 수신 기준점을 갱신해 재연결 대기 중 관측을 제외한다."""
+        if request_id == self.request_id:
+            self._send_observation = self._observations
 
     def finish_send(self, request_id: int, result: SendResult) -> None:
         if request_id != self.request_id:

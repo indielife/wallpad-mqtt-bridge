@@ -1,7 +1,7 @@
 import asyncio
 import time
 
-from .base import BaseTransport
+from .base import BaseTransport, WriteCallback
 
 DEFAULT_IDLE_INTERVAL_SECONDS = 0.1
 
@@ -35,8 +35,11 @@ class BusArbitrationTransport(BaseTransport):
         self._last_activity = time.monotonic()
         return data
 
-    async def write(self, data: bytes):
-        await self._transport.write(data)
+    async def write(self, data: bytes, *, on_write: WriteCallback | None = None):
+        if on_write is None:
+            await self._transport.write(data)
+        else:
+            await self._transport.write(data, on_write=on_write)
         self._last_activity = time.monotonic()
 
     async def close(self):
@@ -46,7 +49,7 @@ class BusArbitrationTransport(BaseTransport):
         """버스가 마지막 활동 이후 정숙 간격만큼 조용했는지 확인."""
         return time.monotonic() - self._last_activity > self._idle_interval
 
-    async def write_if_idle(self, data: bytes) -> bool:
+    async def write_if_idle(self, data: bytes, *, on_write: WriteCallback | None = None) -> bool:
         """버스가 정숙할 때만 데이터를 씀.
 
         정숙 판정부터 실제 전송, 활동 시각 갱신까지를 락으로 원자화해 서로 다른 코루틴(스캔 루프,
@@ -57,5 +60,8 @@ class BusArbitrationTransport(BaseTransport):
         async with self._write_lock:
             if not self.is_idle():
                 return False
-            await self.write(data)
+            if on_write is None:
+                await self.write(data)
+            else:
+                await self.write(data, on_write=on_write)
             return True

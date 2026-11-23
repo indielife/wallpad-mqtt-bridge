@@ -1,6 +1,6 @@
 import asyncio
 
-from .base import BaseTransport
+from .base import BaseTransport, WriteCallback
 
 
 class SocketTransport(BaseTransport):
@@ -20,9 +20,11 @@ class SocketTransport(BaseTransport):
             raise ConnectionError("소켓 EOF: 상대가 연결을 종료했습니다.")
         return data
 
-    async def write(self, data: bytes):
+    async def write(self, data: bytes, *, on_write: WriteCallback | None = None):
         assert self._writer is not None, "connect()가 호출되지 않았습니다."
         self._writer.write(data)
+        if on_write is not None:
+            on_write()
         await self._writer.drain()
 
     async def close(self):
