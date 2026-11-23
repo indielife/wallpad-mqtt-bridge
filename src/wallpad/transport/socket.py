@@ -15,7 +15,10 @@ class SocketTransport(BaseTransport):
 
     async def read(self, size: int) -> bytes:
         assert self._reader is not None, "connect()가 호출되지 않았습니다."
-        return await self._reader.read(size)
+        data = await self._reader.read(size)
+        if not data and size != 0:
+            raise ConnectionError("소켓 EOF: 상대가 연결을 종료했습니다.")
+        return data
 
     async def write(self, data: bytes):
         assert self._writer is not None, "connect()가 호출되지 않았습니다."
