@@ -54,7 +54,7 @@ async def drive_reconcile(panel) -> None:
     폴링(조회 broadcast)은 이 테스트의 관심사가 아니므로, 모든 방의 스캔 타이머를
     현재 시각으로 맞춰 억제하고 reconcile 경로만 실행한다(하니스 셋업).
     """
-    now = time.time()
+    now = time.monotonic()
     for device_state in panel.device_states.values():
         for room_state in device_state.values():
             room_state.scan.tick = now

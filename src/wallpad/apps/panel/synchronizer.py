@@ -3,6 +3,7 @@ import logging
 import time
 from collections.abc import Awaitable, Callable
 
+from wallpad.apps.panel.send_result import SendResult
 from wallpad.apps.panel.state import KocomStateManager, RoomState, ScanState, SubDeviceState
 from wallpad.config import AppConfig
 from wallpad.protocol.kocom.constants import DEVICE_ELEVATOR, DEVICE_GAS
@@ -15,7 +16,7 @@ RECONCILE_RETRY_LIMIT = 4
 RECONCILE_RETRY_INTERVAL = 1
 GAS_CONFIRM_EXTRA_DELAY = 5
 
-SendPacket = Callable[..., Awaitable[None]]
+SendPacket = Callable[..., Awaitable[SendResult]]
 IsBusIdle = Callable[[], bool]
 
 
@@ -48,12 +49,11 @@ class StateSynchronizer:
     async def run(self) -> None:
         await self.ha_ready.wait()
         while True:
-            now = time.time()
-            if self.is_bus_idle():
-                try:
-                    await self.sync_once(now)
-                except Exception as e:
-                    logger.debug("Sync failed: %r", e)
+            now = time.monotonic()
+            try:
+                await self.sync_once(now)
+            except Exception:
+                logger.exception("event=sync_failed")
             await asyncio.sleep(0.2)
 
     async def sync_once(self, now: float) -> None:
@@ -67,19 +67,30 @@ class StateSynchronizer:
                 await self.reconcile_device(device, room, sub_device, sub_state, now)
             return
 
+        # 이미 전송한 요청의 시간 초과는 버스 혼잡·스캔 우선순위와 무관하게 처리한다.
+        waiting = {
+            sub_device
+            for sub_device, sub_state in room_state.sub_devices.items()
+            if isinstance(sub_state.last, float)
+        }
+        for sub_device in waiting:
+            await self.reconcile_device(device, room, sub_device, room_state[sub_device], now)
+
         scan_state = room_state.scan
         if now - scan_state.tick > self.config.scan_interval:
             await self.poll_room(device, room, scan_state, now)
         else:
             for sub_device, sub_state in room_state.sub_devices.items():
-                await self.reconcile_device(device, room, sub_device, sub_state, now)
+                if sub_device not in waiting:
+                    await self.reconcile_device(device, room, sub_device, sub_state, now)
 
     async def poll_room(self, device: str, room: str, scan_state: ScanState, now: float) -> None:
-        if now - scan_state.last > POLL_STEP_INTERVAL:
-            scan_state.count += 1
-            scan_state.last = now
-            await self.send_packet(device, room, "", "", cmd="조회")
-            await asyncio.sleep(self.config.packet_delay)
+        if self.is_bus_idle() and now - scan_state.last > POLL_STEP_INTERVAL:
+            result = await self.send_packet(device, room, "", "", cmd="조회")
+            if result is SendResult.SENT:
+                scan_state.count += 1
+                scan_state.last = time.monotonic()
+                await asyncio.sleep(self.config.packet_delay)
         if scan_state.count > POLL_BURST_LIMIT:
             scan_state.tick = now
             scan_state.count = 0
@@ -88,16 +99,49 @@ class StateSynchronizer:
     async def reconcile_device(
         self, device: str, room: str, sub_device: str, sub_state: SubDeviceState, now: float
     ) -> None:
-        if sub_state.count > RECONCILE_RETRY_LIMIT:
-            sub_state.count = 0
-            sub_state.last = "state"
-        elif sub_state.last == "set":
-            sub_state.last = now
+        if sub_state.last == "set" and self.is_bus_idle():
+            value = sub_state.set
+            result = await self.send_packet(device, room, sub_device, value)
+            if result is SendResult.DEFERRED:
+                return
+            if result is not SendResult.SENT:
+                logger.warning(
+                    "event=command_unsent device=%s room=%s target=%s result=%s",
+                    device,
+                    room,
+                    sub_device,
+                    result.value,
+                )
+                sub_state.last = "state"
+                sub_state.count = 0
+                return
+            # 쓰기를 기다리는 동안 도착한 응답이나 새 요청을 덮어쓰지 않는다.
+            if sub_state.last != "set" or sub_state.set != value:
+                return
+            sub_state.last = time.monotonic()
             if device == DEVICE_GAS:
                 sub_state.last += GAS_CONFIRM_EXTRA_DELAY
             elif device == DEVICE_ELEVATOR:
                 sub_state.last = "state"
-            await self.send_packet(device, room, sub_device, sub_state.set)
         elif isinstance(sub_state.last, float) and now - sub_state.last > RECONCILE_RETRY_INTERVAL:
-            sub_state.last = "set"
             sub_state.count += 1
+            logger.info(
+                "event=response_timeout device=%s room=%s target=%s attempts=%s",
+                device,
+                room,
+                sub_device,
+                sub_state.count,
+            )
+            if sub_state.count > RECONCILE_RETRY_LIMIT:
+                logger.warning(
+                    "event=retry_exhausted device=%s room=%s target=%s requested=%s attempts=%s",
+                    device,
+                    room,
+                    sub_device,
+                    sub_state.set,
+                    sub_state.count,
+                )
+                sub_state.last = "state"
+                sub_state.count = 0
+            else:
+                sub_state.last = "set"

@@ -4,6 +4,7 @@ import logging
 
 from wallpad.apps.panel.devices import CategoryController, Room
 from wallpad.apps.panel.factory import DeviceFactory
+from wallpad.apps.panel.send_result import SendResult
 from wallpad.apps.panel.synchronizer import StateSynchronizer
 from wallpad.config import AppConfig
 from wallpad.devices.base import BaseDevice
@@ -287,8 +288,20 @@ class Panel:
     def _schedule_write(self, data: str | None) -> None:
         if data and self._loop:
             asyncio.run_coroutine_threadsafe(
-                self.transport.write_if_idle(bytes.fromhex(data)), self._loop
+                self._write_packet(data, source="HA_debug"), self._loop
             )
+
+    async def _write_packet(self, packet: str, source: str) -> SendResult:
+        try:
+            sent = await self.transport.write_if_idle(bytes.fromhex(packet))
+        except Exception:
+            logger.exception("event=tx_failed source=%s raw=%s", source, packet)
+            return SendResult.FAILED
+        if not sent:
+            logger.debug("event=tx_deferred source=%s reason=bus_busy raw=%s", source, packet)
+            return SendResult.DEFERRED
+        logger.debug("event=tx_frame source=%s raw=%s", source, packet)
+        return SendResult.SENT
 
     def set_list(self, device, room, value):
         try:
@@ -303,21 +316,23 @@ class Panel:
                 e,
             )
 
-    async def send_packet(self, device, room, target, value, cmd="상태"):
+    async def send_packet(self, device, room, target, value, cmd="상태") -> SendResult:
         if cmd == "상태":
             packet = self.make_packet(device, room, "상태", target, value)
         elif cmd == "조회":
             packet = self.make_packet(device, room, "조회", "", "")
         else:
-            return
+            return SendResult.INVALID
 
         if not packet:
-            return
+            logger.warning("event=tx_invalid device=%s room=%s target=%s", device, room, target)
+            return SendResult.INVALID
 
         parsed_frame = self.parser.parse_frame(packet, self.device_states)
 
-        if not await self.transport.write_if_idle(bytes.fromhex(packet)):
-            return
+        result = await self._write_packet(packet, source="poll" if cmd == "조회" else "control")
+        if result is not SendResult.SENT:
+            return result
 
         if cmd == "상태":
             logger.info("[To %s] %s/%s/%s -> %s", self.name, device, room, target, value)
@@ -329,6 +344,7 @@ class Panel:
 
         if device == DEVICE_ELEVATOR:
             self.publish_state_to_ha(DEVICE_ELEVATOR, DEVICE_WALLPAD, "on")
+        return SendResult.SENT
 
     def make_packet(self, device, room, cmd, target, value):
         # 1. (device, room) 컨트롤러에 조립 위임 (맵 조회 O(1), 타겟 탐색은 컨트롤러 책임)

@@ -50,7 +50,7 @@ class CategoryController:
         raise NotImplementedError
 
     def reset_scan(self) -> None:
-        self.state.scan.tick = time.time()
+        self.state.scan.tick = time.monotonic()
         self.state.scan.count = 0
         self.state.scan.last = 0.0
 
