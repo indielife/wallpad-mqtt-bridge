@@ -183,6 +183,31 @@
     'unique_id': 'test_name_room1_thermostat',
   })
 # ---
+# name: test_publish_ha_discovery[False-thermostat-expected_topics5][thermostat_publish_payload_sensor_room1_heating_command]
+  dict({
+    'device': dict({
+      'identifiers': 'kocom_room1',
+      'manufacturer': 'KOCOM',
+      'model': 'Wallpad',
+      'name': 'kocom room1',
+      'sw_version': 'RS485 Compilation 0.1.0',
+    }),
+    'device_class': 'enum',
+    'enabled_by_default': True,
+    'entity_category': 'diagnostic',
+    'json_attributes_topic': 'wallpad/diagnostic/heating/room1',
+    'name': '난방 명령 확인 상태',
+    'options': list([
+      '이력 없음',
+      '확인 대기',
+      '확인 완료',
+      '명령 미확인',
+    ]),
+    'state_topic': 'wallpad/diagnostic/heating/room1',
+    'unique_id': 'test_name_room1_heating_command',
+    'value_template': "{{ {'idle': '이력 없음', 'pending': '확인 대기', 'confirmed': '확인 완료', 'unconfirmed': '명령 미확인'}[value_json.status] }}",
+  })
+# ---
 # name: test_register_topic_routes[elevator][elevator_registered_topics]
   list([
     'homeassistant/switch/wallpad_elevator/set',
@@ -249,6 +274,7 @@
     'homeassistant/climate/room1/mode',
     'homeassistant/climate/room1/target_temp',
     'homeassistant/climate/room1/config',
+    'homeassistant/sensor/room1_heating_command/config',
     'wallpad/bridge/config/restart',
     'wallpad/bridge/config/remove',
     'wallpad/bridge/config/scan',

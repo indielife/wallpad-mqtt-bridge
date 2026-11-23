@@ -112,6 +112,7 @@ def kocom_factory(mock_config):
             "thermostat",
             [
                 "homeassistant/climate/room1/config",
+                "homeassistant/sensor/room1_heating_command/config",
             ],
         ),
     ],

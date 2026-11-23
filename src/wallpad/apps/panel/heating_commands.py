@@ -6,6 +6,7 @@
 
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
@@ -21,6 +22,7 @@ def _timestamp() -> str:
 @dataclass
 class HeatingCommandTracker:
     room: str
+    on_change: Callable[[dict], None] | None = field(default=None, repr=False)
     request_id: int = 0
     status: str = "idle"
     requested: dict[str, str | int] = field(default_factory=dict)
@@ -35,6 +37,21 @@ class HeatingCommandTracker:
     _observations: int = 0
     _send_observation: int = 0
     _first_send_observation: int | None = None
+    _last_emitted: dict | None = field(default=None, repr=False)
+
+    def snapshot(self) -> dict:
+        return {
+            "request_id": self.request_id,
+            "status": self.status,
+            "requested": dict(self.requested),
+            "requested_at": self.requested_at,
+            "attempts": self.attempts,
+            "last_sent_at": self.last_sent_at,
+            "last_received": dict(self.last_received) if self.last_received is not None else None,
+            "last_received_at": self.last_received_at,
+            "reason": self.reason,
+            "confirmed_late": self.confirmed_late,
+        }
 
     def begin(self, requested: dict[str, str | int]) -> None:
         if self.status == "pending":
@@ -77,6 +94,7 @@ class HeatingCommandTracker:
         elif self.status == "pending":
             if result is SendResult.DEFERRED:
                 self.reason = "bus_busy"
+                self._emit()
             else:
                 self.mark_unconfirmed(result.value)
 
@@ -85,6 +103,7 @@ class HeatingCommandTracker:
         self.last_received = dict(value)
         self.last_received_at = _timestamp()
         self._confirm_if_matching()
+        self._emit()
 
     def timeout(self, *, exhausted: bool) -> None:
         self.waiting_since = None
@@ -128,3 +147,10 @@ class HeatingCommandTracker:
             self.reason,
             self.confirmed_late,
         )
+        self._emit()
+
+    def _emit(self) -> None:
+        snapshot = self.snapshot()
+        if self.on_change is not None and snapshot != self._last_emitted:
+            self.on_change(snapshot)
+            self._last_emitted = snapshot

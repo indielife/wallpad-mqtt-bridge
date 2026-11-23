@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+from functools import partial
 
 from wallpad.apps.panel.devices import CategoryController, Room
 from wallpad.apps.panel.factory import DeviceFactory
@@ -116,6 +117,8 @@ class Panel:
         self.device_map: dict[tuple[str, str], BaseDevice] = {
             (type(d).__name__.lower(), d.room): d for d in self.devices
         }
+        for room, command in self.heating_commands.items():
+            command.on_change = partial(self._publish_heating_diagnostic, room)
         self.command_registry: dict[str, BaseDevice] = {
             topic: device for device in self.devices for topic in device.get_command_topics()
         }
@@ -129,6 +132,7 @@ class Panel:
         self.ha_ready = self.ha_coordinator.ha_ready
 
         self.mqtt_client.register_connect_callback(self.ha_coordinator.on_connect)
+        self.mqtt_client.register_connect_callback(self._on_heating_reconnect)
         self._register_topic_routes()
 
         self.synchronizer = StateSynchronizer(
@@ -226,6 +230,21 @@ class Panel:
         for topic, payload in target.get_ha_state_messages(value):
             self.mqtt_client.publish_json(topic, payload)
             logger.info("[To HA] %s = %s", topic, json.dumps(payload, ensure_ascii=False))
+
+    def _publish_heating_diagnostic(self, room: str, snapshot: dict) -> None:
+        device = self.device_map[(DEVICE_THERMOSTAT, room)]
+        assert device.topics is not None
+        self.mqtt_client.publish_json(device.topics.diagnostic_state_topic, snapshot)
+
+    def _on_heating_reconnect(self, *_) -> None:
+        if self._loop is not None:
+            self._loop.call_soon_threadsafe(self._publish_heating_diagnostics)
+        else:
+            self._publish_heating_diagnostics()
+
+    def _publish_heating_diagnostics(self) -> None:
+        for room, command in self.heating_commands.items():
+            self._publish_heating_diagnostic(room, command.snapshot())
 
     async def receive_packets(self):
         buf = []
