@@ -5,7 +5,13 @@ from collections.abc import Awaitable, Callable
 
 from wallpad.apps.panel.heating_commands import HeatingCommandTracker
 from wallpad.apps.panel.send_result import SendResult
-from wallpad.apps.panel.state import KocomStateManager, RoomState, ScanState, SubDeviceState
+from wallpad.apps.panel.state import (
+    UNSET_SCAN_TIME,
+    KocomStateManager,
+    RoomState,
+    ScanState,
+    SubDeviceState,
+)
 from wallpad.config import AppConfig
 from wallpad.protocol.kocom.constants import DEVICE_ELEVATOR, DEVICE_GAS, DEVICE_THERMOSTAT
 
@@ -125,7 +131,7 @@ class StateSynchronizer:
         if scan_state.count > POLL_BURST_LIMIT:
             scan_state.tick = now
             scan_state.count = 0
-            scan_state.last = 0
+            scan_state.last = UNSET_SCAN_TIME
 
     async def reconcile_device(
         self, device: str, room: str, sub_device: str, sub_state: SubDeviceState, now: float

@@ -173,10 +173,11 @@ async def test_poll_counts_only_completed_writes(synchronizer):
     from wallpad.apps.panel.state import ScanState
 
     scan = ScanState()
+    initial_last = scan.last
     synchronizer.send_packet.return_value = SendResult.DEFERRED
     await synchronizer.poll_room(DEVICE_LIGHT, "livingroom", scan, 500.0)
     assert scan.count == 0
-    assert scan.last == 0.0
+    assert scan.last == initial_last
 
 
 async def test_busy_bus_still_expires_response_wait(synchronizer, monkeypatch, caplog):

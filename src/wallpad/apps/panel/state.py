@@ -1,5 +1,8 @@
 from typing import Any
 
+# 미조회·수동 조회는 단조 시계의 원점과 관계없이 즉시 만료되어야 한다.
+UNSET_SCAN_TIME = float("-inf")
+
 
 class SubDeviceState(dict):
     """서브 기기(조명, 콘센트, 가스밸브 등)의 상태를 저장하는 구조적 객체"""
@@ -49,7 +52,9 @@ class SubDeviceState(dict):
 class ScanState(dict):
     """각 방/기기 그룹의 주기적 스캔 상태 정보"""
 
-    def __init__(self, tick: float = 0.0, count: int = 0, last: float = 0.0):
+    def __init__(
+        self, tick: float = UNSET_SCAN_TIME, count: int = 0, last: float = UNSET_SCAN_TIME
+    ):
         super().__init__()
         self["tick"] = tick
         self["count"] = count
@@ -92,9 +97,9 @@ class RoomState(dict):
         if key == "scan":
             if isinstance(value, dict) and not isinstance(value, ScanState):
                 value = ScanState(
-                    tick=value.get("tick", 0.0),
+                    tick=value.get("tick", UNSET_SCAN_TIME),
                     count=value.get("count", 0),
-                    last=value.get("last", 0.0),
+                    last=value.get("last", UNSET_SCAN_TIME),
                 )
             self.scan = value
         else:
@@ -140,6 +145,6 @@ class KocomStateManager(dict):
         """장비 구성을 잃지 않고 모든 스캔 타이머를 리셋합니다."""
         for device_state in self.values():
             for room_state in device_state.values():
-                room_state.scan.tick = 0.0
+                room_state.scan.tick = UNSET_SCAN_TIME
                 room_state.scan.count = 0
-                room_state.scan.last = 0.0
+                room_state.scan.last = UNSET_SCAN_TIME
