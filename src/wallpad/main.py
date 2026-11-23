@@ -18,6 +18,12 @@ from wallpad.version import SW_VERSION
 logger = logging.getLogger(__name__)
 
 
+def get_log_path() -> str:
+    if os.path.isdir("/share"):
+        return "/share/wallpad-mqtt-bridge/log/kocom.log"
+    return os.path.join(os.path.abspath(os.getcwd()), "log", "kocom.log")
+
+
 def setup_logging(path: str, level: str = "info"):
     log_levels = {
         "debug": logging.DEBUG,
@@ -28,21 +34,41 @@ def setup_logging(path: str, level: str = "info"):
     }
     log_level = log_levels.get(level.lower(), logging.INFO)
 
-    log_dir = os.path.dirname(path)
-    if log_dir and not os.path.isdir(log_dir):
-        os.makedirs(log_dir)
-
-    max_bytes = 1024 * 1024  # 1MB
-    file_handler = logging.handlers.RotatingFileHandler(
-        filename=path, maxBytes=max_bytes, backupCount=10, encoding="utf-8"
-    )
-    stream_handler = logging.StreamHandler()
+    handlers: list[logging.Handler] = [logging.StreamHandler()]
+    file_error: OSError | None = None
+    try:
+        log_dir = os.path.dirname(path)
+        if log_dir:
+            os.makedirs(log_dir, exist_ok=True)
+        handlers.append(
+            logging.handlers.RotatingFileHandler(
+                filename=path, maxBytes=1024 * 1024, backupCount=10, encoding="utf-8"
+            )
+        )
+    except OSError as exc:
+        file_error = exc
 
     logging.basicConfig(
         level=log_level,
         format="%(asctime)s.%(msecs)03d [%(levelname)s] %(name)s:%(lineno)d %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
-        handlers=[file_handler, stream_handler],
+        handlers=handlers,
+    )
+    if file_error is not None:
+        logger.warning("event=file_logging_unavailable path=%s error=%r", path, file_error)
+    else:
+        logger.info("event=file_logging_ready path=%s max_bytes=1048576 backups=10", path)
+
+
+def log_runtime_config(config: AppConfig) -> None:
+    logger.info(
+        "event=runtime_config version=%s transport=%s scan_interval=%s packet_delay=%s "
+        "thermostat_rooms=%s",
+        config.sw_version,
+        config.comm_type,
+        config.scan_interval,
+        config.packet_delay,
+        sum(room.thermo_addr is not None for room in config.rooms),
     )
 
 
@@ -88,9 +114,8 @@ async def main():
     config.load()
     config.validate()
 
-    root_dir = os.path.abspath(os.getcwd())
-    log_path = os.path.join(root_dir, "log", "kocom.log")
-    setup_logging(log_path, config.log_level)
+    setup_logging(get_log_path(), config.log_level)
+    log_runtime_config(config)
 
     logger.info("========================================================")
     logger.info("    Wallpad MQTT Bridge Add-on  %s", SW_VERSION)
