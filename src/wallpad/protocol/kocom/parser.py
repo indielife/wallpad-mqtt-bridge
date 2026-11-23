@@ -99,7 +99,7 @@ class KocomPacketParser(PacketParser):
             v["dst_device"] = KOCOM_DEVICE_BY_HEX.get(p["dst_device"])
             v["dst_room"] = (
                 self._config.kocom_room.get(p["dst_room"])
-                if v["src_device"] != DEVICE_THERMOSTAT
+                if v["dst_device"] != DEVICE_THERMOSTAT
                 else self._config.kocom_room_thermostat.get(p["dst_room"])
             )
             v["value"] = p["value"]
