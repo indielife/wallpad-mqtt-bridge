@@ -1,5 +1,11 @@
 # Git 커밋 메시지 규칙 (Gitmoji + Conventional Commits)
 
+## 릴리즈
+
+릴리즈는 [릴리즈 절차](docs/release.md)를 따릅니다.
+릴리즈 노트를 먼저 작성·검토하고 최종 검증 후 태그를 발행한 뒤,
+GitHub 릴리즈와 HA 애드온 저장소의 버전·변경 내역을 갱신합니다.
+
 ## 커밋 메시지 구조
 
 ```text
