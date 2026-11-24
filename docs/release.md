@@ -31,6 +31,7 @@
 - 사용자에게 영향을 주는 기능·수정·설정 변경과 마이그레이션 안내
 - 제조사·기기·연결 방식별 지원 범위와 알려진 제약
 - HA 애드온 저장소 등록·설치·업데이트 경로
+- 검증한 애드온 커밋에 고정한 버전별 설정·설치 안내 링크
 - 해당 소스 커밋의 CI 실행 링크와 검사별 결과
 - 실제 검증한 소스 및 `ha-addons` 커밋, 빌드 버전 인수 또는 이미지 식별자
 - 빌드 아키텍처와 HA 검증 환경(HA 버전·장비 아키텍처·연결 방식)
@@ -111,6 +112,18 @@ gh release view "$release_tag" --repo indielife/wallpad-mqtt-bridge
 본문의 오기나 검증 근거 보완은 노트 수정으로 처리합니다.
 소스를 바꿔야 하면 새 버전을 준비합니다.
 
+이미 발행한 노트를 수정할 때는 문서 PR을 검토·병합한 뒤,
+기존 GitHub 릴리즈 본문도 병합한 파일로 갱신합니다.
+태그와 소스 커밋은 유지하고, 공개 본문과 저장소 파일의 일치를 확인합니다.
+
+```bash
+gh release edit "$release_tag" --repo indielife/wallpad-mqtt-bridge \
+  --notes-file "docs/releases/${release_tag}.md"
+gh release view "$release_tag" --repo indielife/wallpad-mqtt-bridge \
+  --json body --jq '.body | rtrimstr("\n")' > "/tmp/wallpad-release-${release_tag}-published.md"
+diff -u "docs/releases/${release_tag}.md" "/tmp/wallpad-release-${release_tag}-published.md"
+```
+
 ## 5. HA 애드온 저장소 갱신
 
 GitHub 릴리즈 발행 후 `indielife/ha-addons`의 최신 `main`에서 변경을 준비합니다.
@@ -151,7 +164,7 @@ GitHub 릴리즈 발행 후 `indielife/ha-addons`의 최신 `main`에서 변경�
 
 `v0.1.0`은 릴리즈 노트를 준비하기 전에 생성한 예외입니다.
 태그는 `592d53b40e82085b4fb50c04ea3cef730069685b`를 가리키며 그대로 사용합니다.
-노트 작성 시점의 `main`에 있는 난방 PR #185는 이 버전에 포함하지 않습니다.
+태그 이후 `main`에 반영된 변경은 이 버전에 포함하지 않습니다.
 
 ```bash
 git fetch origin --tags
