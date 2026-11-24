@@ -142,3 +142,29 @@ def test_parse_frame_target_routing_elevator(parser):
     assert v is not None
     assert v["update_target"]["device"] == "elevator"
     assert v["update_target"]["room"] == "wallpad"
+
+
+def test_unsupported_frame_type_has_distinct_diagnostic(parser, caplog):
+    caplog.set_level("DEBUG")
+    packet = SEND_PACKET[:4] + "fff" + SEND_PACKET[7:]
+    assert parser.parse_frame(packet) is None
+    assert "reason=unsupported_type" in caplog.text
+    assert packet in caplog.text
+
+
+@pytest.mark.parametrize(
+    "packet",
+    [
+        "aa5530bc00360301003a0000000000000000600d0d",
+        "aa5530dc00010036033a0000000000000000800d0d",
+    ],
+)
+def test_query_destination_uses_thermostat_room_map(parser, mock_config, packet):
+    """조명과 난방 주소가 교차해도 조회·조회 ACK의 목적지 방을 동일하게 해석한다."""
+    mock_config.kocom_room = {"00": "livingroom", "02": "room2", "03": "room1"}
+    mock_config.kocom_room_thermostat = {"00": "livingroom", "02": "room1", "03": "room2"}
+    assert parser.validate_frame(packet)[0] is True
+    parsed = parser.parse_frame(packet)
+    assert parsed["dst_device"] == "thermostat"
+    assert parsed["dst_room"] == "room2"
+    assert "update_target" not in parsed

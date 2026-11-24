@@ -51,3 +51,26 @@ async def test_close_closes_writer(connected_transport):
     await connected_transport.close()
 
     connected_transport._writer.close.assert_called_once()
+
+
+async def test_socket_eof_is_connection_loss(connected_transport):
+    connected_transport._reader.read.return_value = b""
+    with pytest.raises(ConnectionError, match="EOF"):
+        await connected_transport.read(1)
+
+
+async def test_socket_zero_length_read_is_not_eof(connected_transport):
+    connected_transport._reader.read.return_value = b""
+    assert await connected_transport.read(0) == b""
+
+
+async def test_eof_reconnects_through_existing_wrapper(connected_transport, caplog):
+    from wallpad.transport.reconnect import ReconnectingTransport
+
+    connected_transport._reader.read.side_effect = [b"", b"\xaa"]
+    connected_transport.connect = AsyncMock()
+    transport = ReconnectingTransport(connected_transport)
+    with patch("wallpad.transport.reconnect.asyncio.sleep"):
+        assert await transport.read(1) == b"\xaa"
+    connected_transport.connect.assert_awaited_once()
+    assert "EOF" in caplog.text

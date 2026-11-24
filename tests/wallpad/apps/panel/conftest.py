@@ -68,6 +68,13 @@ class FakeMqtt:
 def _fake_transport() -> AsyncMock:
     transport = AsyncMock()
     transport.write_if_idle.return_value = True
+
+    async def write_if_idle(data, *, on_write=None):
+        if transport.write_if_idle.return_value and on_write is not None:
+            on_write()
+        return transport.write_if_idle.return_value
+
+    transport.write_if_idle.side_effect = write_if_idle
     transport.is_idle = MagicMock(return_value=True)
     return transport
 

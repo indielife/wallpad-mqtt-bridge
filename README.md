@@ -95,6 +95,8 @@ rooms:
 - [로컬 개발 가이드](docs/development.md): `uv`를 사용한 로컬 가상환경 구성, 패키지 관리, 포매팅/린트 설정 및 도커 빌드 검증 방법을 설명합니다.
 - [코콤 패킷 분석 가이드](docs/packet_analysis.md): 코콤 월패드 통신 패킷 구조 및 각 디바이스별 Hex 코드 정의를 설명합니다.
 
+- [난방 명령 확인과 CC 장애 조사](docs/heating_diagnostics.md): 진단 센서 확인, 로그 추출 및 격리 검증 절차를 설명합니다.
+
 ## Credits & Acknowledgements
 
 이 프로젝트는 [zooil](https://github.com/zooil)님의 [kocomRS485](https://github.com/zooil/kocomRS485)에서 출발했으며, 그 원본은 랜이님이 만든 코콤 월패드 프로그램입니다. 시작점을 마련해 주신 두 분께 감사드립니다.

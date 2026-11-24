@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import logging
 
-from .base import BaseTransport
+from .base import BaseTransport, WriteCallback
 
 logger = logging.getLogger(__name__)
 
@@ -48,10 +48,13 @@ class ReconnectingTransport(BaseTransport):
                 logger.warning("Read error: %r", e)
                 await self._reconnect()
 
-    async def write(self, data: bytes):
+    async def write(self, data: bytes, *, on_write: WriteCallback | None = None):
         while True:
             try:
-                await self._transport.write(data)
+                if on_write is None:
+                    await self._transport.write(data)
+                else:
+                    await self._transport.write(data, on_write=on_write)
                 return
             except Exception as e:
                 logger.warning("Write error: %r", e)

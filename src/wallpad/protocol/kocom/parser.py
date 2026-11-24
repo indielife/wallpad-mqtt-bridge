@@ -13,6 +13,7 @@ from wallpad.protocol.kocom.constants import (
     KOCOM_COMMAND_BY_HEX,
     KOCOM_DEVICE_BY_HEX,
     KOCOM_FAN_SPEED_BY_HEX,
+    KOCOM_PACKET_TAIL,
     KOCOM_TYPE_BY_HEX,
 )
 
@@ -33,6 +34,20 @@ class KocomPacketParser(PacketParser):
         orgin_sum = packet[36:38] if len(packet) >= 38 else ""
         return (True, chk_sum) if chk_sum == orgin_sum else (False, chk_sum)
 
+    def validate_frame(self, packet: str) -> tuple[bool, str]:
+        """수신 프레임의 경계와 체크섬을 검증하고 실패 사유를 반환한다."""
+        if len(packet) != self.PACKET_LENGTH:
+            return False, "length"
+        if packet[:4] not in self.SOF_LENGTH_MAP:
+            return False, "sof"
+        if packet[-4:] != KOCOM_PACKET_TAIL:
+            return False, "tail"
+        try:
+            valid, _ = self.validate_checksum(packet)
+        except ValueError:
+            return False, "encoding"
+        return (True, "ok") if valid else (False, "checksum")
+
     def parse_frame(self, packet: str, device_states=None) -> dict | None:
         p = self._parse_packet(packet)
         if p is None:
@@ -41,6 +56,7 @@ class KocomPacketParser(PacketParser):
 
     def _parse_packet(self, packet: str) -> dict | None:
         if len(packet) < self.PACKET_LENGTH:
+            logger.debug("event=parse_skip reason=length raw=%s", packet)
             return None
         p: dict = {}
         try:
@@ -58,6 +74,7 @@ class KocomPacketParser(PacketParser):
                 p["dst_device"] = packet[14:16]
                 p["dst_room"] = packet[16:18]
             else:
+                logger.debug("event=parse_skip reason=unsupported_type raw=%s", packet)
                 return None
             p["command"] = packet[18:20]
             p["value"] = packet[20:36]
@@ -82,7 +99,7 @@ class KocomPacketParser(PacketParser):
             v["dst_device"] = KOCOM_DEVICE_BY_HEX.get(p["dst_device"])
             v["dst_room"] = (
                 self._config.kocom_room.get(p["dst_room"])
-                if v["src_device"] != DEVICE_THERMOSTAT
+                if v["dst_device"] != DEVICE_THERMOSTAT
                 else self._config.kocom_room_thermostat.get(p["dst_room"])
             )
             v["value"] = p["value"]

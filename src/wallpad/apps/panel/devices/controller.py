@@ -1,6 +1,6 @@
 import time
 
-from wallpad.apps.panel.state import RoomState, SubDeviceState
+from wallpad.apps.panel.state import UNSET_SCAN_TIME, RoomState, SubDeviceState
 from wallpad.devices.base import BaseDevice
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 
@@ -50,9 +50,9 @@ class CategoryController:
         raise NotImplementedError
 
     def reset_scan(self) -> None:
-        self.state.scan.tick = time.time()
+        self.state.scan.tick = time.monotonic()
         self.state.scan.count = 0
-        self.state.scan.last = 0.0
+        self.state.scan.last = UNSET_SCAN_TIME
 
     def recover_if_confirmed(self, sub_state: SubDeviceState) -> None:
         """제어(set)가 RS485로 확인되면 재전송 대기 상태를 회수합니다."""

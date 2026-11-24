@@ -11,6 +11,8 @@ class TopicContext:
     config_topic: str = ""
     command_topic: str = ""
     state_topic: str = ""
+    diagnostic_config_topic: str = ""
+    diagnostic_state_topic: str = ""
 
     # Gas (복수 Entity 대응)
     switch_config_topic: str = ""

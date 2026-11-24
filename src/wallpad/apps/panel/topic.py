@@ -41,6 +41,7 @@ class TopicBuilder:
     @staticmethod
     def for_thermostat(room: str) -> TopicContext:
         config_topic = f"{HA_PREFIX}/{HA_CLIMATE}/{room}/config"
+        diagnostic_config_topic = f"{HA_PREFIX}/{HA_SENSOR}/{room}_heating_command/config"
         mode_command_topic = f"{HA_PREFIX}/{HA_CLIMATE}/{room}/mode"
         mode_state_topic = f"{HA_PREFIX}/{HA_CLIMATE}/{room}/state"
         temperature_command_topic = f"{HA_PREFIX}/{HA_CLIMATE}/{room}/target_temp"
@@ -49,7 +50,7 @@ class TopicBuilder:
         state_topic = f"{HA_PREFIX}/{HA_CLIMATE}/{room}/state"
 
         return TopicContext(
-            config_topics=[config_topic],
+            config_topics=[config_topic, diagnostic_config_topic],
             command_topics=[mode_command_topic, temperature_command_topic],
             config_topic=config_topic,
             state_topic=state_topic,
@@ -58,6 +59,8 @@ class TopicBuilder:
             temperature_command_topic=temperature_command_topic,
             temperature_state_topic=temperature_state_topic,
             current_temperature_topic=current_temperature_topic,
+            diagnostic_config_topic=diagnostic_config_topic,
+            diagnostic_state_topic=f"wallpad/diagnostic/heating/{room}",
         )
 
     @staticmethod

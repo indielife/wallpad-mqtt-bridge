@@ -53,3 +53,22 @@ async def test_send_packet_returns_early_when_bus_busy(panel_instance, monkeypat
     await panel_instance.send_packet("light", "livingroom", "1", "on")
 
     panel_instance.transport.write_if_idle.assert_awaited_once_with(bytearray.fromhex("aa5530bc"))
+
+
+async def test_send_result_distinguishes_busy_and_invalid(panel_instance, monkeypatch):
+    from wallpad.apps.panel.send_result import SendResult
+
+    panel_instance.transport.write_if_idle = AsyncMock(return_value=False)
+    monkeypatch.setattr(panel_instance, "make_packet", lambda *a, **k: "aa5530bc")
+    assert await panel_instance.send_packet("light", "livingroom", "1", "on") == SendResult.DEFERRED
+    monkeypatch.setattr(panel_instance, "make_packet", lambda *a, **k: None)
+    assert await panel_instance.send_packet("light", "livingroom", "1", "on") == SendResult.INVALID
+
+
+async def test_send_exception_is_a_distinct_failure(panel_instance, monkeypatch, caplog):
+    from wallpad.apps.panel.send_result import SendResult
+
+    panel_instance.transport.write_if_idle = AsyncMock(side_effect=OSError("disconnected"))
+    monkeypatch.setattr(panel_instance, "make_packet", lambda *a, **k: "aa5530bc")
+    assert await panel_instance.send_packet("light", "livingroom", "1", "on") == SendResult.FAILED
+    assert "event=tx_failed" in caplog.text

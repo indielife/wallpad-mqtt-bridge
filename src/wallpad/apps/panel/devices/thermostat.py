@@ -80,7 +80,7 @@ class Thermostat(PanelDevice):
     def get_discovery_payloads(self, remove: bool = False) -> list[tuple[str, str]]:
         topic = self.topics.config_topic
         if remove:
-            return [(topic, "")]
+            return [(topic, ""), (self.topics.diagnostic_config_topic, "")]
 
         payload = {
             "name": f"{self.name_prefix}_{self.room}_{self.sub_device}",
@@ -99,7 +99,25 @@ class Thermostat(PanelDevice):
             "unique_id": f"{self.name_prefix}_{self.room}_{self.sub_device}",
             "device": self.device_info,
         }
-        return [(topic, json.dumps(payload))]
+        diagnostic_payload = {
+            "name": "난방 명령 확인 상태",
+            "unique_id": f"{self.name_prefix}_{self.room}_heating_command",
+            "device": self.device_info,
+            "entity_category": "diagnostic",
+            "enabled_by_default": True,
+            "device_class": "enum",
+            "options": ["이력 없음", "확인 대기", "확인 완료", "명령 미확인"],
+            "state_topic": self.topics.diagnostic_state_topic,
+            "value_template": (
+                "{{ {'idle': '이력 없음', 'pending': '확인 대기', "
+                "'confirmed': '확인 완료', 'unconfirmed': '명령 미확인'}[value_json.status] }}"
+            ),
+            "json_attributes_topic": self.topics.diagnostic_state_topic,
+        }
+        return [
+            (topic, json.dumps(payload)),
+            (self.topics.diagnostic_config_topic, json.dumps(diagnostic_payload)),
+        ]
 
     def get_ha_state_messages(self, value) -> list[tuple[str, dict]]:
         return [(self.topics.state_topic, value)]

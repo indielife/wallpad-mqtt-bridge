@@ -1,9 +1,12 @@
 import asyncio
 import json
 import logging
+from functools import partial
 
 from wallpad.apps.panel.devices import CategoryController, Room
 from wallpad.apps.panel.factory import DeviceFactory
+from wallpad.apps.panel.heating_commands import HeatingCommandTracker
+from wallpad.apps.panel.send_result import SendResult
 from wallpad.apps.panel.synchronizer import StateSynchronizer
 from wallpad.config import AppConfig
 from wallpad.devices.base import BaseDevice
@@ -25,6 +28,7 @@ from wallpad.protocol.kocom.constants import (
 )
 from wallpad.protocol.kocom.packet_builder import KocomPacketBuilder
 from wallpad.protocol.kocom.parser import KocomPacketParser
+from wallpad.transport.base import WriteCallback
 from wallpad.transport.bus_arbitration import BusArbitrationTransport
 
 logger = logging.getLogger(__name__)  # HA MQTT Discovery
@@ -55,6 +59,12 @@ def flatten_device_tree(rooms: list[Room]) -> list[BaseDevice]:
             if controller is not None:
                 devices.extend(controller.sub_devices)
     return devices
+
+
+def _log_discarded(discarded: list[str], minimum: int = 1) -> None:
+    if len(discarded) >= minimum:
+        logger.debug("event=rx_discard reason=resync raw=%s", "".join(discarded))
+        discarded.clear()
 
 
 def log_frame(direction: str, name: str, parsed_frame: dict) -> None:
@@ -106,9 +116,16 @@ class Panel:
             for room in self.rooms
             for controller in room.controllers
         }
+        self.heating_commands = {
+            room: HeatingCommandTracker(room)
+            for category, room in self.controller_map
+            if category == DEVICE_THERMOSTAT
+        }
         self.device_map: dict[tuple[str, str], BaseDevice] = {
             (type(d).__name__.lower(), d.room): d for d in self.devices
         }
+        for room, command in self.heating_commands.items():
+            command.on_change = partial(self._publish_heating_diagnostic, room)
         self.command_registry: dict[str, BaseDevice] = {
             topic: device for device in self.devices for topic in device.get_command_topics()
         }
@@ -122,6 +139,7 @@ class Panel:
         self.ha_ready = self.ha_coordinator.ha_ready
 
         self.mqtt_client.register_connect_callback(self.ha_coordinator.on_connect)
+        self.mqtt_client.register_connect_callback(self._on_heating_reconnect)
         self._register_topic_routes()
 
         self.synchronizer = StateSynchronizer(
@@ -130,13 +148,14 @@ class Panel:
             config=config,
             is_bus_idle=self.transport.is_idle,
             ha_ready=self.ha_ready,
+            heating_commands=self.heating_commands,
         )
 
     async def start(self) -> list[asyncio.Task]:
+        self._loop = asyncio.get_running_loop()
         await self.transport.connect()
         self._task_read = asyncio.create_task(self.receive_packets())
         self._task_sync = asyncio.create_task(self.synchronizer.run())
-        self._loop = asyncio.get_running_loop()
         return [self._task_read, self._task_sync]
 
     def _register_topic_routes(self) -> None:
@@ -155,6 +174,12 @@ class Panel:
         self.mqtt_client.register_topic_callback(TOPIC_BRIDGE_CHECKSUM, self._handle_checksum_debug)
 
     def _handle_device_command(self, topic: str, payload: str) -> None:
+        if self._loop is not None:
+            self._loop.call_soon_threadsafe(self._apply_device_command, topic, payload)
+        else:
+            self._apply_device_command(topic, payload)
+
+    def _apply_device_command(self, topic: str, payload: str) -> None:
         if not self.ha_ready.is_set():
             return
         self.parse_message(topic.split("/"), payload)
@@ -184,6 +209,12 @@ class Panel:
             self.controller_map[(device_type, room)].apply_ha_command(
                 sub_device, command, processed_payload, self.default_speed
             )
+            if device_type == DEVICE_THERMOSTAT:
+                state = self.controller_map[(device_type, room)].state
+                requested = {"mode": state["mode"].set}
+                if requested["mode"] == "heat":
+                    requested["target_temp"] = state["target_temp"].set
+                self.heating_commands[room].begin(requested)
             logger.info(
                 "[From HA] %s/%s/%s/%s = %s",
                 device_type,
@@ -206,32 +237,67 @@ class Panel:
             self.mqtt_client.publish_json(topic, payload)
             logger.info("[To HA] %s = %s", topic, json.dumps(payload, ensure_ascii=False))
 
+    def _publish_heating_diagnostic(self, room: str, snapshot: dict) -> None:
+        device = self.device_map[(DEVICE_THERMOSTAT, room)]
+        assert device.topics is not None
+        self.mqtt_client.publish_json(device.topics.diagnostic_state_topic, snapshot)
+
+    def _on_heating_reconnect(self, *_) -> None:
+        if self._loop is not None:
+            self._loop.call_soon_threadsafe(self._publish_heating_diagnostics)
+        else:
+            self._publish_heating_diagnostics()
+
+    def _publish_heating_diagnostics(self) -> None:
+        for room, command in self.heating_commands.items():
+            self._publish_heating_diagnostic(room, command.snapshot())
+
     async def receive_packets(self):
         buf = []
-        while True:
-            hex_byte = (await self.transport.read(1)).hex()
-            buf.append(hex_byte)
+        discarded = []
 
-            while len(buf) >= 2:
-                sof = buf[0] + buf[1]
-                if sof not in self.parser.SOF_LENGTH_MAP:
-                    buf.pop(0)
-                    continue
+        try:
+            while True:
+                hex_byte = (await self.transport.read(1)).hex()
+                buf.append(hex_byte)
 
-                expected_len = self.parser.SOF_LENGTH_MAP[sof]
-                if len(buf) < expected_len:
-                    break
+                while len(buf) >= 2:
+                    sof = buf[0] + buf[1]
+                    if sof not in self.parser.SOF_LENGTH_MAP:
+                        discarded.append(buf.pop(0))
+                        _log_discarded(discarded, minimum=64)
+                        continue
 
-                packet = "".join(buf[:expected_len])
-                if self.parser.validate_checksum(packet)[0]:
-                    self.process_packet(packet)
-                    buf = buf[expected_len:]
-                else:
-                    buf.pop(0)
+                    expected_len = self.parser.SOF_LENGTH_MAP[sof]
+                    if len(buf) < expected_len:
+                        break
+
+                    packet = "".join(buf[:expected_len])
+                    valid, reason = self.parser.validate_frame(packet)
+                    if valid:
+                        _log_discarded(discarded)
+                        logger.debug("event=rx_frame raw=%s", packet)
+                        self.process_packet(packet)
+                        buf = buf[expected_len:]
+                    else:
+                        logger.debug(
+                            "event=rx_discard reason=%s raw=%s expected_checksum=%s received=%s",
+                            reason,
+                            packet,
+                            self.parser.validate_checksum(packet)[1],
+                            packet[36:38],
+                        )
+                        discarded.append(buf.pop(0))
+                        _log_discarded(discarded, minimum=64)
+        finally:
+            _log_discarded(discarded)
+            if buf:
+                logger.debug("event=rx_discard reason=incomplete raw=%s", "".join(buf))
 
     def process_packet(self, packet, source="kocom"):
         parsed_frame = self.parser.parse_frame(packet, self.device_states)
         if parsed_frame is None:
+            logger.debug("event=frame_unhandled source=%s raw=%s", source, packet)
             return
 
         try:
@@ -248,6 +314,15 @@ class Panel:
 
             update_target = parsed_frame.get("update_target")
             if update_target:
+                if (
+                    source == "kocom"
+                    and parsed_frame["type"] == "ack"
+                    and update_target["device"] == DEVICE_THERMOSTAT
+                    and update_target["room"] in self.heating_commands
+                    and isinstance(packet, str)
+                    and self.parser.validate_frame(packet)[0]
+                ):
+                    self.heating_commands[update_target["room"]].observe(parsed_frame["value"])
                 self.set_list(update_target["device"], update_target["room"], parsed_frame["value"])
                 self.publish_state_to_ha(
                     update_target["device"], update_target["room"], parsed_frame["value"]
@@ -263,8 +338,29 @@ class Panel:
     def _schedule_write(self, data: str | None) -> None:
         if data and self._loop:
             asyncio.run_coroutine_threadsafe(
-                self.transport.write_if_idle(bytes.fromhex(data)), self._loop
+                self._write_packet(data, source="HA_debug"), self._loop
             )
+
+    async def _write_packet(
+        self,
+        packet: str,
+        source: str,
+        request_id: int | None = None,
+        on_write: WriteCallback | None = None,
+    ) -> SendResult:
+        try:
+            if on_write is None:
+                sent = await self.transport.write_if_idle(bytes.fromhex(packet))
+            else:
+                sent = await self.transport.write_if_idle(bytes.fromhex(packet), on_write=on_write)
+        except Exception:
+            logger.exception("event=tx_failed source=%s raw=%s", source, packet)
+            return SendResult.FAILED
+        if not sent:
+            logger.debug("event=tx_deferred source=%s reason=bus_busy raw=%s", source, packet)
+            return SendResult.DEFERRED
+        logger.debug("event=tx_frame source=%s request_id=%s raw=%s", source, request_id, packet)
+        return SendResult.SENT
 
     def set_list(self, device, room, value):
         try:
@@ -279,21 +375,34 @@ class Panel:
                 e,
             )
 
-    async def send_packet(self, device, room, target, value, cmd="상태"):
+    async def send_packet(
+        self, device, room, target, value, cmd="상태", *, request_id: int | None = None
+    ) -> SendResult:
         if cmd == "상태":
             packet = self.make_packet(device, room, "상태", target, value)
         elif cmd == "조회":
             packet = self.make_packet(device, room, "조회", "", "")
         else:
-            return
+            return SendResult.INVALID
 
         if not packet:
-            return
+            logger.warning("event=tx_invalid device=%s room=%s target=%s", device, room, target)
+            return SendResult.INVALID
 
         parsed_frame = self.parser.parse_frame(packet, self.device_states)
 
-        if not await self.transport.write_if_idle(bytes.fromhex(packet)):
-            return
+        result = await self._write_packet(
+            packet,
+            source="poll" if cmd == "조회" else "control",
+            request_id=request_id,
+            on_write=(
+                partial(self.heating_commands[room].mark_write_started, request_id)
+                if request_id is not None
+                else None
+            ),
+        )
+        if result is not SendResult.SENT:
+            return result
 
         if cmd == "상태":
             logger.info("[To %s] %s/%s/%s -> %s", self.name, device, room, target, value)
@@ -305,6 +414,7 @@ class Panel:
 
         if device == DEVICE_ELEVATOR:
             self.publish_state_to_ha(DEVICE_ELEVATOR, DEVICE_WALLPAD, "on")
+        return SendResult.SENT
 
     def make_packet(self, device, room, cmd, target, value):
         # 1. (device, room) 컨트롤러에 조립 위임 (맵 조회 O(1), 타겟 탐색은 컨트롤러 책임)
