@@ -1,0 +1,57 @@
+name: PR title
+
+# squash 머지 커밋에 남을 제목의 형식만 검사한다.
+# gitmoji와 중복 번호는 보정하고, scope 누락·타입 불일치는 작성자에게 안내한다.
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  normalize:
+    name: Normalize + lint PR title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Normalize + lint
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          CAN_EDIT_TITLE: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' }}
+        run: |
+          # 보정과 위반 보고는 독립이다: 고칠 수 있는 건 고치고, 남은 위반으로 실패시킨다.
+          if normalized="$(uv run python scripts/pr_title.py --title "$PR_TITLE" 2> messages.txt)"; then
+            status=0
+          else
+            status=$?
+          fi
+          sed 's/^/- /' messages.txt | tee -a "$GITHUB_STEP_SUMMARY"
+
+          # 보정 불가능한 위반이면 스크립트가 입력 제목을 그대로 돌려주므로 조건이 거짓이 된다.
+          if [ "$normalized" != "$PR_TITLE" ]; then
+            if [ "$CAN_EDIT_TITLE" = "true" ]; then
+              gh pr edit "$PR_NUMBER" --title "$normalized"
+              echo "- PR 제목을 \`$normalized\`로 보정했다" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "- 읽기 전용 실행이므로 PR 제목을 직접 수정하세요: \`$normalized\`" >> "$GITHUB_STEP_SUMMARY"
+              status=1
+            fi
+          fi
+          exit "$status"
