@@ -20,6 +20,24 @@ WORKFLOW = Path(__file__).parents[2] / ".github/workflows/pr-title.yml"
         ("## Summary\n\n이슈 없이 진행합니다.", None),
         ("Refs #N", None),
         (
+            "## Related issues\n\n참고용 인용:\n\n> ## Test Plan\n> 이전 검증 기록\n\nCloses #123",
+            "123",
+        ),
+        (
+            "## Summary\n\n> ## Related issues\n> Ref #999999\n\n## Related issues\n\nCloses #123",
+            "123",
+        ),
+        ("## Related issues\n\n> Ref #999999\n\nCloses #123", "123"),
+        (
+            "## Summary\n\n> > ## Related issues\n> > Ref #999999\n\n## Related issues\n\nCloses #123",
+            "123",
+        ),
+        ("## Related issues\n\n- ## Test Plan\n  이전 검증 기록\n\nCloses #123", "123"),
+        (
+            "## Summary\n\n\\## Related issues\nRef #999999\n\n## Related issues\n\nCloses #123",
+            "123",
+        ),
+        (
             '## Summary\n\n사용 예시: `\nvalue = "<!--"\n`\n\n## Related issues\n\nCloses #123',
             "123",
         ),
@@ -184,20 +202,22 @@ def test_read_only_runs_report_required_edits_without_writing_or_requiring_optio
 
 
 @pytest.mark.parametrize(
-    "example",
+    "body",
     [
-        '사용 예시: `\nvalue = "<!--"\n`',
-        "- ```markdown\n  Refs #999999\n  ```",
+        '## Summary\n\n사용 예시: `\nvalue = "<!--"\n`\n\n## Related issues\n\nCloses #123',
+        "## Summary\n\n- ```markdown\n  Refs #999999\n  ```\n\n## Related issues\n\nCloses #123",
+        "## Related issues\n\n참고용 인용:\n\n> ## Test Plan\n> 이전 검증 기록\n\nCloses #123",
+        "## Summary\n\n> ## Related issues\n> Ref #999999\n\n## Related issues\n\nCloses #123",
     ],
 )
 def test_markdown_examples_do_not_bypass_linked_issue_title_check(
-    example: str, tmp_path: Path
+    body: str, tmp_path: Path
 ) -> None:
     lookup = _run_step(
         "Look up linked issue title",
         tmp_path,
         "gh() { printf '%s\\n' \"$*\" > gh-args.txt; printf '%s\\n' 'feat: 연결된 이슈'; }\n",
-        {"PR_BODY": f"## Summary\n\n{example}\n\n## Related issues\n\nCloses #123"},
+        {"PR_BODY": body},
     )
     assert lookup.returncode == 0, lookup.stderr
     assert (tmp_path / "gh-args.txt").read_text().strip() == (
