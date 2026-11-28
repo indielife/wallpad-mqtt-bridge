@@ -4,29 +4,47 @@ import re
 import sys
 
 
+def _without_comments(line: str, in_comment: bool) -> tuple[str, bool]:
+    """본문 주석 상태를 이어가되 인라인 코드의 주석 기호는 보존한다."""
+    visible = ""
+    while line:
+        if in_comment:
+            end = line.find("-->")
+            if end < 0:
+                return visible, True
+            line, in_comment = line[end + 3 :], False
+            continue
+        marker = re.search(r"(?P<code>(`+).*?\2)|<!--", line)
+        if marker is None:
+            return visible + line, False
+        visible += line[: marker.start()]
+        if marker["code"] is not None:
+            visible += marker[0]
+        else:
+            in_comment = True
+        line = line[marker.end() :]
+    return visible, in_comment
+
+
 def _visible_lines(body: str) -> list[str]:
-    """주석과 코드 블록을 제외한 줄을 반환한다."""
-    body = re.sub(r"<!--.*?(?:-->|$)", "", body, flags=re.DOTALL)
+    """코드 블록 안에서는 주석 상태를 바꾸지 않고, 주석 안의 펜스도 무시한다."""
     lines: list[str] = []
     fence: str | None = None
+    in_comment = False
     for line in body.splitlines():
-        marker = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
         if fence is not None:
-            if (
-                marker
-                and marker[1][0] == fence[0]
-                and len(marker[1]) >= len(fence)
-                and not marker[2].strip()
-            ):
+            if re.fullmatch(rf" {{0,3}}{re.escape(fence[0])}{{{len(fence)},}}\s*", line):
                 fence = None
             continue
-        if marker:
-            fence = marker[1]
-            continue
-        if line.startswith(("    ", "\t")):
-            continue
-        lines.append(line)
-
+        if not in_comment:
+            if line.startswith(("    ", "\t")):
+                continue
+            marker = re.match(r"^ {0,3}(`{3,}|~{3,})", line)
+            if marker:
+                fence = marker[1]
+                continue
+        visible, in_comment = _without_comments(line, in_comment)
+        lines.append(visible)
     return lines
 
 
