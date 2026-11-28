@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  issues: read
   pull-requests: write
 
 concurrency:
@@ -48,7 +49,11 @@ jobs:
             | grep -oiE '(closes|refs?)[[:space:]]+#[0-9]+' \
             | head -n1 | grep -oE '[0-9]+' || true)"
           if [ -n "$issue" ]; then
-            gh issue view "$issue" --json title --jq .title > issue-title.txt || rm -f issue-title.txt
+            if ! gh issue view "$issue" --json title --jq .title > issue-title.txt; then
+              rm -f issue-title.txt
+              echo "- 참조 이슈 #$issue 제목 조회에 실패해 검증할 수 없습니다. 권한과 API 상태를 확인한 뒤 다시 실행하세요." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
           fi
 
       - name: Normalize + lint
@@ -56,8 +61,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
+          CAN_EDIT_TITLE: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' }}
         run: |
-          args=(--title "$PR_TITLE" --commits-file commit-titles.txt)
+          args=(--title "$PR_TITLE")
+          # 읽기 전용 실행에서는 선택 사항인 scope를 추론해 수정을 요구하지 않는다.
+          if [ "$CAN_EDIT_TITLE" = "true" ]; then
+            args+=(--commits-file commit-titles.txt)
+          fi
           if [ -f issue-title.txt ]; then
             args+=(--issue-title "$(cat issue-title.txt)")
           fi
@@ -72,7 +82,12 @@ jobs:
 
           # 보정 불가능한 위반이면 스크립트가 입력 제목을 그대로 돌려주므로 조건이 거짓이 된다.
           if [ "$normalized" != "$PR_TITLE" ]; then
-            gh pr edit "$PR_NUMBER" --title "$normalized"
-            echo "- PR 제목을 \`$normalized\`로 보정했다" >> "$GITHUB_STEP_SUMMARY"
+            if [ "$CAN_EDIT_TITLE" = "true" ]; then
+              gh pr edit "$PR_NUMBER" --title "$normalized"
+              echo "- PR 제목을 \`$normalized\`로 보정했다" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "- 읽기 전용 실행이므로 PR 제목을 직접 수정하세요: \`$normalized\`" >> "$GITHUB_STEP_SUMMARY"
+              status=1
+            fi
           fi
           exit "$status"
