@@ -40,7 +40,7 @@ def referenced_issue(body: str) -> str | None:
         if heading:
             start, level = index + 1, len(heading[1])
             break
-    candidates = lines
+    candidates: list[str] = lines
     if start is not None:
         candidates = []
         for line in lines[start:]:
