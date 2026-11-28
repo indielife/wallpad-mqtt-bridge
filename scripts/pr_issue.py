@@ -50,8 +50,8 @@ def referenced_issue(body: str) -> str | None:
             candidates.append(line)
 
     for line in candidates:
-        match = re.fullmatch(
-            r" {0,3}(?:(?:[-+*]|\d+[.)])\s+)?(?:closes|refs?)\s+#(\d+)(?:\s*,\s*#\d+)*\s*",
+        match = re.match(
+            r" {0,3}(?:(?:[-+*]|\d+[.)])\s+)?(?:closes|refs?)\s+#(\d+)\b",
             line,
             re.I,
         )
