@@ -19,31 +19,29 @@ WORKFLOW = Path(__file__).parents[2] / ".github/workflows/pr-title.yml"
         ("## Related issues\n\nRefs #123\nCloses #456", "123"),
         ("## Summary\n\n이슈 없이 진행합니다.", None),
         ("Refs #N", None),
+        ("Closes #123, #456", "123"),
+        ("```markdown\n## Related issues\nRefs #999999\n```\nCloses #123", "123"),
+        ("## Summary\n\n예시: `Refs #999999`\n\n## Related issues\n\nCloses #123", "123"),
+        ("Refs #999999\n\n## Related issues\n\n- Ref #123", "123"),
+        ("## Related issues\n\n<!-- Refs #999999 -->\nRefs #123", "123"),
+        ("## Related issues\n\n<!--\nRefs #999999\n-->\nRefs #123", "123"),
+        ("## Related issues\n\n```text\nRefs #999999\n```\nRefs #123", "123"),
+        ("## Related issues\n\n~~~\nRefs #999999\n~~~\nRefs #123", "123"),
+        ("## Related issues\n\n`Refs #999999`\n    Refs #999998\nRefs #123", "123"),
+        ("## Related issues\n\n연결 없음\n\n## Test Plan\n\nRefs #999999", None),
+        ("설명에서 Refs #999999 문법을 소개합니다.", None),
     ],
 )
 def test_workflow_looks_up_the_first_referenced_issue(
     body: str, issue_number: str | None, tmp_path: Path
 ) -> None:
-    workflow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
-    lookup = next(
-        step
-        for step in workflow["jobs"]["normalize"]["steps"]
-        if step.get("name") == "Look up linked issue title"
+    result = _run_step(
+        "Look up linked issue title",
+        tmp_path,
+        "gh() { printf '%s\\n' \"$*\" > gh-args.txt; printf '%s\\n' 'feat: 연결된 이슈'; }\n",
+        {"PR_BODY": body},
     )
-    # 실제 조회 단계는 그대로 실행하고 gh만 대체해 외부 호출 없이 전달 인자를 검증한다.
-    stub = """gh() {
-    printf '%s\\n' "$*" > gh-args.txt
-    printf '%s\\n' 'feat: 연결된 이슈'
-}
-"""
-    subprocess.run(
-        ["bash", "-e", "-o", "pipefail", "-c", stub + lookup["run"]],
-        cwd=tmp_path,
-        env={"PATH": os.environ["PATH"], "PR_BODY": body},
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    assert result.returncode == 0, result.stderr
 
     title_file = tmp_path / "issue-title.txt"
     args_file = tmp_path / "gh-args.txt"
@@ -63,10 +61,21 @@ def _run_step(
     workflow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
     step = next(step for step in workflow["jobs"]["normalize"]["steps"] if step.get("name") == name)
     return subprocess.run(
-        ["bash", "-e", "-o", "pipefail", "-c", stub + step["run"]],
+        [
+            "bash",
+            "-e",
+            "-o",
+            "pipefail",
+            "-c",
+            'uv() { shift 2; "$PYTHON_EXECUTABLE" "$REPOSITORY_ROOT/$1" "${@:2}"; }\n'
+            + stub
+            + step["run"],
+        ],
         cwd=tmp_path,
         env={
             "PATH": os.environ["PATH"],
+            "PYTHON_EXECUTABLE": sys.executable,
+            "REPOSITORY_ROOT": str(WORKFLOW.parents[2]),
             "GITHUB_STEP_SUMMARY": str(tmp_path / "summary.md"),
             **extra_env,
         },
@@ -111,12 +120,7 @@ def test_read_only_runs_report_required_edits_without_writing_or_requiring_optio
     tmp_path: Path,
 ) -> None:
     (tmp_path / "commit-titles.txt").write_text("✨ feat(data): 조회 경로 추가\n")
-    # uv 실행만 프로젝트 인터프리터로 대체하고 실제 제목 검사 CLI를 실행한다.
-    stub = """uv() {
-    shift 3
-    "$PYTHON_EXECUTABLE" "$TITLE_SCRIPT" "$@"
-}
-gh() {
+    stub = """gh() {
     printf '%s\\n' "$*" > gh-args.txt
 }
 """
@@ -128,8 +132,6 @@ gh() {
             "CAN_EDIT_TITLE": can_edit,
             "PR_TITLE": title,
             "PR_NUMBER": "42",
-            "PYTHON_EXECUTABLE": sys.executable,
-            "TITLE_SCRIPT": str(WORKFLOW.parents[2] / "scripts/pr_title.py"),
         },
     )
 

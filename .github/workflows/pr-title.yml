@@ -45,9 +45,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          issue="$(printf '%s' "$PR_BODY" \
-            | grep -oiE '(closes|refs?)[[:space:]]+#[0-9]+' \
-            | head -n1 | grep -oE '[0-9]+' || true)"
+          issue="$(printf '%s' "$PR_BODY" | uv run python scripts/pr_issue.py)"
           if [ -n "$issue" ]; then
             if ! gh issue view "$issue" --json title --jq .title > issue-title.txt; then
               rm -f issue-title.txt
