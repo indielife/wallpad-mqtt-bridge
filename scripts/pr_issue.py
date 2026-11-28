@@ -3,48 +3,36 @@
 import re
 import sys
 
+from markdown_it import MarkdownIt
+from markdown_it.token import Token
 
-def _without_comments(line: str, in_comment: bool) -> tuple[str, bool]:
-    """본문 주석 상태를 이어가되 인라인 코드의 주석 기호는 보존한다."""
-    visible = ""
-    while line:
-        if in_comment:
-            end = line.find("-->")
-            if end < 0:
-                return visible, True
-            line, in_comment = line[end + 3 :], False
-            continue
-        marker = re.search(r"(?P<code>(`+).*?\2)|<!--", line)
-        if marker is None:
-            return visible + line, False
-        visible += line[: marker.start()]
-        if marker["code"] is not None:
-            visible += marker[0]
-        else:
-            in_comment = True
-        line = line[marker.end() :]
-    return visible, in_comment
+
+def _reference_text(token: Token) -> str:
+    """참조 후보의 줄 경계를 보존하고 코드·HTML을 참조로 이어 붙이지 않는다."""
+    parts: list[str] = []
+    for child in token.children or []:
+        if child.type == "text":
+            parts.append(child.content)
+        elif child.type in {"softbreak", "hardbreak"}:
+            parts.append("\n")
+        elif child.type in {"code_inline", "html_inline", "image"}:
+            # 코드를 삭제하면 뒤의 설명이 줄 시작의 참조로 바뀔 수 있다.
+            parts.append("\ufffc")
+    return "".join(parts)
 
 
 def _visible_lines(body: str) -> list[str]:
-    """코드 블록 안에서는 주석 상태를 바꾸지 않고, 주석 안의 펜스도 무시한다."""
+    """CommonMark 토큰에서 코드·HTML 블록을 제외한 본문과 제목을 읽는다."""
+    tokens = MarkdownIt("commonmark").parse(body)
     lines: list[str] = []
-    fence: str | None = None
-    in_comment = False
-    for line in body.splitlines():
-        if fence is not None:
-            if re.fullmatch(rf" {{0,3}}{re.escape(fence[0])}{{{len(fence)},}}\s*", line):
-                fence = None
+    for index, token in enumerate(tokens):
+        if token.type != "inline":
             continue
-        if not in_comment:
-            if line.startswith(("    ", "\t")):
-                continue
-            marker = re.match(r"^ {0,3}(`{3,}|~{3,})", line)
-            if marker:
-                fence = marker[1]
-                continue
-        visible, in_comment = _without_comments(line, in_comment)
-        lines.append(visible)
+        text = _reference_text(token)
+        previous = tokens[index - 1]
+        if previous.type == "heading_open":
+            text = "#" * int(previous.tag[1:]) + " " + text
+        lines.extend(text.splitlines())
     return lines
 
 

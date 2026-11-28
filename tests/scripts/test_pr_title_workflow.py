@@ -19,6 +19,27 @@ WORKFLOW = Path(__file__).parents[2] / ".github/workflows/pr-title.yml"
         ("## Related issues\n\nRefs #123\nCloses #456", "123"),
         ("## Summary\n\n이슈 없이 진행합니다.", None),
         ("Refs #N", None),
+        (
+            '## Summary\n\n사용 예시: `\nvalue = "<!--"\n`\n\n## Related issues\n\nCloses #123',
+            "123",
+        ),
+        (
+            '## Summary\n\n사용 예시: ``\n`\nvalue = "<!--"\n``\n\n## Related issues\n\nCloses #123',
+            "123",
+        ),
+        (
+            "## Summary\n\n- ```markdown\n  Refs #999999\n  ```\n\n## Related issues\n\nCloses #123",
+            "123",
+        ),
+        (
+            "## Summary\n\n1. ~~~markdown\n   Refs #999999\n   ~~~\n\n## Related issues\n\nCloses #123",
+            "123",
+        ),
+        (
+            "## Summary\n\n- 예시\n  - ```markdown\n    Refs #999999\n    ```\n\n## Related issues\n\nCloses #123",
+            "123",
+        ),
+        ("## Related issues\n\n``Refs #999999 ` 설명``\n\nCloses #123", "123"),
         ("## Summary\n\n주석 시작은 `<!--`입니다.\n\n## Related issues\n\nCloses #123", "123"),
         ('## Summary\n\n```python\nstart = "<!--"\n```\n\n## Related issues\n\nCloses #123', "123"),
         ("## Summary\n\n~~~html\n<!--\n~~~\n\n## Related issues\n\nRefs #123", "123"),
@@ -39,7 +60,10 @@ WORKFLOW = Path(__file__).parents[2] / ".github/workflows/pr-title.yml"
         ("## Related issues\n\n<!--\nRefs #999999\n-->\nRefs #123", "123"),
         ("## Related issues\n\n```text\nRefs #999999\n```\nRefs #123", "123"),
         ("## Related issues\n\n~~~\nRefs #999999\n~~~\nRefs #123", "123"),
-        ("## Related issues\n\n`Refs #999999`\n    Refs #999998\nRefs #123", "123"),
+        ("## Related issues\n\n`Refs #999999`\n\n    Refs #999998\n\nRefs #123", "123"),
+        # 빈 줄 없는 들여쓰기는 GFM에서 코드 블록이 아니라 문단의 연속이다.
+        ("## Related issues\n\n`Refs #999999`\n    Refs #999998\nRefs #123", "999998"),
+        ("## Related issues\n\n`예시` Closes #999999\nCloses #123", "123"),
         ("## Related issues\n\n연결 없음\n\n## Test Plan\n\nRefs #999999", None),
         ("설명에서 Refs #999999 문법을 소개합니다.", None),
     ],
@@ -157,3 +181,34 @@ def test_read_only_runs_report_required_edits_without_writing_or_requiring_optio
         summary = (tmp_path / "summary.md").read_text()
         assert "직접" in summary
         assert "✨ feat: 조회 경로 추가" in summary
+
+
+@pytest.mark.parametrize(
+    "example",
+    [
+        '사용 예시: `\nvalue = "<!--"\n`',
+        "- ```markdown\n  Refs #999999\n  ```",
+    ],
+)
+def test_markdown_examples_do_not_bypass_linked_issue_title_check(
+    example: str, tmp_path: Path
+) -> None:
+    lookup = _run_step(
+        "Look up linked issue title",
+        tmp_path,
+        "gh() { printf '%s\\n' \"$*\" > gh-args.txt; printf '%s\\n' 'feat: 연결된 이슈'; }\n",
+        {"PR_BODY": f"## Summary\n\n{example}\n\n## Related issues\n\nCloses #123"},
+    )
+    assert lookup.returncode == 0, lookup.stderr
+    assert (tmp_path / "gh-args.txt").read_text().strip() == (
+        "issue view 123 --json title --jq .title"
+    )
+
+    result = _run_step(
+        "Normalize + lint",
+        tmp_path,
+        "gh() { return 1; }\n",
+        {"CAN_EDIT_TITLE": "false", "PR_TITLE": "✨ feat: 연결된 이슈", "PR_NUMBER": "42"},
+    )
+    assert result.returncode == 1
+    assert "제목이 연결된 이슈 제목과 같다" in (tmp_path / "summary.md").read_text()
