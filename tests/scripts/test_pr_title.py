@@ -9,12 +9,6 @@ CONTRIBUTING = Path(__file__).parents[2] / "CONTRIBUTING.md"
 # CONTRIBUTING.md 타입 표의 한 행: | ✨ | `feat` | 새로운 기능 추가 |
 CONTRIBUTING_ROW = re.compile(r"^\|\s*(?P<icon>\S+)\s*\|\s*`(?P<type>[a-z-]+)`\s*\|")
 
-BRANCH_COMMITS = (
-    "✨ feat(data): 지수 유니버스 산출 경로 추가",
-    "✅ test(data): 지수 구성종목 e2e 테스트 추가",
-    "📝 docs(architecture): 데이터 모델에 유니버스 산출 경로 반영",
-)
-
 
 def test_missing_gitmoji_is_derived_from_type() -> None:
     outcome = review("feat(data): 지수 구성종목 조회 경로 추가")
@@ -71,54 +65,6 @@ def test_trailing_pr_number_is_stripped() -> None:
     assert any("(#N)" in note for note in outcome.notes)
 
 
-def test_scope_is_filled_when_branch_commits_agree() -> None:
-    outcome = review("feat: 지수 유니버스 산출 경로 추가", commit_titles=BRANCH_COMMITS)
-
-    assert outcome.title == "✨ feat(data): 지수 유니버스 산출 경로 추가"
-
-
-def test_majority_scope_is_filled() -> None:
-    commits = (
-        *BRANCH_COMMITS,
-        "✨ feat(data): pykrx 지수 구성종목 소스 어댑터 추가",
-        "✨ feat(cli): collect --index 옵션 추가",
-    )
-
-    outcome = review("feat: 지수 유니버스 산출 경로 추가", commit_titles=commits)
-
-    assert outcome.title == "✨ feat(data): 지수 유니버스 산출 경로 추가"
-    assert any("다수 scope" in note for note in outcome.notes)
-
-
-def test_tied_scope_candidates_are_reported_but_not_filled() -> None:
-    commits = (*BRANCH_COMMITS, "✨ feat(cli): collect --index 옵션 추가")
-
-    outcome = review("feat: 지수 유니버스 산출 경로 추가", commit_titles=commits)
-
-    assert outcome.title == "✨ feat: 지수 유니버스 산출 경로 추가"
-    assert any("동수" in note for note in outcome.notes)
-    assert outcome.errors == []
-
-
-def test_copying_the_linked_issue_title_is_a_violation() -> None:
-    outcome = review(
-        "✨ feat: 유니버스 관리 — 지수 구성종목(KOSPI 200) 조회",
-        issue_title="feat: 유니버스 관리 — 지수 구성종목(KOSPI 200) 조회",
-    )
-
-    assert outcome.errors
-    assert "이슈 제목과 같다" in outcome.errors[0]
-
-
-def test_summary_differing_from_the_issue_title_passes() -> None:
-    outcome = review(
-        "✨ feat(data): 지수 구성종목 유니버스 조회 경로 추가",
-        issue_title="feat: 유니버스 관리 — 지수 구성종목(KOSPI 200) 조회",
-    )
-
-    assert outcome.errors == []
-
-
 @pytest.mark.parametrize(
     "title",
     ["✨feat: x", ": x", "feat:", "Feat: x", "유니버스 관리 개선", "WIP"],
@@ -153,16 +99,19 @@ def test_cli_prints_normalized_title_and_signals_violations(
     assert main(["--title", "유니버스 관리 개선"]) == 1
 
 
-def test_cli_infers_scope_from_commit_titles_file(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    commits_file = tmp_path / "commit-titles.txt"
-    commits_file.write_text("\n".join(BRANCH_COMMITS), encoding="utf-8")
+@pytest.mark.parametrize(
+    "title", ["📝 docs: 양식 정리", "📝 docs( ): 양식 정리", "📝 docs(my scope): 양식 정리"]
+)
+def test_pr_scope_must_be_provided_by_the_author(title: str) -> None:
+    outcome = review(title)
 
-    exit_code = main(
-        ["--title", "feat: 지수 유니버스 산출 경로 추가", "--commits-file", str(commits_file)]
-    )
+    assert outcome.errors
+    assert "scope" in outcome.errors[0]
 
-    assert exit_code == 0
-    assert capsys.readouterr().out.strip() == "✨ feat(data): 지수 유니버스 산출 경로 추가"
+
+@pytest.mark.parametrize(
+    "title",
+    ["📝 docs(templates):", "📝 docs(templates):   ", "📝 docs(): 양식 정리"],
+)
+def test_required_title_parts_cannot_be_empty(title: str) -> None:
+    assert review(title).errors
