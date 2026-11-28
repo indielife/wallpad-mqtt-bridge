@@ -170,7 +170,8 @@ git checkout -b <branch-name>
 
 ### 이슈·PR 템플릿 작성
 
-- 섹션 제목과 구조 키워드는 영어로, 본문과 안내 주석은 한국어로 작성합니다.
+- 이슈·PR 본문의 섹션 제목과 구조 키워드는 영어로 유지합니다.
+  설명과 안내 주석은 한국어로 작성합니다.
   `In`, `Out`, `Depends on`, `Blocks`, `Refs`, `Closes`, `Ref`를 유지합니다.
 - 이슈의 `Background`, `Scope`, `Done when`에 문제·범위·관찰 가능한 완료 조건을 적습니다.
   `Approach`와 `Tasks`는 필요할 때만 작성하고 상세 구현 계획은 착수 시 수립합니다.
