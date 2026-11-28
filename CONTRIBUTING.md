@@ -131,7 +131,8 @@ pre-commit 훅은 ruff(check·format)·파일 위생 검사와 함께 `pytest`�
 
 ## 브랜치 명명 규칙
 
-형식: `<type>/<issue-number>-<description>`
+- 이슈가 있는 작업: `<type>/<issue-number>-<description>`
+- 이슈 없이 진행하는 작업: `<type>/<description>`
 
 - 타입은 커밋 메시지 타입과 일치 (`feat`, `fix`, `refactor`, `docs`, `chore` 등)
 - description은 영어 소문자 + 하이픈 (kebab-case)
@@ -147,9 +148,10 @@ git checkout -b <branch-name>
 
 ## Pull Request 작성 규칙
 
-- `.github/PULL_REQUEST_TEMPLATE.md` 양식 준수
+- [.github/pull_request_template.md](.github/pull_request_template.md) 양식 준수
 - PR 제목 형식: 커밋 메시지 제목과 동일 (`<emoji> <type>(<scope>): <subject>`)
-- PR 본문 하단에 `Closes #<이슈 번호>` 작성
+- `Related issues`에 종료할 이슈는 `Closes #N`, 일부 기여는 `Ref #N`으로 연결합니다.
+- 연결할 이슈가 없으면 해당 절을 생략합니다. 같은 이슈에 `Closes`와 `Ref`를 중복하지 않습니다.
 
 ## 추적 제외 파일 언급 금지
 
@@ -164,3 +166,31 @@ git checkout -b <branch-name>
 | `bug` | 버그 수정, 예상치 못한 동작 수정 |
 | `refactor` | 외부 동작 변화 없는 코드 구조·설계 개선 |
 | `chore` | 유지보수, 설정 변경, 의존성 업데이트, 문서 작업 |
+| `spike` | 구현 전 조사·실험으로 판단 근거를 확보하는 작업 |
+
+### 이슈·PR 템플릿 작성
+
+- 섹션 제목과 구조 키워드는 영어로, 본문과 안내 주석은 한국어로 작성합니다.
+  `In`, `Out`, `Depends on`, `Blocks`, `Refs`, `Closes`, `Ref`를 유지합니다.
+- 이슈의 `Background`, `Scope`, `Done when`에 문제·범위·관찰 가능한 완료 조건을 적습니다.
+  `Approach`와 `Tasks`는 필요할 때만 작성하고 상세 구현 계획은 착수 시 수립합니다.
+- `Starting points`에는 알고 있는 관련 경로와 이유를 적습니다.
+  탐색은 해당 경로부터 시작하고 필요한 의존 관계를 따라 확장합니다.
+  수정 파일을 확정하거나 탐색 범위를 제한하는 목록이 아니며 경로를 추측하지 않습니다.
+- 이슈 본문에는 브랜치명을 적지 않습니다. 실제 브랜치는 PR에서 확인합니다.
+- `Dependencies`는 관계가 있을 때만 작성하고 빈 항목은 삭제합니다.
+  `Depends on`과 `Blocks`에는 착수·병합·운영 활성화 중 어느 단계의 조건인지 명시합니다.
+- 일반 CI 검사 통과 여부와 테스트 개수를 고정 체크박스로 반복하지 않습니다.
+  필수 검사 수행 의무는 유지하며 검사 도입·범위 변경이 목표이면 완료 조건에 포함합니다.
+- PR의 `Test Plan`에는 핵심 검증 시나리오·실행 조건·관찰 결과와 근거를 적습니다.
+  자동 테스트와 실제 연동·운영 확인을 구분합니다.
+  미검증 범위와 완료 판단에 미치는 영향은 `Limitations and follow-up`에 적습니다.
+- 이슈의 `Outcome`은 PR 머지 준비 시 목표 달성 여부·최종 결정·관련 PR을 기록합니다.
+  남은 작업과 이슈 종료 가능 여부를 적고 병합·운영 확인으로 달라지면 갱신합니다.
+  PR 없이 끝나는 작업은 종료 판단 시 결과와 근거를 기록합니다.
+  작은 작업은 결과 한 문장과 근거 링크로 충분하며 검증 상세는 PR·조사 기록에 연결합니다.
+- `spike`는 조사 질문·방법·종료 기준과 확인한 사실·추정·미검증 범위를 구분합니다.
+  채택·보류·기각도 유효한 결론이며 채택안 구현 성공을 조사 완료 조건으로 두지 않습니다.
+  조사 범위를 벗어나는 구현은 범위를 합의하거나 후속 이슈로 분리합니다.
+
+`spike`는 기존 `chore:` 제목과 `type:chore` 라벨을 사용합니다.
